@@ -16,7 +16,8 @@ class Coupon extends Model
     public function referral(){
         return $this->hasOne(Referral::class, 'coupon_id', 'id');
     }
-    public static function countProfile($id){
+    
+        public static function countProfile($id){
         $count = Profile::where('coupon_code',$id)->count();
         return $count;
     }
@@ -24,4 +25,5 @@ class Coupon extends Model
         $count = Profile::where('coupon_code',$id)->where('payment_status','1')->count();
         return $count;
     }
+    
 }

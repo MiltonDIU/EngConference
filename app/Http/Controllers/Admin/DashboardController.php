@@ -18,9 +18,7 @@ use Gate;
 use DB;
 class DashboardController extends Controller
 {
-
     public function index(){
-
         abort_if(Gate::denies('admin_dashboard'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $user = Auth::user();
         $allowedDomain = Domain::where('status',1)->pluck('domain_name')->toArray();
@@ -100,6 +98,7 @@ class DashboardController extends Controller
             ->orderBy('start_time', 'asc')
             ->get()
             ->groupBy('day_number');
+            
         $blogs = Post::where('is_active','1')->orderBy('views','desc')->get();
         $aminities = Amenity::orderBy('id','desc')->get();
         $eventActivities = EventActivity::all();

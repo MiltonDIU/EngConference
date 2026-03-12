@@ -35,13 +35,13 @@ class MailController extends Controller
 //        }
         $profiles = Profile::whereIn('payment_status',$request->input('user_groups'))->get();
 
-        $i=0;
+$i=0;
         foreach ($profiles as $profile){
             if ($request->input('den_users') == '0'){
                 $emailDomainsToExclude = Domain::where('status',1)->pluck('domain_name')->toArray();
                 if ($profile->user){
                     $domain = explode('@', $profile->user->email);
-                    if ($profile->user->email != null and $profile->coupon_code == null and $profile->special_coupon != null and !in_array($domain[1], $emailDomainsToExclude)){
+                    if ($profile->user->email != null and $profile->coupon_code == null and !in_array($domain[1], $emailDomainsToExclude)){
                         EventNotifyJobs::dispatch($profile->user,$message);
                     }
                 }

@@ -126,7 +126,7 @@
                             @foreach($blogCategories as $blogCategory)
                                 <div class=" col-sm-12 col-md-6 col-lg-6  browse-category-row">
                                     <div class="blog-image-category-box">
-                                        <img  src="{{ $blogCategory->feature_image->getUrl() }}" alt="">
+                                        <img  src="{{ $blogCategory->feature_image->getUrl('thumb') }}" alt="">
                                     </div>
                                     <div class="blog-image-category-content d-flex align-items-center">
                                         <a href="{{ route('blogsCategory',[$blogCategory->id,$blogCategory->slug]) }}">

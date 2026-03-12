@@ -24,11 +24,11 @@
             @endforeach
         </ul>
 
+     
         <h3 class="sub-heading">
-            Join us on November 18-19, 2023, at AI Connect Bangladesh Summit 2023! This two-day event will feature immersive workshops on AI applications across industries and hands-on AI technology exploration and exhibition.
-{{--            --}}
-{{--            The event is rescheduled for unavoidable circumstances. A new date will be announced soon. Stay Tuned!--}}
-        </h3>
+            <!--Join us on November 18-19, 2023, at AI Connect Bangladesh Summit 2023! This two-day event will feature immersive workshops on AI applications across industries and hands-on AI technology exploration and exhibition.-->
+              <!--The event is rescheduled for unavoidable circumstances. A new date will be announced soon. Stay Tuned!-->
+            </h3>
 
         <div class="tab-content row justify-content-center">
             @foreach($schedules as $key => $day)

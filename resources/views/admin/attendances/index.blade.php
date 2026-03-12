@@ -9,6 +9,7 @@
             </div>
         </div>
     @endcan
+    
     <div class="card">
         <div class="card-header">
             {{ trans('cruds.schedule.title_singular') }} {{ trans('global.list') }}
@@ -48,6 +49,9 @@
                         </th>
                         <th>
                             Number of Paid Users
+                        </th>
+                         <th>
+                            Number of Presents
                         </th>
                         <th>
                             {{ trans('cruds.schedule.fields.subtitle') }}
@@ -106,6 +110,22 @@
                                 @endforeach
                                 {{ $paid }}
                             </td>
+                            
+                             <td>
+                                @php
+                                    $attendenc = 0;
+                                @endphp
+                                @foreach($schedule->users as $key => $user)
+                                    @if($user->profile->event_attendance=='1')
+                                        @php
+                                            $attendenc += 1;
+                                        @endphp
+                                    @endif
+                                @endforeach
+                                {{ $attendenc }}
+                            </td>
+                            
+                            
                             <td>
                                 {{ $schedule->subtitle ?? '' }}
                             </td>

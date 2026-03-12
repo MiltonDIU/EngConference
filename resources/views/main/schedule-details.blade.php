@@ -6,7 +6,7 @@
                 <div class="container">
                     <div class="section-header">
                         <h3>{{ $schedule->title??"" }}</h3>
-
+                      
                     </div>
                 </div>
             </div>

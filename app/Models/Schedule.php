@@ -15,13 +15,11 @@ class Schedule extends Model
         '0' => 'No',
         '1' => 'Yes',
     ];
-
-    public const IS_Active = [
+    public const IS_event_session = [
         '0' => 'No',
         '1' => 'Yes',
     ];
-
-    public const IS_event_session = [
+        public const IS_Active = [
         '0' => 'No',
         '1' => 'Yes',
     ];
@@ -50,10 +48,12 @@ class Schedule extends Model
         'updated_at',
         'deleted_at',
     ];
-    public function feedback()
+    
+      public function feedback()
     {
         return $this->hasMany(Schedule::class);
     }
+
     public function speaker()
     {
         return $this->belongsTo(Speaker::class, 'speaker_id');

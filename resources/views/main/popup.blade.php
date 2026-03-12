@@ -1,7 +1,7 @@
 <div id="popup-container">
     <div id="popup-content">
         <button id="close-popup">Close</button>
-        <img src="{{ url('img/popup.jpeg') }}" height="100%" alt="Popup Image">
+        <img src="{{ url('img/popup.png') }}" height="100%" alt="Popup Image">
     </div>
 </div>
 
@@ -32,7 +32,7 @@
             width: 100%;
             max-height: 100%;
             overflow: auto;
-            margin: 0 auto;
+               margin: 0 auto;
             top: 1%;
         }
 

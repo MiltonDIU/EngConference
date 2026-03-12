@@ -69,7 +69,7 @@
                             <td>
                                 @if($eventActivity->feature_image)
                                     <a href="{{ $eventActivity->feature_image->getUrl() }}" target="_blank" style="display: inline-block">
-                                        <img src="{{ $eventActivity->feature_image->getUrl() }}" width="100px">
+                                        <img src="{{ $eventActivity->feature_image->getUrl('thumb') }}">
                                     </a>
                                 @endif
                             </td>

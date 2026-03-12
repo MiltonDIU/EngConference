@@ -208,7 +208,7 @@
                                         @endif
 
                                     @else
-                                        <button class="btn btn-primary" style="float: left;margin-right: 5px">Seat is Full</button>
+                                        <button class="btn btn-primary" style="float: left;margin-right: 5px">The Event is Temporarily Postponed</button>
                                     @endcan
 
 
@@ -238,11 +238,6 @@
             </div>
         </div>
     </div>
-
-
-
-
-
 @endsection
 
 @section('scripts')

@@ -31,7 +31,7 @@ class CreateProfilesTable extends Migration
 
 
             $table->float('pay_amount')->default(0);
-            $table->integer('identity_no ')->default(0);
+            $table->integer('identity_no')->default(0);
             $table->string('coupon_code')->nullable();
             $table->enum('payment_status',['0','1'])->default('0');
             $table->timestamps();

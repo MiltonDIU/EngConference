@@ -20,7 +20,7 @@
             @elseif ($currentDate >= $eventStartDate && $currentDate <= $eventCloseDate)
                 <a href="{{ route('book-ticket') }}" class="about-btn scrollto">Register Now</a>
             @else
-                <a href="#" class="about-btn scrollto">Closed</a>
+                <a href="#" class="about-btn scrollto">Registration Closed</a>
             @endif
 
         @endif

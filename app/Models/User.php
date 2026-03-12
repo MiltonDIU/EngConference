@@ -22,17 +22,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-        ];
-    }
+    protected $dates = [
+        'updated_at',
+        'created_at',
+        'deleted_at',
+        'email_verified_at',
+    ];
 
     protected $fillable = [
         'name',
@@ -75,7 +70,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Schedule::class);
     }
-
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
     public function getIsAdminAttribute()
     {
         return $this->roles()->where('id', 1)->exists();
@@ -83,11 +85,12 @@ class User extends Authenticatable implements MustVerifyEmail
     public function profile(){
         return $this->hasOne(Profile::class,'user_id','id');
     }
+
     public function feedback()
     {
         return $this->hasMany(Schedule::class);
     }
-
+    
         public function payment(){
         return $this->hasMany(Payment::class,'user_id','id');
     }

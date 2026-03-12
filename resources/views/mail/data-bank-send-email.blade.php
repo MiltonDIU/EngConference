@@ -8,7 +8,7 @@
 </head>
 <body>
 {{--<h2 style="text-align: center;">{!! $data['message']->subject !!}</h2>--}}
-<p>Hello! Mr. {!! $data['dataBank']->name !!}</p>
+<p>Hello {!! $data['dataBank']->name !!}!</p>
 {!! $data['message']->mail_body !!}
 <br>
 

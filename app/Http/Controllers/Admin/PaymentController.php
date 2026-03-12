@@ -97,7 +97,7 @@ class PaymentController extends Controller
             'service_type' => 'event',
             'reff_id' => $randomNum
         );
-
+        
         Payment::create($paymentData);
     }
 

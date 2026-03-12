@@ -51,7 +51,10 @@ class SponsorsTableSeeder extends Seeder
         {
             $photo_id = $key + 1;
             $sponsor = Sponsor::create($sponsor);
-            $sponsor->addMedia(storage_path()."/seeders/supporters/$photo_id.png")->preservingOriginal()->toMediaCollection('logo');
+            $mediaPath = storage_path()."/seeders/supporters/$photo_id.png";
+            if (file_exists($mediaPath)) {
+                $sponsor->addMedia($mediaPath)->preservingOriginal()->toMediaCollection('logo');
+            }
         }
     }
 }

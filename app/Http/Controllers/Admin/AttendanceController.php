@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use Symfony\Component\HttpFoundation\Response;
 use Gate;
+
 class AttendanceController extends Controller
 {
     public function index(){
@@ -109,6 +110,5 @@ public function eventAttendance(){
         }
 
     }
-
-
+    
 }

@@ -108,12 +108,16 @@
                             <th>
                                 {{ trans('cruds.user.fields.name') }}
                             </th>
+                             <th>
+                                Mobile
+                            </th>
                             <th>
                                 Reg. ID
                             </th>
                             <th>
                                 Attendance
                             </th>
+                            
                         </tr>
                         </thead>
                         <tbody>
@@ -125,9 +129,13 @@
                                     <td>
                                         {{ $user->name ?? '' }}
                                     </td>
+                                     <td>
+                                        {{ $user->profile->phone ?? ''   }}
+                                    </td>
                                     <td>
                                         {{ $user->profile->identity_no ?? ''   }}
                                     </td>
+                                    
                                     <td>
 
                                         <input
@@ -139,6 +147,7 @@
                                         />
 
                                     </td>
+                                    
                                 </tr>
                             @endif
                         @endforeach

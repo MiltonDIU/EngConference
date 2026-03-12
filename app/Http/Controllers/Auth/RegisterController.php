@@ -202,7 +202,6 @@ return $validator;
                 }
             }
 
-
                 $profile['pay_amount'] = $pay_amount;
 
             $profile =  Profile::create($profile);

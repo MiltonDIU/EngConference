@@ -50,10 +50,9 @@ protected $noReferral = array(
         $schedules = Schedule::with('speaker')
             ->orderBy('day_number', 'asc')
             ->orderBy('start_time', 'asc')
-            ->where('is_active','1')
+             ->where('is_active','1')
             ->get()
             ->groupBy('day_number');
-
         $venues = Venue::all();
         $hotels = Hotel::all();
         $galleries = Gallery::all();
@@ -109,6 +108,7 @@ protected $noReferral = array(
         return view('main.privacy');
     }
     public function bookTicket(Request $request,$referral=null){
+
         if (Auth::user()) {
             return redirect(route('admin.home'));
         } else {
@@ -120,7 +120,7 @@ protected $noReferral = array(
                     });
                 }])
                 ->where('is_workshop', '1')
-                ->where('is_active', '1')
+                  ->where('is_active', '1')
                     ->orWhere('event_session', '1')
                 ->orderBy('day_number', 'asc')->orderBy('start_time', 'asc')
                 ->get()
@@ -284,7 +284,6 @@ public function blogsCategory($id,$slug){
     }
 
 
-
     public function uniqueIdGenerate(){
         $currentDate = Carbon::now();
         $formattedDate = sprintf('%02d%02d%02d', $currentDate->format('y'), $currentDate->month, $currentDate->day);
@@ -301,7 +300,6 @@ public function blogsCategory($id,$slug){
 public function scheduleDetails($id,$title){
 
   $schedule = Schedule::where('id',$id)->first();
-  $schedule =
     $settings = Setting::pluck('value', 'key');
     $populers = Post::where('is_active', '1')
         ->orderBy('views', 'desc')

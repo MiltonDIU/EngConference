@@ -4,8 +4,8 @@
       <div class="row">
 
         <div class="col-lg-3 col-md-6 footer-info">
-          <h4>{{ $settings['title'] ?? '' }}</h4>
-          <p>{{ $settings['footer_description'] ?? '' }}</p>
+          <h4>{!! $settings['title'] ?? '' !!}</h4>
+          <p>{!! $settings['footer_description'] ?? '' !!}</p>
         </div>
 
         <div class="col-lg-3 col-md-6 footer-links">

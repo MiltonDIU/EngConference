@@ -29,6 +29,6 @@ class CreateDataBankCategoriesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('data_bank_categories');
+       // Schema::dropIfExists('data_bank_categories');
     }
 }

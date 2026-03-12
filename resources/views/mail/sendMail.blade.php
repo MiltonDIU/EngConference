@@ -8,7 +8,7 @@
 </head>
 <body>
 {{--<h2 style="text-align: center;">AI Connect Bangladesh Summit</h2>--}}
-<p>Hello! Mr. {!! $data['user']->name !!}</p>
+<p>Hello {!! $data['user']->name !!}!</p>
 {!! $data['message']->mail_body !!}
 <br>
 

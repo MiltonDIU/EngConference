@@ -20,13 +20,16 @@
 
         @include('main.sections.sponsors')
 
-    <!--@include('main.sections.faq')-->
+{{-- @include('main.sections.club-partner')--}}
+
+
+    @include('main.sections.faq')
 
 {{--    @include('main.sections.subscribe')--}}
 
-{{--    @include('main.sections.buy_ticket')--}}
+ @include('main.sections.buy_ticket')
         <!--@include('main.sections.register')-->
         @include('main.sections.contact')
-{{--        @include('main.popup')--}}
+                <!--@include('main.popup')-->
     </main>
 @endsection

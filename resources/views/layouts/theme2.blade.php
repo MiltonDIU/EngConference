@@ -7,7 +7,7 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
-
+    
   <meta property="og:url"               content="http://aws.dipti.com.bd/" />
   <meta property="og:type"              content="website" />
   <meta property="og:title"             content="AWS Cloud Day Bangladesh" />

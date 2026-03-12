@@ -20,7 +20,11 @@ class Event extends Model implements HasMedia
         'photo',
     ];
 
-
+    protected $dates = [
+        'created_at',
+        'updated_at',
+        'deleted_at',
+    ];
 
     protected $fillable = [
         'title',

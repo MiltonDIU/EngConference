@@ -72,6 +72,43 @@ class SettingsTableSeeder extends Seeder
                 'key'   => 'footer_linkedin',
                 'value' => '#'
             ],
+
+            [
+                'key'   => 'registration_start_date',
+                'value' => '2006-03-15 00:00:00'
+            ],
+            [
+                'key'   => 'registration_close_date',
+                'value' => '2026-10-01 12:00:00'
+            ],
+            [
+                'key'   => 'event_price',
+                'value' => '4500'
+            ],
+            [
+                'key'   => 'early_registration_last_date',
+                'value' => '2026-05-01 23:59:00'
+            ],
+            [
+                'key'   => 'early_registration_event_price',
+                'value' => '3500'
+            ],
+            [
+                'key'   => 'selected_domain_discount',
+                'value' => '3500'
+            ],
+            [
+                'key'   => 'payment_last_date',
+                'value' => '2026-11-15 20:00:00'
+            ],
+            [
+                'key'   => 'seat_is_full',
+                'value' => 'false'
+            ],
+            [
+                'key'   => 'event_date',
+                'value' => '2027-01-01'
+            ],
         ];
 
         foreach($settings as $setting)

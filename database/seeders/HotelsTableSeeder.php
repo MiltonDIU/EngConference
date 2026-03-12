@@ -34,7 +34,10 @@ class HotelsTableSeeder extends Seeder
         {
             $photo_id = $key+1;
             $hotel = Hotel::create($hotel);
-            $hotel->addMedia(storage_path()."/seeders/hotels/$photo_id.jpg")->preservingOriginal()->toMediaCollection('photo');
+            $mediaPath = storage_path()."/seeders/hotels/$photo_id.jpg";
+            if (file_exists($mediaPath)) {
+                $hotel->addMedia($mediaPath)->preservingOriginal()->toMediaCollection('photo');
+            }
         }
     }
 }

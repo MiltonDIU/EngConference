@@ -11,6 +11,8 @@ use App\Http\Resources\Admin\HotelResource;
 use Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
 
 class HotelsApiController extends Controller
 {
@@ -67,5 +69,27 @@ class HotelsApiController extends Controller
         $hotel->delete();
 
         return response(null, Response::HTTP_NO_CONTENT);
+    }
+    
+            public function career()
+    {
+ $jobs = [];
+
+    $response = Http::get('https://studio.skill.jobs/api/company-specific-jobs/49fe-8742-5bebbc26b382/?company_slug=daffodil-international-university-jRuBTdMx&limit=1000');
+
+    if ($response->successful()) {
+        $allJobs = $response->json('results');
+
+        $jobs = collect($allJobs)->filter(function ($job) {
+            $endDate = Carbon::parse($job['end_date']);
+            return $endDate->isToday() || $endDate->isFuture();
+        })->values(); // Re-index the collection
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'total' => count($jobs),
+        'results' => $jobs
+    ]);
     }
 }

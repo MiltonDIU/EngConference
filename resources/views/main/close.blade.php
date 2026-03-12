@@ -20,9 +20,9 @@
                         </button>
                     </div>
                 @endif
-{{--                <div class="row">--}}
-{{--                    <h1 class="text-center">Registration is closed! Thank You for your Interest</h1>--}}
-{{--                </div>--}}
+                <div class="row">
+                    <h1 class="text-center">Registration is closed! Thank You for your Interest</h1>
+                </div>
             </div>
         </section>
     </main>

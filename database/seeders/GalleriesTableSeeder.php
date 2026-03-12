@@ -17,7 +17,10 @@ class GalleriesTableSeeder extends Seeder
         ]);
         foreach(range(1,8) as $id)
         {
-            $gallery->addMedia(storage_path()."/seeders/gallery/$id.jpg")->preservingOriginal()->toMediaCollection('photos');
+            $mediaPath = storage_path()."/seeders/gallery/$id.jpg";
+            if (file_exists($mediaPath)) {
+                $gallery->addMedia($mediaPath)->preservingOriginal()->toMediaCollection('photos');
+            }
         }
     }
 }

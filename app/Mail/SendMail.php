@@ -33,7 +33,7 @@ protected $user, $message,$data;
             'user' => $this->user,
             'message' => $this->message,
         ];
-        return $this->subject($this->message->subject)
+      return $this->subject($this->message->subject)
             ->view('mail.sendMail', ['data' => $data]);
 
     }

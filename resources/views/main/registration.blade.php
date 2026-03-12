@@ -47,9 +47,9 @@
                                         <div><strong>Registration Fee : {{ $settings['event_price'] }} BDT</strong></div>
                                         <div><strong>Early Registration Fee : {{ $settings['early_registration_event_price'] }} BDT</strong></div>
                                         {{--                                        <div><strong>For Daffodil Students :400 BDT</strong> <small><em>(use Student Email)</em></small> </div>--}}
-                                        <div><strong>Reg. Starting: {{ $eventStartDate->formatLocalized('%e %B %Y %H:%M:%S') }} </strong></div>
-                                        <div><strong>Reg. Early Deadline: {{ $eventEarlyRegDate->formatLocalized('%e %B %Y %H:%M:%S') }} </strong></div>
-                                        <div><strong>Reg. Deadline: {{ $eventCloseDate->formatLocalized('%e %B %Y %H:%M:%S') }} </strong></div>
+                                        <div><strong>Reg. Starting: {{ $eventStartDate->isoFormat('D MMMM YYYY HH:mm:ss') }} </strong></div>
+                                        <div><strong>Reg. Early Deadline: {{ $eventEarlyRegDate->isoFormat('D MMMM YYYY HH:mm:ss') }} </strong></div>
+                                        <div><strong>Reg. Deadline: {{ $eventCloseDate->isoFormat('D MMMM YYYY HH:mm:ss') }} </strong></div>
                                     </div>
                                     <br/>
 
@@ -171,7 +171,7 @@
 
                                                 @foreach ($schedules as $dayKey => $daySchedules)
                                                     <span style="font-size: 22px; font-weight: bold">{{ "Day - " . $dayKey }}</span>
-
+                                                 
                                                     @php
                                                         $timeis = "";
                                                     @endphp
@@ -286,7 +286,9 @@
 
                 @else
                     <div class="row">
-                        <h1 class="text-center">The event registration has closed. It closed on {{ $eventCloseDate->format('Y-m-d H:i:s') }}</h1>
+                        <!--<h1 class="text-center">The event registration is temporarily closed.</h1>-->
+                        <h1 class="text-center">The event registration has closed. It closed on {{ $eventCloseDate->format('Y-m-d H:i:s') }} </h1>
+                        <!--<h3 class="text-center">If you have registered already, you can complete your registration by making the payment after logging in within 7 PM.</h3>-->
                     </div>
                 @endif
 

@@ -26,7 +26,7 @@
                     @if(isset($profile))
                         {{ 'Already Registered' }}
                     @else
-                        <a href="{{ route('book-now') }}" class="btn">Register Now</a>
+                        <a href="{{ route('book-ticket') }}" class="btn">Register Now</a>
                     @endif
 
             </div>

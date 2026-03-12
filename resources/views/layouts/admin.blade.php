@@ -39,6 +39,15 @@
                    src="https://www.facebook.com/tr?id=989405928987211&ev=PageView&noscript=1"
         /></noscript>
     <!-- End Meta Pixel Code -->
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-GEPJR65WYL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-GEPJR65WYL');
+</script>
 </head>
 
 <body class="sidebar-mini layout-fixed" style="height: auto;">
@@ -80,7 +89,7 @@
                         </div>
                     </div>
                 @endif
-                @if(session('feedbackErrors'))
+                      @if(session('feedbackErrors'))
                     <div class="alert alert-danger">
                         {{ session('feedbackErrors') }}
                     </div>

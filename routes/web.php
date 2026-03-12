@@ -39,7 +39,6 @@ use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\DataBankCategoriesController;
 use App\Http\Controllers\Admin\DataBanksController;
 use App\Http\Controllers\Admin\FeedbackController;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -54,9 +53,9 @@ use App\Http\Controllers\Admin\FeedbackController;
 //Route::get('/', function () {
 //    return view('welcome');
 //});
-
+Route::get('/career', [HomeController::class,'career']);
 Route::get('/phpinfo', function() {
-    echo phpinfo();
+    //echo phpinfo();
 });
 Route::get('/clear-cache', function() {
     Artisan::call('storage:link');
@@ -130,8 +129,9 @@ Auth::routes(['register' => false,'verify'=>true,]);
 
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','verified']], function () {
+    
+        Route::post('feedback', [FeedbackController::class,'store'])->name('feedback.store');
 
-    Route::post('feedback', [FeedbackController::class,'store'])->name('feedback.store');
 
     Route::get('/', [DashboardController::class, 'index'])->name('home');
     // Permissions
@@ -261,7 +261,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
     Route::resource('attendances',AttendanceController::class);
     Route::post('attendance-present', [AttendanceController::class,'updateAttendance'])->name('attendance-present');
     Route::get('download-certificate/{id}', [AttendanceController::class,'downloadCertificate'])->name('downloadCertificate');
-    Route::get('event-attendance', [AttendanceController::class,'eventAttendance'])->name('eventAttendance');
+ Route::get('event-attendance', [AttendanceController::class,'eventAttendance'])->name('eventAttendance');
     Route::post('eventAttendance', [AttendanceController::class,'eventAttendanceTotal'])->name('eventAttendanceTotal');
 
     // Data Bank Categories

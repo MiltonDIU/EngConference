@@ -13,16 +13,19 @@ class VenuesTableSeeder extends Seeder
     public function run()
     {
         $venue = Venue::create([
-            'name'          => 'Downtown Conference Center, New York',
-            'address'       => '157 William St, New York, NY 10038',
-            'latitude'      => '40.7101282',
-            'longitude'     => '-74.0062269',
-            'description'   =>  'Iste nobis eum sapiente sunt enim dolores labore accusantium autem. Cumque beatae ipsam. Est quae sit qui voluptatem corporis velit. Qui maxime accusamus possimus. Consequatur sequi et ea suscipit enim nesciunt quia velit.'
+            'name'          => 'Daffodil Plaza',
+            'address'       => '4/2 Sobhanbag, Mirpur Road, Dhanmondi, Dhaka',
+            'latitude'      => '23.75484855496525',
+            'longitude'     => '90.37654019499453',
+            'description'   =>  'This full day event will feature hands-on workshops on building cloud native applications and machine learning, as well as insights on the recipe for creating the next generation of unicorn startups.'
         ]);
 
         foreach(range(1,8) as $id)
         {
-            $venue->addMedia(storage_path()."/seeders/venue-gallery/$id.jpg")->preservingOriginal()->toMediaCollection('photos');
+            $mediaPath = storage_path()."/seeders/venue-gallery/$id.jpg";
+            if (file_exists($mediaPath)) {
+                $venue->addMedia($mediaPath)->preservingOriginal()->toMediaCollection('photos');
+            }
         }
     }
 }
