@@ -41,5 +41,9 @@
     .social a{
         margin: 0 10px;
     }
+    .img-fluid {
+        width: 100%;
+        object-fit: cover;
+    }
 </style>
 @endpush

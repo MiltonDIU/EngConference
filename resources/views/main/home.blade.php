@@ -27,7 +27,7 @@
 
 {{--    @include('main.sections.subscribe')--}}
 
- @include('main.sections.buy_ticket')
+{{-- @include('main.sections.buy_ticket')--}}
         <!--@include('main.sections.register')-->
         @include('main.sections.contact')
                 <!--@include('main.popup')-->
