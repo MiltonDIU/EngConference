@@ -2,7 +2,7 @@
     <div class="intro-container wow fadeIn">
         <div class="main-title pb-0">{!! $settings['title'] ?? '' !!}</div>
         <p style="margin:10px" class="mb-4 pb-0">{!! $settings['subtitle'] ?? '' !!}</p>
-
+       
         <p class="mb-4 pb-0">{!! $settings['about_when'] ?? '' !!}</p>
         @if(isset($settings['youtube_link']))
             <a href="{{ $settings['youtube_link'] }}" class="venobox play-btn mb-4" data-vbtype="video"
@@ -25,33 +25,36 @@
             @endif
 
         @endif
-        {{--                <div class="clock pt-3">--}}
-        {{--                    <div id="countdown" class="countdown">--}}
-        {{--                        <h4 style="color:white">Registration Start Date</h4>--}}
-        {{--                       <ul style="padding-left:0!important;">--}}
-        {{--                          <li><span class="frame" id="days"></span><span class="font">days</span></li>--}}
-        {{--                          <li><span class="frame" id="hours"></span><span class="font">Hours</span></li>--}}
-        {{--                         <li><span class="frame" id="minutes"></span><span class="font">Minutes</span></li>--}}
-        {{--                          <li><span class="frame" id="seconds"></span><span class="font">Seconds</span></li>--}}
-        {{--                        </ul>--}}
-        {{--                    </div>--}}
-        {{--                </div>--}}
-
-
-        <div class="organize microsoft">
-            <img src="{{ asset('/') }}img/microsoft.png">
-        </div>
+{{--                <div class="clock pt-3">--}}
+{{--                    <div id="countdown" class="countdown">--}}
+{{--                        <h4 style="color:white">Registration Start Date</h4>--}}
+{{--                       <ul style="padding-left:0!important;">--}}
+{{--                          <li><span class="frame" id="days"></span><span class="font">days</span></li>--}}
+{{--                          <li><span class="frame" id="hours"></span><span class="font">Hours</span></li>--}}
+{{--                         <li><span class="frame" id="minutes"></span><span class="font">Minutes</span></li>--}}
+{{--                          <li><span class="frame" id="seconds"></span><span class="font">Seconds</span></li>--}}
+{{--                        </ul>--}}
+{{--                    </div>--}}
+{{--                </div>--}}
 
 
         <p class="organize" style="margin-top: 20px"> Organized By</p>
         <div class="organize">
-            {{--            <img src="{{ asset('/') }}img/AWS-DIU-DIPTI.png">--}}
-            <img src="{{ asset('/') }}img/banner-logo.png">
-            {{--            @foreach($strategics as $strategic)--}}
-            {{--                <img src="{{ $strategic->logo!=null?$strategic->logo->getUrl():'' }}" alt="{{ $strategic->name }}">--}}
-            {{--            @endforeach--}}
+{{--            <img src="{{ asset('/') }}img/AWS-DIU-DIPTI.png">--}}
+            <!--<img src="{{ asset('/') }}img/banner-logo.png">-->
+            <p>Department of English, Daffodil International University</p>
+            
+{{--            @foreach($strategics as $strategic)--}}
+{{--                <img src="{{ $strategic->logo!=null?$strategic->logo->getUrl():'' }}" alt="{{ $strategic->name }}">--}}
+{{--            @endforeach--}}
 
         </div>
+        
+          <div class="organize microsoft">
+            <img src="{{ asset('/') }}img/hero-partner_engcon2.png">
+        </div>
+        
+        
     </div>
 
 </section>
@@ -98,7 +101,7 @@
     .organize img {
         width: 600px;
     }
-    .microsoft img{ width: 400px}
+.microsoft img{ width: 500px}
     @media all and (max-width: 768px) {
         .microsoft img{ width: 300px}
         h1 {
