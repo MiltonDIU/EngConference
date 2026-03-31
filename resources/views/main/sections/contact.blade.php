@@ -1,4 +1,4 @@
-<section id="contact" class="wow fadeInUp section-with-bg wow ">
+<section id="contact" class="wow fadeInUp ">
 
   <div class="container">
 

@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\CheckUniquePostView;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
+use App\Models\CommitteeType;
 class HomeController extends Controller
 {
 protected $noReferral = array(
@@ -35,6 +36,7 @@ protected $noReferral = array(
     'facebookexternalhit',
     'WhatsApp',
     'LinkedInBot',
+    'developers.google.com',
 );
 
     /**
@@ -61,12 +63,32 @@ protected $noReferral = array(
         $faqs = Faq::all();
         $prices = Price::with('amenities')->get();
         $amenities = Amenity::with('prices')->get();
+
+        // Fetch Advisory Boards
+        $advisoryBoardType = CommitteeType::where('name', 'Academic Advisory Boards')->first();
+        $advisoryBoards = $advisoryBoardType
+            ? $advisoryBoardType->committees()->orderBy('sort_order', 'asc')->with(['members' => function($q) {
+                $q->orderBy('committee_conference_member.sort_order', 'asc');
+            }])->get()
+            : collect();
+
+        // Fetch Conference Committees (Organizers)
+        $conferenceCommitteeType = CommitteeType::where('name', 'Conference Committee Structure')->first();
+        $conferenceCommittees = $conferenceCommitteeType
+            ? $conferenceCommitteeType->committees()->where('parent_id', 0)->orderBy('sort_order', 'asc')->with(['subCommittees' => function($q) {
+                $q->orderBy('sort_order', 'asc')->with(['members' => function($mq) {
+                    $mq->orderBy('committee_conference_member.sort_order', 'asc');
+                }]);
+            }])->get()
+            : collect();
+
+        $viewData = compact('settings', 'speakers', 'schedules', 'venues', 'hotels', 'galleries', 'sponsors', 'strategics', 'faqs', 'prices', 'amenities', 'advisoryBoards', 'conferenceCommittees');
+
         if (Auth::user()) {
-            $profile = Profile::where('user_id', $user->id)->first();
-            return view('main.home', compact('settings', 'speakers', 'schedules', 'venues', 'hotels', 'galleries', 'sponsors', 'strategics', 'faqs', 'prices', 'amenities','profile'));
-        }else {
-            return view('main.home', compact('settings', 'speakers', 'schedules', 'venues', 'hotels', 'galleries', 'sponsors', 'strategics', 'faqs', 'prices', 'amenities'));
+            $viewData['profile'] = Profile::where('user_id', $user->id)->first();
         }
+
+        return view('main.home', $viewData);
     }
 
     public function singleEvent($id,$slug)

@@ -1,5 +1,10 @@
-<section id="CallforPapers" class="wow fadeInUp">
-    <div class="container">
+<section id="CallforPapers">
+    <div class="container wow fadeInUp">
+        <div class="section-header">
+            <h2>Call for Papers</h2>
+{{--            <p>This is our contact detail.</p>--}}
+        </div>
+
         <div class="row">
             <div class="col-md-12  col-sm-12">
                 <!-- PDF Viewer -->
@@ -23,3 +28,6 @@
         </div>
     </div>
 </section>
+<style>
+    #CallforPapers{ padding: 60px 0; }
+</style>

@@ -12,6 +12,7 @@
         @include('main.sections.speakers')
         @include('main.sections.advisors')
 
+        @include('main.sections.organizing_committee')
 
 
 
@@ -19,7 +20,7 @@
 
     <!--@include('main.sections.gallery')-->
 
-        @include('main.sections.strategic-partner')
+{{--        @include('main.sections.strategic-partner')--}}
 
         @include('main.sections.sponsors')
 

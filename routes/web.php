@@ -39,6 +39,9 @@ use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\DataBankCategoriesController;
 use App\Http\Controllers\Admin\DataBanksController;
 use App\Http\Controllers\Admin\FeedbackController;
+use App\Http\Controllers\Admin\CommitteeTypeController;
+use App\Http\Controllers\Admin\CommitteeController;
+use App\Http\Controllers\Admin\ConferenceMemberController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -277,6 +280,18 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
     Route::post('data-banks/process-csv-import', [DataBanksController::class,'processCsvImport'])->name('data-banks.processCsvImport');
 
     Route::resource('data-banks', DataBanksController::class);
+
+    // Committee Types
+    Route::delete('committee-types/destroy', [CommitteeTypeController::class, 'massDestroy'])->name('committee-types.massDestroy');
+    Route::resource('committee-types', CommitteeTypeController::class);
+
+    // Committees
+    Route::delete('committees/destroy', [CommitteeController::class, 'massDestroy'])->name('committees.massDestroy');
+    Route::resource('committees', CommitteeController::class);
+
+    // Committee  Members
+    Route::delete('conference-members/destroy', [ConferenceMemberController::class, 'massDestroy'])->name('conference-members.massDestroy');
+    Route::resource('conference-members', ConferenceMemberController::class);
 
 });
 //Route::get('book-ticket',[ProfileController::class,'create'])->name('book-ticket');

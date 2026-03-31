@@ -1,4 +1,4 @@
-<section id="supporters" class="wow fadeInUp">
+<section id="supporters" class="wow fadeInUp section-with-bg">
   <div class="container">
     <div class="section-header text-center">
       <h2>Partners</h2>

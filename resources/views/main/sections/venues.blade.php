@@ -1,4 +1,4 @@
-<section id="venue" class="wow fadeInUp">
+<section id="venue" class="wow fadeInUp section-with-bg">
     <div class="container-fluid">
       <div class="section-header">
         <h2>Event Venue</h2>
