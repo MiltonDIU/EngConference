@@ -65,6 +65,10 @@ Route::get('/clear-cache', function() {
     return '<h1>Cache facade value cleared</h1>';
 });
 
+
+Route::get('call-for-papers', [HomeController::class,'callForPepper'])->name('callForPepper');
+
+
 Route::get('unsubscribe/{unsubscribe_link}', [HomeController::class,'unsubscribe'])->name('data-banks.unsubscribe');
 Route::get('subscribe/{unsubscribe_link}', [HomeController::class,'subscribe'])->name('data-banks.subscribe');
 
@@ -129,7 +133,7 @@ Auth::routes(['register' => false,'verify'=>true,]);
 
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','verified']], function () {
-    
+
         Route::post('feedback', [FeedbackController::class,'store'])->name('feedback.store');
 
 

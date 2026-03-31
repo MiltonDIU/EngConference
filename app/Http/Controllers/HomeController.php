@@ -365,4 +365,10 @@ $link = true;
         }
     }
 
+    public function callForPepper()
+    {
+        $settings = Setting::pluck('value', 'key');
+        return view('main.call_for_pepper',compact('settings'));
+    }
+
 }

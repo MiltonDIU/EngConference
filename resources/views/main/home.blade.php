@@ -6,11 +6,14 @@
     <main id="main">
         @include('main.sections.about')
 
-        @include('main.sections.speakers')
-
+        @include('main.sections.CallforPapers')
         @include('main.sections.schedule')
 
-        @include('main.sections.venues')
+        @include('main.sections.speakers')
+        @include('main.sections.advisors')
+
+
+
 
 {{--    @include('main.sections.hotels')--}}
 
@@ -31,5 +34,7 @@
         <!--@include('main.sections.register')-->
         @include('main.sections.contact')
                 <!--@include('main.popup')-->
+
+        @include('main.sections.venues')
     </main>
 @endsection

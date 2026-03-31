@@ -1,12 +1,20 @@
 <section id="intro">
-    <div class="intro-container wow fadeIn">
-        <div class="main-title pb-0">{!! $settings['title'] ?? '' !!}</div>
-        <p style="margin:10px" class="mb-4 pb-0">{!! $settings['subtitle'] ?? '' !!}</p>
-       
+    <div class="intro-container container wow fadeIn" style="background: #4E7FAF; border-radius: 15px; opacity: 0.9; margin-bottom: 30px">
+
+{{--        <div class="main-title pb-0">{!! $settings['title'] ?? '' !!}</div>--}}
+
+        <span class="main-title">International Conference on</span>
+        <img src="{{ asset('/') }}img/eng-con_logo.png">
+        <span class="second-title"> Beyond Nature and Culture </span>
+        <span class="sub-title">Planetarity Precarity in Literary-Cultural-Linguistic Representations</span>
+
+
+{{--        <p style="margin:10px" class="mb-4 pb-0">{!! $settings['subtitle'] ?? '' !!}</p>--}}
+
         <p class="mb-4 pb-0">{!! $settings['about_when'] ?? '' !!}</p>
         @if(isset($settings['youtube_link']))
-            <a href="{{ $settings['youtube_link'] }}" class="venobox play-btn mb-4" data-vbtype="video"
-               data-autoplay="true"></a>
+            <!--<a href="{{ $settings['youtube_link'] }}" class="venobox play-btn mb-4" data-vbtype="video"-->
+            <!--   data-autoplay="true"></a>-->
         @endif
         @php
             $eventStartDate = \Carbon\Carbon::parse($settings['registration_start_date']);
@@ -16,54 +24,83 @@
         @endphp
 
         @if(!Auth::check())
-            @if ($currentDate < $eventStartDate)
-                <a href="#" class="about-btn scrollto">Upcoming Event</a>
-            @elseif ($currentDate >= $eventStartDate && $currentDate <= $eventCloseDate)
+            @if($currentDate >= $eventStartDate && $currentDate <= $eventCloseDate)
                 <a href="{{ route('book-ticket') }}" class="about-btn scrollto">Register Now</a>
             @else
-                <a href="#" class="about-btn scrollto">Registration Closed</a>
+                {{--                <a href="#" class="about-btn scrollto">Registration Closed</a>--}}
             @endif
 
         @endif
-{{--                <div class="clock pt-3">--}}
-{{--                    <div id="countdown" class="countdown">--}}
-{{--                        <h4 style="color:white">Registration Start Date</h4>--}}
-{{--                       <ul style="padding-left:0!important;">--}}
-{{--                          <li><span class="frame" id="days"></span><span class="font">days</span></li>--}}
-{{--                          <li><span class="frame" id="hours"></span><span class="font">Hours</span></li>--}}
-{{--                         <li><span class="frame" id="minutes"></span><span class="font">Minutes</span></li>--}}
-{{--                          <li><span class="frame" id="seconds"></span><span class="font">Seconds</span></li>--}}
-{{--                        </ul>--}}
-{{--                    </div>--}}
-{{--                </div>--}}
-
-
-        <p class="organize" style="margin-top: 20px"> Organized By</p>
+        {{--                <div class="clock pt-3">--}}
+        {{--                    <div id="countdown" class="countdown">--}}
+        {{--                        <h4 style="color:white">Registration Start Date</h4>--}}
+        {{--                       <ul style="padding-left:0!important;">--}}
+        {{--                          <li><span class="frame" id="days"></span><span class="font">days</span></li>--}}
+        {{--                          <li><span class="frame" id="hours"></span><span class="font">Hours</span></li>--}}
+        {{--                         <li><span class="frame" id="minutes"></span><span class="font">Minutes</span></li>--}}
+        {{--                          <li><span class="frame" id="seconds"></span><span class="font">Seconds</span></li>--}}
+        {{--                        </ul>--}}
+        {{--                    </div>--}}
+        {{--                </div>--}}
+        <p class="organize" style="margin-top: 20px"> Organized by</p>
+        <img src="{{ asset('/') }}img/eng-dept_logo.png">
+        <br>
+        <p>Department of English | Daffodil International University</p>
         <div class="organize">
-{{--            <img src="{{ asset('/') }}img/AWS-DIU-DIPTI.png">--}}
-            <!--<img src="{{ asset('/') }}img/banner-logo.png">-->
-            <p>Department of English, Daffodil International University</p>
-            
-{{--            @foreach($strategics as $strategic)--}}
-{{--                <img src="{{ $strategic->logo!=null?$strategic->logo->getUrl():'' }}" alt="{{ $strategic->name }}">--}}
-{{--            @endforeach--}}
+            {{--            <img src="{{ asset('/') }}img/AWS-DIU-DIPTI.png">
+                        <!--<img src="{{ asset('/') }}img/banner-logo.png">-->
+                        <p>Department of English, Daffodil International University</p>
+
+            {{--            @foreach($strategics as $strategic)--}}
+            {{--                <img src="{{ $strategic->logo!=null?$strategic->logo->getUrl():'' }}" alt="{{ $strategic->name }}">--}}
+            {{--            @endforeach--}}
 
         </div>
-        
-          <div class="organize microsoft">
-            <img src="{{ asset('/') }}img/hero-partner_engcon2.png">
-        </div>
-        
-        
+
+
+        <img src="{{ asset('/') }}img/hero-partner_engcon2.png">
+
+
+
     </div>
 
 </section>
 <style>
     .main-title {
-        font-size: 45px;
-        color: #ffffff;
+        display: block;
+        font-size: 28px;
+        color: #000000;
         font-weight: 700;
-        line-height: 60px;
+        line-height: normal;
+        font-family: 'edo', sans-serif;
+    }
+    .second-title {
+        display: block;
+        font-family: 'edo', sans-serif;
+        font-size: 40px;
+        color: #ffffff;
+        line-height: normal;
+        margin: 10px 0;
+
+
+    }
+    .sub-title {
+        display: block;
+        font-family: 'GlacialIndifference-Regular', sans-serif;
+        font-size: 21px;
+        color: #ffffff;
+        line-height: normal;
+        font-weight: bold;
+        padding-bottom: 35px;
+    }
+
+    @font-face {
+        font-family: 'edo';
+        src: url('{{"fonts/edo.ttf"}}') format('truetype');
+    }
+    @font-face {
+        font-family: 'GlacialIndifference-Regular';
+        src: url('{{"fonts/GlacialIndifference-Regular.otf"}}') format('truetype');
     }
     .countdown li {
         display: inline-block;
@@ -101,7 +138,7 @@
     .organize img {
         width: 600px;
     }
-.microsoft img{ width: 500px}
+    .microsoft img{ width: 500px}
     @media all and (max-width: 768px) {
         .microsoft img{ width: 300px}
         h1 {
@@ -127,9 +164,14 @@
             width: 250px;
         }
         .main-title {
-            font-size: 25px;
-            color: #ffffff;
-            line-height: 30px;
+            font-size: 20px;
+            color: #000000;
+        }
+        .second-title {
+            font-size: 28px;
+        }
+        .sub-title {
+            font-size: 16px;
         }
     }
     @media all and (max-width: 992px) {
@@ -143,14 +185,22 @@
             width: 350px;
         }
         .main-title {
-            font-size: 25px;
-            color: #ffffff;
-            line-height: 30px;
+            font-size: 22px;
+            color: #000000;
+        }
+        .second-title {
+            font-size: 30px;
+        }
+        .sub-title {
+            font-size: 17px;
         }
     }
     @media all and (max-width: 1366px) {
         .main-title {
-            font-size: 30px;
+            font-size: 24px;
+        }
+        .second-title {
+            font-size: 32px;
         }
         .frame {
             width:50px;
