@@ -4,7 +4,7 @@
 {{--        <div class="main-title pb-0">{!! $settings['title'] ?? '' !!}</div>--}}
 
         <span class="main-title">International Conference on</span>
-        <img src="{{ asset('/') }}img/eng-con_logo.png">
+        <img src="{{ asset('/') }}img/eng-con_logo.png" class="intro-img">
         <span class="second-title"> Beyond Nature and Culture </span>
         <span class="sub-title">Planetarity Precarity in Literary-Cultural-Linguistic Representations</span>
 
@@ -43,7 +43,7 @@
         {{--                    </div>--}}
         {{--                </div>--}}
         <p class="organize" style="margin-top: 20px"> Organized by</p>
-        <img src="{{ asset('/') }}img/eng-dept_logo.png">
+        <img src="{{ asset('/') }}img/eng-dept_logo.png" class="intro-img">
         <br>
         <p>Department of English | Daffodil International University</p>
         <div class="organize">
@@ -58,7 +58,7 @@
         </div>
 
 
-        <img src="{{ asset('/') }}img/hero-partner_engcon2.png">
+        <img src="{{ asset('/') }}img/hero-partner_engcon2.png" class="intro-img">
 
 
 
@@ -66,6 +66,36 @@
 
 </section>
 <style>
+    #intro .intro-container {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 90px;
+        width: 100%;
+        max-width: 1320px; /* Constrains the blue card on wide screens */
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        text-align: center;
+        padding: 0 15px;
+    }
+
+    .intro-img {
+        max-width: 100%;
+        height: auto;
+    }
+
     .main-title {
         display: block;
         font-size: 28px;
@@ -111,20 +141,8 @@
         text-transform: uppercase;
     }
 
-    /*.countdown li span {*/
-    /*    display: block;*/
-    /*    font-size: 3rem;*/
-    /*}*/
+    /* ... Keep other original li span styles ... */
 
-    .emoji {
-        display: none;
-        padding: 1rem;
-    }
-
-    .emoji span {
-        font-size: 4rem;
-        padding: 0 .5rem;
-    }
     .frame {
         border: 1px solid;
         padding: 0px 5px;
@@ -137,21 +155,12 @@
     }
     .organize img {
         width: 600px;
+        max-width: 100%;
     }
-    .microsoft img{ width: 500px}
+    .microsoft img{ width: 500px; max-width: 100%; }
+
     @media all and (max-width: 768px) {
         .microsoft img{ width: 300px}
-        h1 {
-            font-size: calc(1.5rem * var(--smaller));
-        }
-
-        .countdown li {
-            font-size: calc(1.125rem * var(--smaller));
-        }
-
-        /*li span {*/
-        /*    font-size: calc(3.375rem * var(--smaller));*/
-        /*}*/
         .frame {
             width:50px;
             font-size: calc(3.375rem * var(--smaller));
@@ -228,8 +237,6 @@
             hour = minute * 60,
             day = hour * 24;
 
-        //I'm adding this section so I don't have to keep updating this pen every year :-)
-        //remove this if you don't need it
         let today = new Date(),
             dd = String(today.getDate()).padStart(2, "0"),
             mm = String(today.getMonth() + 1).padStart(2, "0"),
@@ -239,11 +246,9 @@
             birthday = dayMonth + yyyy;
 
         today = mm + "/" + dd + "/" + yyyy;
-        console.log(today);
         if (today > birthday) {
             birthday = dayMonth + nextYear;
         }
-        //end
 
         const countDown = new Date(birthday).getTime(),
             x = setInterval(function() {
@@ -251,19 +256,16 @@
                 const now = new Date().getTime(),
                     distance = countDown - now;
 
-                document.getElementById("days").innerText = Math.floor(distance / (day)),
-                    document.getElementById("hours").innerText = Math.floor((distance % (day)) / (hour)),
-                    document.getElementById("minutes").innerText = Math.floor((distance % (hour)) / (minute)),
+                if (document.getElementById("days")) {
+                    document.getElementById("days").innerText = Math.floor(distance / (day));
+                    document.getElementById("hours").innerText = Math.floor((distance % (day)) / (hour));
+                    document.getElementById("minutes").innerText = Math.floor((distance % (hour)) / (minute));
                     document.getElementById("seconds").innerText = Math.floor((distance % (minute)) / second);
+                }
 
-                //do something later when date is reached
                 if (distance < 0) {
-                    document.getElementById("headline").innerText = "It's my birthday!";
-                    document.getElementById("countdown").style.display = "none";
-                    document.getElementById("content").style.display = "block";
                     clearInterval(x);
                 }
-                //seconds
-            }, 0)
+            }, 1000)
     }());
 </script>
