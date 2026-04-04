@@ -5,8 +5,15 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\SslCommerzPaymentController;
 use App\Models\ReferralVisitor;
-use App\Models\Schedule;
 use App\Models\Setting;
+use App\Models\Country;
+use App\Models\Paper;
+use App\Models\PaperAuthor;
+use App\Models\Track;
+use App\Models\SubTrack;
+use App\Mail\AbstractSubmitted;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use DB;
 use App\Models\Coupon;
@@ -23,7 +30,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Admin\PaymentController;
 use Illuminate\Validation\ValidationException;
-use App\Rules\SchedulesPerDay;
 
 class RegisterController extends Controller
 {
@@ -78,36 +84,51 @@ class RegisterController extends Controller
 //    }
     protected function validator(array $data)
     {
-        // Retrieve the grouped schedules using the query
-//        $groupedSchedules = Schedule::select('day_number', \DB::raw('MAX(id) as max_id'))
-//            ->whereNull('deleted_at')
-//            ->groupBy('day_number')
-//            ->get();
-
-        $schedules = Schedule::with('speaker')
-            ->where('is_workshop', '1')
-            ->orderBy('start_time', 'desc')
-            ->get()
-            ->filter(function ($schedule) {
-                return $schedule->total_seat >  $schedule->users->count();
-            })
-            ->groupBy('day_number');
-
-
-        $validator =  Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
+        $rules = [
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'institute_name' => ['required', 'string'],
-            'phone' => ['required'],
-            // Use the custom rule with the grouped schedules
-            'schedule_ids' => ['required', 'array', new SchedulesPerDay($schedules)],
-        ]);
+            'designation' => ['required', 'string', 'max:255'],
+            'institution' => ['required', 'string', 'max:255'],
+            'country_id' => ['required', 'exists:countries,id'],
+            'whatsapp_number' => ['required', 'string', 'max:20'],
+            'participation_mode' => ['required', 'in:onsite,online'],
+            'is_author' => ['required', 'boolean'],
+        ];
 
+        if (isset($data['is_author']) && $data['is_author'] == "1") {
+            $settings = Setting::pluck('value', 'key');
+            $isSubmissionOpen = ($settings['is_abstract_submission_open'] ?? 'true') == 'true';
 
+            if ($isSubmissionOpen) {
+                $rules['paper_title'] = ['required', 'string', 'max:500'];
+            $rules['abstract_text'] = ['required', 'string'];
+            $rules['keywords'] = ['required', 'string', 'max:255'];
+            $rules['track_id'] = ['required', 'exists:tracks,id'];
+            $rules['sub_track_id'] = ['required', 'exists:sub_tracks,id'];
+            $rules['is_corresponding_author'] = ['required', 'boolean'];
+            
+            // Consents
+            $rules['consent_original'] = ['accepted'];
+            $rules['consent_review'] = ['accepted'];
+            $rules['consent_acceptance'] = ['accepted'];
+            $rules['consent_no_late_addition'] = ['accepted'];
 
+                // Co-authors if any
+                if (isset($data['co_authors']) && is_array($data['co_authors'])) {
+                    foreach ($data['co_authors'] as $index => $author) {
+                        $rules["co_authors.$index.name"] = ['required', 'string', 'max:255'];
+                        $rules["co_authors.$index.email"] = ['required', 'email', 'max:255'];
+                        $rules["co_authors.$index.designation"] = ['required', 'string', 'max:255'];
+                        $rules["co_authors.$index.institution"] = ['required', 'string', 'max:255'];
+                        $rules["co_authors.$index.country_id"] = ['required', 'exists:countries,id'];
+                    }
+                }
+            }
+        }
 
-return $validator;
+        return Validator::make($data, $rules);
     }
 
     /**
@@ -118,131 +139,107 @@ return $validator;
      */
     protected function create(array $data)
     {
-
         $settings = Setting::pluck('value', 'key');
+        $paper = null;
+        
         try {
             DB::beginTransaction();
-            $email = $data['email'];
-            $domain = explode('@', $email)[1];
-            $allowedDomain = Domain::where('status',1)->pluck('domain_name')->toArray();
-            $coupon = $data['coupon'];
+
             $user = User::create([
-                'name' => $data['name'],
-                'email' => $email,
+                'name' => $data['first_name'] . ' ' . $data['last_name'],
+                'email' => $data['email'],
                 'password' => Hash::make($data['password']),
             ]);
-            User::findOrFail($user->id)->roles()->sync(3);
+            
+            $user->roles()->sync(3); // Default Participant/Author role
 
-           $schedule_ids = $data['schedule_ids'];
-           $user->schedules()->attach($schedule_ids);
-            $profile=[
+            // 1. Create Profile
+            $profileData = [
                 'user_id' => $user->id,
-                'phone' => $data['phone'],
-                'institute_name' => $data['institute_name'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'whatsapp_number' => $data['whatsapp_number'],
+                'designation' => $data['designation'],
+                'institution' => $data['institution'],
+                'department' => $data['department'] ?? null,
+                'country_id' => $data['country_id'],
+                'is_author' => isset($data['is_author']) && $data['is_author'] == "1",
+                'participation_mode' => $data['participation_mode'] ?? 'onsite',
+                'registration_id' => \App\Services\IdGeneratorService::generateRegistrationId(),
                 'payment_status' => '0',
             ];
 
+            $profile = Profile::create($profileData);
 
-            // Get the early registration last date and the current date
-            $earlyRegistrationLastDate = Carbon::parse($settings['early_registration_last_date']);
-            $currentDate = Carbon::now();
-            // Check if the early registration last date is greater than the current date
-            if ($earlyRegistrationLastDate->gt($currentDate)) {
-                // Use the early registration event price
-                $pay_amount = $settings['early_registration_event_price'];
+            // 2. Handle Paper Submission if Author
+            if ($profile->is_author && ($settings['is_abstract_submission_open'] ?? 'true') == 'true') {
+                $paperData = [
+                    'user_id' => $user->id,
+                    'submission_id' => \App\Services\IdGeneratorService::generateSubmissionId(),
+                    'paper_title' => $data['paper_title'] ?? 'N/A',
+                    'abstract_text' => $data['abstract_text'] ?? 'N/A',
+                    'keywords' => $data['keywords'] ?? 'N/A',
+                    'track_id' => $data['track_id'] ?? null,
+                    'sub_track_id' => $data['sub_track_id'] ?? null,
+                    'is_corresponding_author' => $data['is_corresponding_author'] ?? true,
+                    'status' => 'pending',
+                    'payment_status' => '0',
+                ];
 
-                if ($data['radioButton']=='yes') {
-                    if ($data['coupon'] != null) {
-                        $coupon = Coupon::where('title', $data['coupon'])->where('expire_date', '>=', now())->first();
-                        if ($coupon) {
-                            $pay_amount = $pay_amount - 50;
-                            $profile['coupon_code'] = $data['coupon'];
-                            if ($pay_amount > 0) {
-                                $profile['payment_status'] = '0';
-                            } else {
-                                $profile['payment_status'] = '1';
-                            }
-                        }
+                $paper = Paper::create($paperData);
+
+                // Handle Co-authors
+                if (isset($data['co_authors']) && is_array($data['co_authors'])) {
+                    foreach ($data['co_authors'] as $co_author) {
+                        $paper->authors()->create([
+                            'name' => $co_author['name'],
+                            'email' => $co_author['email'],
+                            'designation' => $co_author['designation'],
+                            'institution' => $co_author['institution'],
+                            'country_id' => $co_author['country_id'],
+                        ]);
                     }
-                }
-
-            } else {
-                // Use the regular event price
-                $pay_amount = $settings['event_price'];
-                if ($data['radioButton']=='yes') {
-                    if ($data['coupon'] != null) {
-                        $coupon = Coupon::where('title', $data['coupon'])->where('expire_date', '>=', now())->first();
-
-                        if ($coupon) {
-                            //$pay_amount = $pay_amount - $coupon->value;
-                            if ($coupon->is_domain == 1) {
-                                if (in_array($domain, $allowedDomain)) {
-                                    $pay_amount = $pay_amount - $coupon->value;
-                                }else{
-                                    $pay_amount = $pay_amount;
-                                }
-                            } else {
-                                $pay_amount = $pay_amount - $coupon->value;
-                            }
-                            $profile['coupon_code'] = $data['coupon'];
-                            if ($pay_amount > 0) {
-                                $profile['payment_status'] = '0';
-                            } else {
-                                $profile['payment_status'] = '1';
-                            }
-                        }
-                    }
-                }
-
-            }
-
-            if ($data['radioButton']=='no') {
-                if (in_array($domain, $allowedDomain)) {
-                    $pay_amount = $pay_amount - $settings['selected_domain_discount'];
                 }
             }
 
-                $profile['pay_amount'] = $pay_amount;
+            if (Cookie::get('referral_visitors') != null) {
+                ReferralVisitor::where('cookie_value', Cookie::get('referral_visitors'))->first()->update(['user_id' => $user->id]);
+            }
 
-            $profile =  Profile::create($profile);
-             if (Cookie::get('referral_visitors')!=null){
-                 ReferralVisitor::where('cookie_value',Cookie::get('referral_visitors'))->first()->update(['user_id'=>$user->id]);
-             }
+            // Sync the total amount due based on the registration type and content
+            \App\Services\PricingService::updateProfileTotalDue($profile->fresh());
 
             DB::commit();
+
+            // Notify if paper submitted
+            if ($paper) {
+                try {
+                    Mail::to($user->email)->queue(new AbstractSubmitted($paper));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Mail Error (Registration Submission): ' . $e->getMessage());
+                }
+            }
+
             return $user;
-        } catch (Throwable $e) {
+        } catch (\Exception $e) {
             DB::rollback();
+            throw $e;
         }
     }
-    public function register_old(Request $request)
-    {
-        $this->validator($request->all())->validate();
-        event(new Registered($user = $this->create($request->all())));
-        if ($request->action == 'save-pay'){
-            $payment= new PaymentController();
-            $paymentValue =  $payment->setPayment($user);
-            return redirect()->route('setPayment',['data' => $request])->with('message', 'New User Create Successfully');
-        }else {
-            return redirect('/book-ticket')->with('message', 'Registration Complete. Please complete your payment to confirm your seat. You can pay after login.');
-        }
-    }
-     public function register(Request $request)
-    {
-        $this->validator($request->all())->validate();
-        event(new Registered($user = $this->create($request->all())));
-        if ($request->action == 'save-pay'){
 
-         $payment= new PaymentController();
-//            $paymentValue =  $payment->setPayment($user);
-//            return redirect()->route('setPayment',['data' => $request])->with('message', 'New User Create Successfully');
-            $randomNum= rand(100,999).'-'."aicDipti-".strtotime(now());  //substr(str_shuffle
-            $payment->paymentStore($user,$randomNum,'sslcommerz');
+    public function register(Request $request)
+    {
+        $this->validator($request->all())->validate();
+        event(new Registered($user = $this->create($request->all())));
+        
+        if ($request->action == 'save-pay') {
+            $payment = new PaymentController();
+            $transaction_id = rand(100, 999) . '-' . "AIC-" . strtotime(now());
+            $payment->paymentStore($user, $transaction_id, 'sslcommerz');
+            
             $sslPayment = new SslCommerzPaymentController();
-            $sslPayment->index($request,$user,$randomNum);
-
-
-        }else {
+            return $sslPayment->index($request, $user, $transaction_id);
+        } else {
             return redirect('/book-ticket')->with('message', 'Registration Complete. Please complete your payment to confirm your seat. You can pay after login.');
         }
     }

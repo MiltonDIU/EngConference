@@ -71,8 +71,18 @@
                                 {{ $domain->status == 1 ?'Publish':'UnPublish' }}
                             </td>
                             <td>
-                                <a href="{{ route('admin.domain.edit',$domain->id) }}" class="btn btn-primary btn-sm">Edit</a>
-                                <a href="{{ route('admin.domain.destroy',$domain->id) }}" class="btn btn-danger btn-sm">Delete</a>
+                                @can('domain_edit')
+                                    <a class="btn btn-xs btn-info" href="{{ route('admin.domain.edit', $domain->id) }}">
+                                        {{ trans('global.edit') }}
+                                    </a>
+                                @endcan
+                                @can('domain_delete')
+                                    <form action="{{ route('admin.domain.destroy', $domain->id) }}" method="POST" onsubmit="return confirm('{{ trans('global.areYouSure') }}');" style="display: inline-block;">
+                                        <input type="hidden" name="_method" value="DELETE">
+                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                        <input type="submit" class="btn btn-xs btn-danger" value="{{ trans('global.delete') }}">
+                                    </form>
+                                @endcan
                             </td>
                         </tr>
                     @endforeach

@@ -1,15 +1,15 @@
 <section id="intro">
-    <div class="intro-container container wow fadeIn" style="background: #4E7FAF; border-radius: 15px; opacity: 0.9; margin-bottom: 30px">
+    <div class="intro-container container wow fadeIn" style="background: #4E7FAF; border-radius: 15px; opacity: 0.9;">
 
-{{--        <div class="main-title pb-0">{!! $settings['title'] ?? '' !!}</div>--}}
+        {{--        <div class="main-title pb-0">{!! $settings['title'] ?? '' !!}</div>--}}
 
         <span class="main-title">International Conference on</span>
-        <img src="{{ asset('/') }}img/eng-con_logo.png" class="intro-img">
+        <img src="{{ asset('/') }}img/eng-con_logo.png">
         <span class="second-title"> Beyond Nature and Culture </span>
         <span class="sub-title">Planetarity Precarity in Literary-Cultural-Linguistic Representations</span>
 
 
-{{--        <p style="margin:10px" class="mb-4 pb-0">{!! $settings['subtitle'] ?? '' !!}</p>--}}
+        {{--        <p style="margin:10px" class="mb-4 pb-0">{!! $settings['subtitle'] ?? '' !!}</p>--}}
 
         <p class="mb-4 pb-0">{!! $settings['about_when'] ?? '' !!}</p>
         @if(isset($settings['youtube_link']))
@@ -43,7 +43,7 @@
         {{--                    </div>--}}
         {{--                </div>--}}
         <p class="organize" style="margin-top: 20px"> Organized by</p>
-        <img src="{{ asset('/') }}img/eng-dept_logo.png" class="intro-img">
+        <img src="{{ asset('/') }}img/eng-dept_logo.png">
         <br>
         <p>Department of English | Daffodil International University</p>
         <div class="organize">
@@ -55,10 +55,14 @@
             {{--                <img src="{{ $strategic->logo!=null?$strategic->logo->getUrl():'' }}" alt="{{ $strategic->name }}">--}}
             {{--            @endforeach--}}
 
+
+            <img  src="{{ asset('/') }}img/hero-partner_engcon2.png">
+
+
+
         </div>
 
 
-        <img src="{{ asset('/') }}img/hero-partner_engcon2.png" class="intro-img">
 
 
 
@@ -66,36 +70,19 @@
 
 </section>
 <style>
-    #intro .intro-container {
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        top: 90px;
-        width: 100%;
-        max-width: 1320px; /* Constrains the blue card on wide screens */
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
-        -webkit-box-pack: center;
-        -ms-flex-pack: center;
-        justify-content: center;
-        -webkit-box-align: center;
-        -ms-flex-align: center;
-        align-items: center;
-        -webkit-box-orient: vertical;
-        -webkit-box-direction: normal;
-        -ms-flex-direction: column;
-        flex-direction: column;
-        text-align: center;
-        padding: 0 15px;
+    #intro {
+        min-height: 100vh!important;
+        height: auto!important;
     }
-
-    .intro-img {
-        max-width: 100%;
-        height: auto;
+    .intro-container {
+        position: relative!important;
+        padding: 40px 15px!important;
+        margin-bottom:130px;
     }
+    #intro .intro-container{
 
+        top:120px!important;
+    }
     .main-title {
         display: block;
         font-size: 28px;
@@ -141,8 +128,20 @@
         text-transform: uppercase;
     }
 
-    /* ... Keep other original li span styles ... */
+    /*.countdown li span {*/
+    /*    display: block;*/
+    /*    font-size: 3rem;*/
+    /*}*/
 
+    .emoji {
+        display: none;
+        padding: 1rem;
+    }
+
+    .emoji span {
+        font-size: 4rem;
+        padding: 0 .5rem;
+    }
     .frame {
         border: 1px solid;
         padding: 0px 5px;
@@ -155,12 +154,21 @@
     }
     .organize img {
         width: 600px;
-        max-width: 100%;
     }
-    .microsoft img{ width: 500px; max-width: 100%; }
-
+    .microsoft img{ width: 500px}
     @media all and (max-width: 768px) {
         .microsoft img{ width: 300px}
+        h1 {
+            font-size: calc(1.5rem * var(--smaller));
+        }
+
+        .countdown li {
+            font-size: calc(1.125rem * var(--smaller));
+        }
+
+        /*li span {*/
+        /*    font-size: calc(3.375rem * var(--smaller));*/
+        /*}*/
         .frame {
             width:50px;
             font-size: calc(3.375rem * var(--smaller));
@@ -229,6 +237,24 @@
             font-size: 1rem;
         }
     }
+
+    @media (max-width: 991px) {
+        #intro .intro-container {
+            top: 90px;
+            margin-bottom: 140px;
+        }
+
+        .organize{ width:95%; margin: auto 0px;}
+        .organize img{width:100%;}
+        .intro-container{ width:95%; margin: 0 auto}
+    }
+
+
+
+
+
+
+
 </style>
 <script>
     (function () {
@@ -237,6 +263,8 @@
             hour = minute * 60,
             day = hour * 24;
 
+        //I'm adding this section so I don't have to keep updating this pen every year :-)
+        //remove this if you don't need it
         let today = new Date(),
             dd = String(today.getDate()).padStart(2, "0"),
             mm = String(today.getMonth() + 1).padStart(2, "0"),
@@ -246,9 +274,11 @@
             birthday = dayMonth + yyyy;
 
         today = mm + "/" + dd + "/" + yyyy;
+        console.log(today);
         if (today > birthday) {
             birthday = dayMonth + nextYear;
         }
+        //end
 
         const countDown = new Date(birthday).getTime(),
             x = setInterval(function() {
@@ -256,16 +286,19 @@
                 const now = new Date().getTime(),
                     distance = countDown - now;
 
-                if (document.getElementById("days")) {
-                    document.getElementById("days").innerText = Math.floor(distance / (day));
-                    document.getElementById("hours").innerText = Math.floor((distance % (day)) / (hour));
-                    document.getElementById("minutes").innerText = Math.floor((distance % (hour)) / (minute));
+                document.getElementById("days").innerText = Math.floor(distance / (day)),
+                    document.getElementById("hours").innerText = Math.floor((distance % (day)) / (hour)),
+                    document.getElementById("minutes").innerText = Math.floor((distance % (hour)) / (minute)),
                     document.getElementById("seconds").innerText = Math.floor((distance % (minute)) / second);
-                }
 
+                //do something later when date is reached
                 if (distance < 0) {
+                    document.getElementById("headline").innerText = "It's my birthday!";
+                    document.getElementById("countdown").style.display = "none";
+                    document.getElementById("content").style.display = "block";
                     clearInterval(x);
                 }
-            }, 1000)
+                //seconds
+            }, 0)
     }());
 </script>

@@ -6,6 +6,7 @@ use App\Models\Amenity;
 use App\Models\Domain;
 use App\Models\EventActivity;
 use App\Models\Post;
+use App\Models\Paper;
 use App\Models\Profile;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
@@ -16,119 +17,130 @@ use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 use Gate;
 use DB;
+
 class DashboardController extends Controller
 {
-    public function index(){
+    public function index()
+    {
+
         abort_if(Gate::denies('admin_dashboard'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $user = Auth::user();
-        $allowedDomain = Domain::where('status',1)->pluck('domain_name')->toArray();
-        //users registration paid and unpaid chart
+        $allowedDomain = Domain::where('status', 1)->pluck('domain_name')->toArray();
         $settings = Setting::pluck('value', 'key');
-        $total = Profile::get()->count();
-        $paid = Profile::where('payment_status','1')->get()->count();
+
+        // General Registration Stats
+        $total = Profile::count();
+        $totalParticipants = Profile::where('is_author', false)->count();
+        $totalAuthors = Profile::where('is_author', true)->count();
+        $paid = Profile::where('payment_status', '1')->count();
         $unpaid = $total - $paid;
-        $profiles = array();
-        $totalTaka = array();
-        $totalPayAmount = \DB::table('profiles')->sum('pay_amount');
-        $paidPayAmount = \DB::table('profiles')->where('payment_status','1')->sum('pay_amount');
-        $unpaidAmount = $totalPayAmount - $paidPayAmount;
-        array_push($totalTaka, ['country' => 'Paid', 'litres' => intval($paidPayAmount)]);
-        array_push($totalTaka, ['country' => 'Unpaid', 'litres' => intval($unpaidAmount)]);
-// dd($totalTaka);
-        array_push($profiles, ['country' => 'Paid', 'litres' => $paid]);
-        array_push($profiles, ['country' => 'Unpaid', 'litres' => $unpaid]);
 
-//        $registrations = [];
-//
-//        $endDate = now(); // Get the current date and time
-//        $startDate = $endDate->copy()->subDays(10); // Subtract 10 days from the current date
-//
-//
-//        for ($i = 1; $i <= 10; $i++) {
-//            $dayData = [
-//                'category' => 'Nov #' . $i,
-//                'first' => rand(20, 60), // Replace with your logic to get the 'first' count
-//                'second' => rand(30, 80), // Replace with your logic to get the 'second' count
-//                'third' => rand(20, 70), // Replace with your logic to get the 'third' count
-//            ];
-//
-//            $registrations[] = $dayData;
-//        }
-//
-        $endDate = now(); // Get the current date and time
-        $startDate = $endDate->copy()->subDays(10); // Subtract 10 days from the current date
+        $profiles = [
+            ['country' => 'Paid', 'litres' => $paid],
+            ['country' => 'Unpaid', 'litres' => $unpaid],
+        ];
 
-        $registrations = \DB::table('profiles')
-            ->selectRaw('DATE_FORMAT(created_at, "%b %d") as date, SUM(CASE WHEN payment_status = "1" THEN 1 ELSE 0 END) as paid, SUM(CASE WHEN payment_status = "0" THEN 1 ELSE 0 END) as unpaid, SUM(1) as total_users')
-            ->where('created_at', '>=', $startDate)
-            ->where('created_at', '<=', $endDate)
-            ->groupBy('date')
-            ->orderBy('date', 'asc') // Order by date in descending order
+        // Payment Statistics Grouped by Currency and User Type
+        $currencyStats = DB::table('profiles')
+            ->selectRaw('currency,
+                         COUNT(*) as total_users,
+                         SUM(CASE WHEN payment_status = "1" THEN pay_amount ELSE 0 END) as paid_amount,
+                         SUM(CASE WHEN payment_status = "0" THEN pay_amount ELSE 0 END) as unpaid_amount,
+                         SUM(CASE WHEN is_author = 1 AND payment_status = "1" THEN pay_amount ELSE 0 END) as author_paid_amt,
+                         SUM(CASE WHEN is_author = 1 AND payment_status = "0" THEN pay_amount ELSE 0 END) as author_unpaid_amt,
+                         SUM(CASE WHEN is_author = 0 AND payment_status = "1" THEN pay_amount ELSE 0 END) as participant_paid_amt,
+                         SUM(CASE WHEN is_author = 0 AND payment_status = "0" THEN pay_amount ELSE 0 END) as participant_unpaid_amt')
+            ->whereNotNull('currency')
+            ->groupBy('currency')
             ->get();
-//        $registrations = \DB::table('profiles')
-//            ->selectRaw('DATE_FORMAT(created_at, "%b %d") as date, SUM(CASE WHEN payment_status = 1 THEN 1 ELSE 0 END) as paid, SUM(CASE WHEN payment_status = 0 THEN 1 ELSE 0 END) as unpaid')
-//            ->where('created_at', '>=', $startDate)
-//            ->where('created_at', '<=', $endDate)
-//            ->groupBy('date')
-//            ->get();
 
+        $totalPayAmount = $currencyStats->sum('paid_amount'); // Still useful for general overview
+        $totalTaka = $currencyStats->map(function($stat) {
+            return ['country' => $stat->currency . ' (Paid)', 'litres' => intval($stat->paid_amount)];
+        })->toArray();
 
+        // Top Submission Tracks with Status Breakdown
+        $topTracks = DB::table('tracks')
+            ->leftJoin('papers', 'tracks.id', '=', 'papers.track_id')
+            ->selectRaw('tracks.name,
+                         COUNT(papers.id) as submission_count,
+                         SUM(CASE WHEN papers.status = "pending" THEN 1 ELSE 0 END) as pending_count,
+                         SUM(CASE WHEN papers.status = "approved" THEN 1 ELSE 0 END) as approved_count,
+                         SUM(CASE WHEN papers.status = "rejected" THEN 1 ELSE 0 END) as rejected_count')
+            ->groupBy('tracks.id', 'tracks.name')
+            ->orderBy('submission_count', 'DESC')
+            ->limit(10)
+            ->get();
 
-
-//        {
-//            category: 'Nov #1',
-//                    first: 40,
-//                    second: 55,
-//                    third: 60
-//                },
-
-//        array_push($profiles, ['country' => 'Totla', 'litres' => $total]);
-        //end of users registration paid and unpaid chart
+        // Workshop Schedules
         $schedules = Schedule::with('speaker')
-            ->where('is_workshop','1')
-            ->where('is_active','1')
+            ->where('is_workshop', '1')
+            ->where('is_active', '1')
             ->orderBy('day_number', 'asc')
             ->orderBy('start_time', 'asc')
             ->get()
             ->groupBy('day_number');
 
         $allSchedules = Schedule::with('speaker')
-            ->where('is_active','1')
+            ->where('is_active', '1')
             ->orderBy('day_number', 'asc')
             ->orderBy('start_time', 'asc')
             ->get()
             ->groupBy('day_number');
-            
-        $blogs = Post::where('is_active','1')->orderBy('views','desc')->get();
-        $aminities = Amenity::orderBy('id','desc')->get();
+
+        $blogs = Post::where('is_active', '1')->orderBy('views', 'desc')->get();
+        $aminities = Amenity::orderBy('id', 'desc')->get();
         $eventActivities = EventActivity::all();
 
-        if(auth()->user()->roles->contains('id', 3)){
-            if ($user->profile->payment_status==1 && $user->profile->identity_no==null){
+        // Abstract Statistics
+        $totalPapers = Paper::count();
+        $pendingPapers = Paper::where('status', 'pending')->count();
+        $approvedPapers = Paper::where('status', 'approved')->count();
+        $rejectedPapers = Paper::where('status', 'rejected')->count();
+
+        $paperStats = [
+            ['category' => 'Pending', 'litres' => $pendingPapers],
+            ['category' => 'Approved', 'litres' => $approvedPapers],
+            ['category' => 'Rejected', 'litres' => $rejectedPapers],
+        ];
+
+        $paidPapers = Paper::where('payment_status', '1')->count();
+        $unpaidPaperCount = Paper::where('status', 'approved')->where('payment_status', '0')->count();
+
+        $paidPapers = Paper::where('payment_status', '1')->count();
+        $unpaidPaperCount = Paper::where('status', 'approved')->where('payment_status', '0')->count();
+
+        $paperPaymentStats = [
+            ['category' => 'Paid', 'litres' => $paidPapers],
+            ['category' => 'Unpaid', 'litres' => $unpaidPaperCount],
+        ];
+
+        // User-Specific Logic (Unpaid Papers & Identity Generation)
+        $unpaidPapers = collect();
+        if ($user->roles->contains('id', 3)) {
+            $unpaidPapers = Paper::where('user_id', $user->id)
+                ->where('status', 'approved')
+                ->where(function($q) {
+                    $q->whereNull('payment_status')
+                      ->orWhere('payment_status', '!=', '1');
+                })->get();
+
+            if ($user->profile && $user->profile->payment_status == 1 && $user->profile->registration_id == null) {
                 $profile = Profile::find($user->profile->id);
-                $newId = $this->uniqueIdGenerate();
-                $profile->identity_no = $newId;
+                $profile->registration_id = \App\Services\IdGeneratorService::generateRegistrationId();
                 $profile->save();
+                $user = $user->fresh();
             }
-            $user = Auth::user();
         }
 
-
-
-        return view('admin.home',compact('settings','profiles','total','schedules','allSchedules','blogs','eventActivities','aminities','registrations','totalTaka','totalPayAmount','allowedDomain'));;
-    }
-
-    public function uniqueIdGenerate(){
-        $currentDate = Carbon::now();
-        $formattedDate = sprintf('%02d%02d%02d', $currentDate->format('y'), $currentDate->month, $currentDate->day);
-// Count existing profiles with non-zero identity numbers
-        $total = Profile::where('identity_no', '!=', '0')->count();
-// Increment the existing count
-        $newIdCount = $total + 1;
-
-// Pad the count with leading zeros to a specific width (e.g., 4 for "0001", 5 for "00001")
-        $sequenceNumber = str_pad($newIdCount, 4, '0', STR_PAD_LEFT);
-        $newId = $formattedDate . $sequenceNumber;
-        return $newId;
+        return view('admin.home', compact(
+            'settings', 'profiles', 'total', 'totalParticipants', 'totalAuthors', 'schedules', 'allSchedules', 'blogs',
+            'eventActivities', 'aminities', 'topTracks', 'totalTaka',
+            'totalPayAmount', 'allowedDomain', 'currencyStats',
+            'totalPapers', 'pendingPapers', 'approvedPapers', 'rejectedPapers',
+            'paperStats', 'paidPapers', 'paperPaymentStats',
+            'unpaidPapers'
+        ));
     }
 }

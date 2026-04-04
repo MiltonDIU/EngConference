@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             AmenitiesTableSeeder::class,
             PricesTableSeeder::class,
             AmenityPriceTableSeeder::class,
+            TrackSubTrackSeeder::class,
         ]);
     }
 }

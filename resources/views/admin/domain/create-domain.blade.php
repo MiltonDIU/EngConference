@@ -28,7 +28,7 @@
                     @endif
                 </div>
                 <div class="form-group {{ $errors->has('status') ? 'has-error' : '' }}">
-                    <label for="part_aws_cloud_club">Are you part of an AWS Cloud Club? *</label><br/>
+                    <label for="part_aws_cloud_club">Status *</label><br/>
                     <input type="radio" name="status" value="1"> Publish <br/>
                     <input type="radio" name="status" value="0"> UnPublish <br/>
                     @if($errors->has('status'))

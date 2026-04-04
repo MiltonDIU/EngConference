@@ -7,7 +7,90 @@ Dashboard
 
 <div class="card-body">
 <div class="content">
-@can('admin-dashboard')
+@can('admin_report')
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #6f42c1 !important;">
+            <span class="info-box-icon text-purple"><i class="fas fa-users"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Total Registration</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $total }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #007bff !important;">
+            <span class="info-box-icon text-primary"><i class="fas fa-user-edit"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Total Authors</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $totalAuthors }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #28a745 !important;">
+            <span class="info-box-icon text-success"><i class="fas fa-walking"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Participants Only</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $totalParticipants }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="info-box shadow-none border bg-light" style="border-radius: 12px;">
+            <span class="info-box-icon text-primary"><i class="fas fa-file-alt"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Total Abstracts</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $totalPapers }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="info-box shadow-none border bg-light" style="border-radius: 12px;">
+            <span class="info-box-icon text-warning"><i class="fas fa-hourglass-half"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Pending Review</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $pendingPapers }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="info-box shadow-none border bg-light" style="border-radius: 12px;">
+            <span class="info-box-icon text-success"><i class="fas fa-wallet"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Paid Papers</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $paidPapers }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0" style="border-radius: 12px;">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="card-title font-weight-bold mb-0 text-dark">Abstract Status Overview</h5>
+            </div>
+            <div class="card-body">
+                <div id="chart_paper_status" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0" style="border-radius: 12px;">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="card-title font-weight-bold mb-0 text-dark">Approved Abstract Payments</h5>
+            </div>
+            <div class="card-body">
+                <div id="chart_paper_payment" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
 
 <div class="col-lg-6">
@@ -22,95 +105,123 @@ Total Registered Users
 </div>
 </div>
 <div class="col-lg-6">
-<div class="card">
-<div class="card-header">
-Total Paid/Unpaid TK
+    <div class="card shadow-sm border-0" style="border-radius: 12px; height: 100%;">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="card-title font-weight-bold mb-0 text-dark"><i class="fas fa-file-invoice-dollar mr-2 text-success"></i> Financial Overview by Registration Type</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" style="min-width: 600px;">
+                    <thead class="bg-light small uppercase font-weight-bold text-muted">
+                        <tr>
+                            <th class="border-0 px-4 py-3">Currency</th>
+                            <th class="border-0 py-3 text-center">Authors<br><small class="text-xs">(Paid / Unpaid)</small></th>
+                            <th class="border-0 py-3 text-center">Participants<br><small class="text-xs">(Paid / Unpaid)</small></th>
+                            <th class="border-0 px-4 py-3 text-right">Total<br><small class="text-xs">(Paid / Unpaid)</small></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($currencyStats as $stat)
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <div class="font-weight-bold h6 mb-0 text-dark-blue">{{ $stat->currency }}</div>
+                                    <small class="text-muted"><i class="fas fa-users mr-1"></i> {{ $stat->total_users }} Users</small>
+                                </td>
+                                <td class="py-3 text-center">
+                                    <div class="text-success font-weight-bold small"><i class="fas fa-check-circle mr-1 opacity-7"></i> {{ number_format($stat->author_paid_amt, 0) }}</div>
+                                    <div class="text-danger font-weight-bold small"><i class="fas fa-clock mr-1 opacity-7"></i> {{ number_format($stat->author_unpaid_amt, 0) }}</div>
+                                </td>
+                                <td class="py-3 text-center">
+                                    <div class="text-success font-weight-bold small"><i class="fas fa-check-circle mr-1 opacity-7"></i> {{ number_format($stat->participant_paid_amt, 0) }}</div>
+                                    <div class="text-danger font-weight-bold small"><i class="fas fa-clock mr-1 opacity-7"></i> {{ number_format($stat->participant_unpaid_amt, 0) }}</div>
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <div class="text-success font-weight-bold h6 mb-0"><strong>{{ number_format($stat->paid_amount, 0) }}</strong></div>
+                                    <div class="text-danger font-weight-bold small"><strong>{{ number_format($stat->unpaid_amount, 0) }}</strong></div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="fas fa-info-circle mr-1"></i> No currency-specific data found.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card-body">
-<div id="chartdiv3"></div>
-</div>
-</div>
-</div>
-<div class="col-lg-6">
-<div class="card">
-<div class="card-header">
-Event Program Schedule
-</div>
 
-<div class="card-body">
-<table class="table table-bordered">
-@foreach($schedules as $key=> $schedule)
-
-    <tr>
-        <td><strong>Day {{$key}}</strong></td>
-        <td>
-            @foreach($schedule as $key=> $sc)
-                {{--                                                {{ dd($sc->speaker->speaker_type_id) }}--}}
-                {{++$key. '. '.$sc->title}} {{ $sc->start_time }}
-                <strong> ({{ $sc->users!=null?count($sc->users):0 }})</strong>
-                @php
-                    $paid= 0;
-
-                @endphp
-                @foreach($sc->users as $user)
-                    @if($user->profile!=null)
-                        @if($user->profile->payment_status=='1')
-                            @php
-                                $paid++;
-                            @endphp
-                        @endif
-                    @endif
-                @endforeach
-                --- {{ 'Paid User'.': '.$paid}} ---
-                {{  'Unpaid User'.": " .(count($sc->users)-$paid) }}
-                <br>
-
-            @endforeach
-        </td>
-    </tr>
-@endforeach
-</table>
-
-</div>
-</div>
-</div>
-<div class="col-lg-6">
-<div class="card">
-<div class="card-header">
-Relevant Resource
-</div>
-<div class="card-body">
-<table class="table table-bordered">
-
-@foreach( $blogs as $key=> $blog)
-
-    <tr>
-        <td>
-            <a class="link-muted" href="{{ route('blogDetails',[$blog->id,$blog->slug]) }}" target="_blank">  <strong>
-                    {{ $blog->title }} (<i class="fa fa-eye"></i> {{ $blog->views }})
-
-                </strong></a>
-        </td>
-    </tr>
-@endforeach
-
-
-</table>
-
-</div>
-</div>
-</div>
 <div class="col-lg-12">
-<div class="card">
-<div class="card-header">
-Last 10 days Report
-</div>
+    <div class="card shadow-sm border-0 mt-4" style="border-radius: 12px;">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="card-title font-weight-bold mb-0 text-dark">
+                <i class="fas fa-chart-bar mr-2 text-primary"></i> Top Submission Tracks
+            </h5>
+        </div>
+        <div class="card-body py-4">
+            <div class="row">
+                @forelse($topTracks as $track)
+                    @php
+                        $percentage = $totalPapers > 0 ? ($track->submission_count / $totalPapers) * 100 : 0;
+                        $barColor = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69', '#2e59d9', '#17a673', '#2c9faf'][$loop->index % 10];
+                    @endphp
+                    <div class="col-md-6 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="font-weight-bold text-dark text-truncate" style="max-width: 70%;" title="{{ $track->name }}">
+                                {{ $track->name }}
+                            </span>
+                            <span class="badge badge-light border text-primary px-2">{{ $track->submission_count }} Total</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 10px; border-radius: 10px; background-color: #f8f9fc;">
+                            <div class="progress-bar" role="progressbar"
+                                style="width: {{ $percentage }}%; background-color: {{ $barColor }}; border-radius: 10px;"
+                                aria-valuenow="{{ $percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
 
-<div class="card-body">
-<div id="chartdiv2"></div>
-</div>
-</div>
+                        <!-- Status Breakdown Mini-Bars -->
+                        <div class="row no-gutters mt-2">
+                            <div class="col-4 pr-1">
+                                <div class="d-flex justify-content-between x-small mb-1">
+                                    <span class="text-muted">Approved</span>
+                                    <span class="font-weight-bold text-success">{{ $track->approved_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ $track->submission_count > 0 ? ($track->approved_count / $track->submission_count) * 100 : 0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="col-4 px-1">
+                                <div class="d-flex justify-content-between x-small mb-1">
+                                    <span class="text-muted">Pending</span>
+                                    <span class="font-weight-bold text-warning">{{ $track->pending_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $track->submission_count > 0 ? ($track->pending_count / $track->submission_count) * 100 : 0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="col-4 pl-1">
+                                <div class="d-flex justify-content-between x-small mb-1">
+                                    <span class="text-muted">Rejected</span>
+                                    <span class="font-weight-bold text-danger">{{ $track->rejected_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ $track->submission_count > 0 ? ($track->rejected_count / $track->submission_count) * 100 : 0 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="col-12 text-center py-5 text-muted">
+                        <i class="fas fa-folder-open mb-2 h2 d-block opacity-2"></i>
+                        No submissions recorded yet.
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
 </div>
 </div>
 @endcan
@@ -136,158 +247,151 @@ We are pleased to inform you that your payment has been <strong>successfully</st
 </strong>
 </div>
 @else
-<div class="alert alert-info alert-dismissible fade show">
-<button type="button" class="close" data-dismiss="alert">&times;</button>
-<strong>Info!</strong> We have received your registration details; however, it appears that the payment for your account has not been completed yet. <strong>Please note that your seat is not confirmed until the payment is processed successfully
-</strong>
+                    <div class="alert alert-info alert-dismissible fade show">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <strong>Info!</strong> We have received your registration details; however, it appears that the payment for your account has not been completed yet. <strong>Please note that your seat is not confirmed until the payment is processed successfully</strong>
+                    </div>
+                @endif
+
+                @if($unpaidPapers->count() > 0)
+                    <div class="card mb-4 border-primary shadow-sm" style="border-width: 2px; border-radius: 12px; overflow: hidden;">
+                        <div class="card-body bg-light p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <div class="mb-3 mb-md-0">
+                                    <h4 class="text-primary font-weight-bold mb-2"><i class="fas fa-shopping-cart mr-2"></i> Abstract Bulk Checkout</h4>
+                                    <p class="text-muted mb-0" style="font-size: 1.1rem;">You have <strong>{{ $unpaidPapers->count() }}</strong> approved abstract(s) pending payment. You can pay for all of them securely through a single transaction.</p>
+                                </div>
+                                <button class="btn btn-primary btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#bulkPaymentModal" style="border-radius: 8px;">
+                                    <i class="fas fa-credit-card mr-2"></i> Review & Pay All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Payment Review Modal -->
+                    <div class="modal fade" id="bulkPaymentModal" tabindex="-1" role="dialog" aria-labelledby="bulkPaymentModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                                <div class="modal-header bg-primary text-white border-0 py-3">
+                                    <h5 class="modal-title font-weight-bold" id="bulkPaymentModalLabel">Bulk Payment Review</h5>
+                                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body p-4 bg-white">
+                                    <p class="text-muted mb-4 small font-italic">Review the payment details for your approved abstracts before proceeding to secure checkout.</p>
+
+                                    <div class="bg-light p-3 rounded mb-4 border shadow-sm">
+                                        <table class="table table-borderless table-sm mb-0">
+                                            <thead class="text-muted border-bottom small uppercase font-weight-bold">
+                                                <tr>
+                                                    <th class="pb-2">Abstract ID</th>
+                                                    <th class="pb-2">Rate Breakdown</th>
+                                                    <th class="pb-2 text-right">Price</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php $totalPrice = 0; @endphp
+                                                @foreach($unpaidPapers as $up)
+                                                    @php
+                                                        $pricing = \App\Services\PricingService::calculatePaperCost(auth()->user()->profile, $up);
+                                                    @endphp
+                                                    <tr class="border-bottom">
+                                                        <td class="py-3 font-weight-bold text-dark">{{ $up->submission_id }} <small class="text-muted">({{ $pricing['authors_count'] }} author{{ $pricing['authors_count'] > 1 ? 's' : '' }})</small></td>
+                                                        <td class="py-3 align-middle"><span class="badge badge-info">{{ ucfirst($pricing['stage']) }} Price</span></td>
+                                                        <td class="py-3 text-right font-weight-bold text-dark">{{ $pricing['currency'] }} {{ number_format($pricing['final_price'], 2) }}</td>
+                                                    </tr>
+                                                    @php $totalPrice += $pricing['final_price']; @endphp
+                                                @endforeach
+                                                <tr>
+                                                    <td colspan="2" class="pt-4 font-weight-bold text-uppercase" style="font-size: 1.1rem;">Total Amount</td>
+                                                    <td class="pt-4 font-weight-bold text-primary text-right" style="font-size: 1.5rem;">{{ $pricing['currency'] }} {{ number_format($totalPrice, 2) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <form action="{{ route('payNowPapers') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+                                        @foreach($unpaidPapers as $up)
+                                            <input type="hidden" name="paper_ids[]" value="{{ $up->id }}">
+                                        @endforeach
+                                        <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm py-3" style="border-radius: 8px;">
+                                            <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+
+{{--<h2 style="color:red">--}}
+{{--@if(auth()->user()->profile->payment_status=='1')--}}
+{{--<strong>You paid: {{ auth()->user()->profile->pay_amount??"" }}, Thank you for your payment</strong>--}}
+{{--@else--}}
+{{--Your payable amount: {{ auth()->user()->profile->pay_amount??"" }}--}}
+{{--@endif--}}
+
+{{--{{  auth()->user()->profile->coupon_code!=null?" and You are used coupon code: " .auth()->user()->profile->coupon_code:""}}</h2>--}}
+{{--    --}}
+{{--    --}}
+{{--<div class="row" style="margin: 50px 0px">--}}
+{{--<div class="col-md-1">--}}
+{{--   <strong> Payment Status:</strong>--}}
+{{--</div>--}}
+{{--<div class="col-md-11">--}}
+{{--    @if(auth()->user()->profile->payment_status == '1')--}}
+{{--        <button class="btn btn-success">Payment Complete</button>--}}
+{{--    @else--}}
+
+{{--        @if($settings['seat_is_full']=='false')--}}
+{{--            <button class="btn btn-info" style="float: left;margin-right: 5px">Pending</button>--}}
+
+{{--            @php--}}
+{{--                $domain = explode('@', auth()->user()->profile->user->email);--}}
+{{--            @endphp--}}
+
+{{--            @if($settings['special_discount_is_true']=='true' and auth()->user()->profile->coupon_code==null and auth()->user()->profile->special_coupon=='REGSP300' and (in_array($domain[1], $allowedDomain)!=true) )--}}
+{{--                <form action="{{ route('payNow') }}" method="post" style="width: 50px;float: left;">--}}
+{{--                    @csrf--}}
+{{--                    <input type="hidden" name="user_id" value="{{ auth()->user()->profile->user_id }}">--}}
+{{--                    <input type="hidden" name="special_discount" value="REGSP300">--}}
+{{--                    <input  class="btn btn-danger" type="submit" value="Pay With Coupon extra {{ $settings['special_discount']??"0" }}% (REGSP300)">--}}
+{{--                </form>--}}
+{{--            @else--}}
+{{--                <form action="{{ route('payNow') }}" method="post" style="width: 50px;float: left">--}}
+{{--                    @csrf--}}
+{{--                    <input type="hidden" name="user_id" value="{{ auth()->user()->profile->user_id }}">--}}
+{{--                    <input  class="btn btn-danger" type="submit" value="Pay Now">--}}
+{{--                </form>--}}
+
+{{--            @endif--}}
+
+{{--        @else--}}
+{{--            <button class="btn btn-info" style="float: left;margin-right: 5px">Seat is Full</button>--}}
+{{--        @endcan--}}
+{{--    @endif--}}
+{{--</div>--}}
+
+
+{{--</div>--}}
+
 </div>
-@endif
-
-
-<h2 style="color:red">
-@if(auth()->user()->profile->payment_status=='1')
-<strong>You paid: {{ auth()->user()->profile->pay_amount??"" }}, Thank you for your payment</strong>
-@else
-Your payable amount: {{ auth()->user()->profile->pay_amount??"" }}
-@endif
-
-{{  auth()->user()->profile->coupon_code!=null?" and You are used coupon code: " .auth()->user()->profile->coupon_code:""}}</h2>
-<div class="row" style="margin: 50px 0px">
-<div class="col-md-1">
-   <strong> Payment Status:</strong>
-</div>
-<div class="col-md-11">
-    @if(auth()->user()->profile->payment_status == '1')
-        <button class="btn btn-success">Payment Complete</button>
-    @else
-
-        @if($settings['seat_is_full']=='false')
-            <button class="btn btn-info" style="float: left;margin-right: 5px">Pending</button>
-
-            @php
-                $domain = explode('@', auth()->user()->profile->user->email);
-            @endphp
-
-            @if($settings['special_discount_is_true']=='true' and auth()->user()->profile->coupon_code==null and auth()->user()->profile->special_coupon=='REGSP300' and (in_array($domain[1], $allowedDomain)!=true) )
-                <form action="{{ route('payNow') }}" method="post" style="width: 50px;float: left;">
-                    @csrf
-                    <input type="hidden" name="user_id" value="{{ auth()->user()->profile->user_id }}">
-                    <input type="hidden" name="special_discount" value="REGSP300">
-                    <input  class="btn btn-danger" type="submit" value="Pay With Coupon extra {{ $settings['special_discount']??"0" }}% (REGSP300)">
-                </form>
-            @else
-                <form action="{{ route('payNow') }}" method="post" style="width: 50px;float: left">
-                    @csrf
-                    <input type="hidden" name="user_id" value="{{ auth()->user()->profile->user_id }}">
-                    <input  class="btn btn-danger" type="submit" value="Pay Now">
-                </form>
-
-            @endif
-
-        @else
-            <button class="btn btn-info" style="float: left;margin-right: 5px">Seat is Full</button>
-        @endcan
-    @endif
-</div>
-
-
-</div>
-
-</div>
+{{--
 <div class="col-lg-6">
-
-<div class="card">
-<div class="card-header">
-Session Rating
-</div>
-<div class="card-body">
-
-
-
-
-<form method="POST" action="{{ route('admin.feedback.store') }}">
-    @csrf
-
-    <div class="form-group">
-        <label for="schedule">Session Rating :</label><br>
-        <select name="schedule_id" id="schedule_id" required>
-<option value=""> Select your session</option>
-@foreach(auth()->user()->schedules()->get()->groupBy('day_number') as $dayNumber => $schedules)
-{{--                                    <optgroup label="Day {{ $dayNumber }}">--}}
-
-{{--                                        @foreach($schedules as $schedule)--}}
-{{--                                            <option value="{{ $schedule->id }}">{{ $schedule->title }}</option>--}}
-{{--                                        @endforeach--}}
-{{--                                    </optgroup>--}}
-
-                @foreach($schedules as $key=> $sc)
-
-                    {{--                                                {{ dd($sc->speaker->speaker_type_id) }}--}}
-
-
-                    @php
-                        $currentDateTime = now();
-                        $scheduledStartTime = \Carbon\Carbon::parse($settings['event_date'].$sc->start_time);
-                                if ($sc->day_number==2){
-                                $scheduledStartTime->addDays(1);
-                                }
-                        $scheduledDayNumber = $scheduledStartTime->day;
-                    @endphp
-                    @if($currentDateTime >= $scheduledStartTime)
-
-                        @if($sc->attendance
- ->where('attendance_status',1)
- ->where('user_id',auth()->id())
- ->where('schedule_id',$sc->id)->first()!=null)
-
-                            @if(\App\Models\Feedback::checkFeedback($sc->id, auth()->id())==true)
-                                <option disabled value="{{ $sc->id }}">  {!! ++$key. '. '.$sc->title!!}
-                                    -- Certificate Unlocked </option>
-                            @else
-                                <option value="{{ $sc->id }}">  {!! ++$key. '. '.$sc->title!!} </option>
-                            @endif
-
-
-
-                        @else
-                        <option disabled value="{{ $sc->id }}">  {!! ++$key. '. '.$sc->title!!} -- Absent</option>
-                        @endif
-                    @else
-                        <option disabled value="{{ $sc->id }}">  {!! ++$key. '. '.$sc->title!!}  -- Upcomming</option>
-                    @endif
-                @endforeach
-
-@endforeach
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label>Rating:</label><br>
-        <div class="rating">
-            <input type="radio" id="star1" name="rating" value="1"><label for="star1"></label>
-            <input type="radio" id="star2" name="rating" value="2"><label for="star2"></label>
-            <input type="radio" id="star3" name="rating" value="3"><label for="star3"></label>
-            <input type="radio" id="star4" name="rating" value="4"><label for="star4"></label>
-            <input type="radio" id="star5" name="rating" value="5" checked><label for="star5"></label>
+    <div class="card">
+        <div class="card-header">
+            Session Rating
+        </div>
+        <div class="card-body">
+            ... Content Omitted ...
         </div>
     </div>
-
-    <div class="form-group">
-        <label for="comment">Comment:</label><br>
-        <textarea name="comment" id="comment" rows="4" cols="50"></textarea>
-    </div>
-
-
-    <button class="btn btn-info" type="submit">Rating</button>
-</form>
-
-
-
-
-
-
 </div>
-</div>
+--}}
 
 
 
@@ -340,69 +444,16 @@ Total Program Schedule
 </div>
 
 <div class="col-lg-6">
-<div class="card">
-<div class="card-header">
-My Registered Workshop List
-</div>
-<div class="card-body">
-<table class="table table-bordered">
-
-    @foreach( auth()->user()->schedules()->get()->groupBy('day_number') as $key=> $schedule)
-
-        <tr>
-            <td><strong>Day {{$key}}</strong></td>
-            <td>
-                @foreach($schedule as $key=> $sc)
-                    {{--                                                {{ dd($sc->speaker->speaker_type_id) }}--}}
-                    {!! ++$key. '. '.$sc->title!!}
-                    <br>
-                    <strong>  Start Time & Duration: {{ \Carbon\Carbon::parse($sc->start_time)->format('h:i A') }} -- {{ $sc->subtitle }}</strong>
-                    {{--                                                                 new condition here--}}
-                    @php
-                        $currentDateTime = now();
-
-                        $scheduledStartTime = \Carbon\Carbon::parse($settings['event_date'].$sc->start_time);
-                                if ($sc->day_number==2){
-                                $scheduledStartTime->addDays(1);
-                                }
-                        $scheduledDayNumber = $scheduledStartTime->day;
-//nes script add when developed rating and previous script review must n
-
-
-                    @endphp
-
-                    @if( $currentDateTime >= $scheduledStartTime)
-                        @if($sc->attendance
-->where('attendance_status',1)
-->where('user_id',auth()->id())
-->where('schedule_id',$sc->id)->first()!=null)
-                            @if(\App\Models\Feedback::checkFeedback($sc->id, auth()->id())==true)
-                            <a href="{{ route('admin.downloadCertificate',$sc->id) }}" style="color: #8D12D1; cursor: pointer">
-                                Download Certificate
-                            </a>
-                            @else
-                               <span style="color:red"> {{ "Feedback First: Unlock Your Certificate" }}</span>
-                            @endif
-
-                        @else
-                            <strong style="color: darkred">Absent</strong>
-                        @endif
-                    @else
-                        <strong style="color: darkred">Upcoming</strong>
-                    @endif
-
-                    <br>
-
-                @endforeach
-            </td>
-        </tr>
-    @endforeach
-
-
-</table>
-
-</div>
-</div>
+                    {{--
+                    <div class="card">
+                        <div class="card-header">
+                            My Registered Workshop List
+                        </div>
+                        <div class="card-body">
+                            ... Content Omitted ...
+                        </div>
+                    </div>
+                    --}}
 <div class="card">
 <div class="card-header">
 Blogs
@@ -472,13 +523,14 @@ Relevant Resource
 width: 100%;
 height: 500px;
 }
-#chartdiv2 {
-width: 100%;
-height: 500px;
-}
+
 #chartdiv3 {
 width: 100%;
 height: 500px;
+}
+#chart_paper_status, #chart_paper_payment {
+    width: 100%;
+    height: 300px;
 }
 .link-muted:hover{color: #7016B6}
 </style>
@@ -494,99 +546,7 @@ height: 500px;
 <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
 <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
 <!-- Chart code -->
-<script>
-var registrations = {!! json_encode($registrations) !!};
-console.log(registrations);
-am4core.ready(function() {
 
-// Themes begin
-am4core.useTheme(am4themes_animated);
-// Themes end
-
-
-
-var chart = am4core.create('chartdiv2', am4charts.XYChart)
-chart.colors.step = 2;
-
-chart.legend = new am4charts.Legend()
-chart.legend.position = 'top'
-chart.legend.paddingBottom = 20
-chart.legend.labels.template.maxWidth = 95
-
-var xAxis = chart.xAxes.push(new am4charts.CategoryAxis())
-xAxis.dataFields.category = 'date'
-xAxis.renderer.cellStartLocation = 0.1
-xAxis.renderer.cellEndLocation = 0.9
-xAxis.renderer.grid.template.location = 0;
-
-var yAxis = chart.yAxes.push(new am4charts.ValueAxis());
-yAxis.min = 0;
-
-function createSeries(value, name) {
-var series = chart.series.push(new am4charts.ColumnSeries())
-series.dataFields.valueY = value
-series.dataFields.categoryX = 'date'
-series.name = name
-
-series.events.on("hidden", arrangeColumns);
-series.events.on("shown", arrangeColumns);
-
-var bullet = series.bullets.push(new am4charts.LabelBullet())
-bullet.interactionsEnabled = false
-bullet.dy = 30;
-bullet.label.text = '{valueY}'
-bullet.label.fill = am4core.color('#ffffff')
-
-return series;
-}
-
-chart.data = registrations;
-
-
-createSeries('total_users', 'Registration');
-createSeries('paid', 'Paid');
-createSeries('unpaid', 'Unpaid');
-
-function arrangeColumns() {
-
-var series = chart.series.getIndex(0);
-
-var w = 1 - xAxis.renderer.cellStartLocation - (1 - xAxis.renderer.cellEndLocation);
-if (series.dataItems.length > 1) {
-var x0 = xAxis.getX(series.dataItems.getIndex(0), "categoryX");
-var x1 = xAxis.getX(series.dataItems.getIndex(1), "categoryX");
-var delta = ((x1 - x0) / chart.series.length) * w;
-if (am4core.isNumber(delta)) {
-var middle = chart.series.length / 2;
-
-var newIndex = 0;
-chart.series.each(function(series) {
-if (!series.isHidden && !series.isHiding) {
-series.dummyData = newIndex;
-newIndex++;
-}
-else {
-series.dummyData = chart.series.indexOf(series);
-}
-})
-var visibleCount = newIndex;
-var newMiddle = visibleCount / 2;
-
-chart.series.each(function(series) {
-var trueIndex = chart.series.indexOf(series);
-var newIndex = series.dummyData;
-
-var dx = (newIndex - trueIndex + middle - newMiddle) * delta
-
-series.animate({ property: "dx", to: dx }, series.interpolationDuration, series.interpolationEasing);
-series.bulletsContainer.animate({ property: "dx", to: dx }, series.interpolationDuration, series.interpolationEasing);
-})
-}
-}
-}
-
-}); // end am4core.ready()
-</script>
 <!-- Chart code -->
 <script>
 var total = {!! json_encode($total) !!};
@@ -636,53 +596,7 @@ series.colors.step = 3;
 }); // end am4core.ready()
 </script>
 
-<script>
-var totalPayAmount = {!! json_encode($totalPayAmount) !!};
-var totalTaka = {!! json_encode($totalTaka) !!};
-am4core.ready(function() {
-// Themes begin
-am4core.useTheme(am4themes_animated);
-// Themes end
-var chart = am4core.create("chartdiv3", am4charts.PieChart3D);
-chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
-chart.data = totalTaka;
-if (totalPayAmount === 0) {
-// Create a new chart with a default value of "No data available"
-var chart = am4core.create("totalOverview", am4charts.PieChart3D);
-chart.innerRadius = 100;
-var label = chart.seriesContainer.createChild(am4core.Label);
-label.text = "No data available";
-label.horizontalCenter = "middle";
-label.verticalCenter = "middle";
-label.fontSize = 30;
-label.y = -20;
-label.multiline = true;
-label.textAlign = "center";
-}else{
-chart.innerRadius = 100;
-var label = chart.seriesContainer.createChild(am4core.Label);
-label.text = "Total\n{{ $totalPayAmount }}"; // use \n instead of <br>
-label.horizontalCenter = "middle";
-label.verticalCenter = "middle";
-label.fontSize = 30;
-label.y = -25; // move label 20 pixels upwards from the center
-label.multiline = true; // enable multiline text
-label.textAlign = "center"; // center-align the text within the label
-}
 
-
-chart.innerRadius = am4core.percent(40);
-chart.depth = 30;
-chart.legend = new am4charts.Legend();
-
-var series = chart.series.push(new am4charts.PieSeries3D());
-series.dataFields.value = "litres";
-series.dataFields.depthValue = "litres";
-series.dataFields.category = "country";
-series.slices.template.cornerRadius = 3;
-series.colors.step = 3;
-}); // end am4core.ready()
-</script>
 
 
 <script>
@@ -737,7 +651,42 @@ labels[i].style.color = '#ddd';
     });
 </script>
 
+<script>
+    am4core.ready(function() {
+        am4core.useTheme(am4themes_animated);
 
+        // Paper Status Chart
+        var statusChart = am4core.create("chart_paper_status", am4charts.PieChart3D);
+        statusChart.hiddenState.properties.opacity = 0;
+        statusChart.data = {!! json_encode($paperStats) !!};
+        statusChart.innerRadius = am4core.percent(40);
+        statusChart.depth = 20;
+        statusChart.legend = new am4charts.Legend();
+
+        var statusSeries = statusChart.series.push(new am4charts.PieSeries3D());
+        statusSeries.dataFields.value = "litres";
+        statusSeries.dataFields.category = "category";
+        statusSeries.slices.template.cornerRadius = 5;
+        statusSeries.colors.step = 3;
+
+        // Paper Payment Chart
+        var paymentChart = am4core.create("chart_paper_payment", am4charts.PieChart3D);
+        paymentChart.hiddenState.properties.opacity = 0;
+        paymentChart.data = {!! json_encode($paperPaymentStats) !!};
+        paymentChart.innerRadius = am4core.percent(40);
+        paymentChart.depth = 20;
+        paymentChart.legend = new am4charts.Legend();
+
+        var paymentSeries = paymentChart.series.push(new am4charts.PieSeries3D());
+        paymentSeries.dataFields.value = "litres";
+        paymentSeries.dataFields.category = "category";
+        paymentSeries.slices.template.cornerRadius = 5;
+        paymentSeries.colors.list = [
+            am4core.color("#28a745"),
+            am4core.color("#ffc107")
+        ];
+    });
+</script>
 @endpush
 
 

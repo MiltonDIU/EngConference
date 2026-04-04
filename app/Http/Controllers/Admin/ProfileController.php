@@ -13,6 +13,8 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\Country;
+use Carbon\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProfileController extends Controller
@@ -31,7 +33,7 @@ class ProfileController extends Controller
             $profiles = Profile::where('user_id',$loged->id)->get();
         }else{
             $emails = CustomMail::where('publication_status',1)->get();
-            $profiles = Profile::orderBy('identity_no','asc')->get();
+            $profiles = Profile::orderBy('registration_id','asc')->get();
         }
         $settings = Setting::pluck('value', 'key');
 
@@ -156,6 +158,7 @@ class ProfileController extends Controller
         abort_if(Gate::denies('profile_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $profile = Profile::find($id);
         $user = User::find($profile->user_id);
+        $countries = Country::all();
         $schedules = Schedule::with(['speaker', 'users' => function ($query) {
             $query->whereHas('profile', function ($subQuery) {
                 $subQuery->where('payment_status', '1');
@@ -168,8 +171,8 @@ class ProfileController extends Controller
                 return $schedule->total_seat > $schedule->users->count();
             })
             ->groupBy('day_number');
-$workshops = $user->schedules->pluck('id')->toArray();
-        return view('admin.profile.edit-profile',compact('profile','user','schedules','workshops'));
+        $workshops = $user->schedules->pluck('id')->toArray();
+        return view('admin.profile.edit-profile',compact('profile','user','schedules','workshops', 'countries'));
     }
 
     /**
@@ -183,19 +186,43 @@ $workshops = $user->schedules->pluck('id')->toArray();
     {
         abort_if(Gate::denies('profile_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $request->validate([
-            'phone'=>'required',
-            'institute_name' => 'required',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'designation' => 'required|string|max:255',
+            'institution' => 'required|string|max:255',
+            'country_id' => 'required|exists:countries,id',
+            'whatsapp_number' => 'required|string|max:20',
+            'participation_mode' => 'required|in:onsite,online',
+            'id' => 'required|exists:profiles,id',
         ]);
-        $user = Auth::user();
-        $profileData = $request->only(['phone','institute_name','coupon_code','payment_status','pay_amount']);
-        $userSchedule = $request->input('schedule_ids');
-
+        
         $profile = Profile::find($request->id);
-        $profile->update($profileData);
+        
+        // Update user name as well for consistency
         $user = $profile->user;
+        $user->update([
+            'name' => $request->first_name . ' ' . $request->last_name
+        ]);
+
+        $profileData = $request->only([
+            'first_name', 'last_name', 'designation', 'department', 'institution', 
+            'country_id', 'whatsapp_number', 'registration_id', 'is_author', 
+            'participation_mode', 'pay_amount', 'currency', 'payment_status', 'coupon_code'
+        ]);
+        
+        $userSchedule = $request->input('schedule_ids', []);
+
+        $profile->update($profileData);
+
+        // If payment status changed to complete and no registration ID exists, generate one
+        if ($profile->payment_status == 1 && $profile->registration_id == null) {
+            $profile->registration_id = \App\Services\IdGeneratorService::generateRegistrationId();
+            $profile->save();
+        }
+
         $user->schedules()->sync($userSchedule);
 
-        return redirect('show/profile')->with('message','Profile update Successfully');
+        return redirect('show/profile')->with('message','Profile updated successfully');
     }
 
     /**

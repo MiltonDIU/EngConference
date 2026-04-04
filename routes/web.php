@@ -42,6 +42,7 @@ use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\CommitteeTypeController;
 use App\Http\Controllers\Admin\CommitteeController;
 use App\Http\Controllers\Admin\ConferenceMemberController;
+use App\Http\Controllers\Admin\PaperController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -137,7 +138,7 @@ Auth::routes(['register' => false,'verify'=>true,]);
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','verified']], function () {
 
-        Route::post('feedback', [FeedbackController::class,'store'])->name('feedback.store');
+    Route::post('feedback', [FeedbackController::class,'store'])->name('feedback.store');
 
 
     Route::get('/', [DashboardController::class, 'index'])->name('home');
@@ -293,22 +294,48 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
     Route::delete('conference-members/destroy', [ConferenceMemberController::class, 'massDestroy'])->name('conference-members.massDestroy');
     Route::resource('conference-members', ConferenceMemberController::class);
 
+    // Papers Admin Actions
+    Route::post('papers/{paper}/review', [PaperController::class, 'review'])->name('papers.review');
+    Route::post('papers/{paper}/approve', [PaperController::class, 'approve'])->name('papers.approve');
+    Route::post('papers/{paper}/reject', [PaperController::class, 'reject'])->name('papers.reject');
 });
+
+    // Paper Submission (Post-registration)
+   // Route::get('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'create'])->name('papers.submit');
+  //  Route::post('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'store'])->name('papers.store');
+Route::resource('papers', PaperController::class);
+
+
+
+
 //Route::get('book-ticket',[ProfileController::class,'create'])->name('book-ticket');
-Route::get('show/profile',[ProfileController::class,'index'])->name('show-profile');
+// Participant Routes (Authenticated & Verified)
+Route::group(['middleware' => ['auth', 'verified']], function () {
+    // Profile
+    Route::get('show/profile', [ProfileController::class, 'index'])->name('show-profile');
+    Route::post('save/profile', [ProfileController::class, 'store'])->name('save-profile');
+    Route::get('edit/profile/{id}', [ProfileController::class, 'edit'])->name('edit-profile');
+    Route::post('update/profile', [ProfileController::class, 'update'])->name('update-profile');
+    Route::post('validate-coupon', [ProfileController::class, 'validateCoupon'])->name('validateCoupon');
 
-Route::post('save/profile',[ProfileController::class,'store'])->name('save-profile');
-Route::get('edit/profile/{id}',[ProfileController::class,'edit'])->name('edit-profile');
-Route::post('update/profile/',[ProfileController::class,'update'])->name('update-profile');
-Route::post('/validate-coupon', [ProfileController::class,'validateCoupon'])->name('validateCoupon');
-Route::get('set/payment/{$data}',[PaymentController::class,'setPayment'])->name('setPayment');
-Route::get('my-payment/',[PaymentController::class,'myPayment'])->name('myPayment');
-Route::post('pay-now',[PaymentController::class,'payNow'])->name('payNow');
-Route::get('status/payment',[ProfileController::class,'statusPayment'])->name('statusPayment');
-Route::post('send-mail',[MailController::class, 'sendMail'])->name('send-message');
+    // Paper Management
+    Route::get('papers', [App\Http\Controllers\Admin\PaperController::class, 'index'])->name('papers.index');
+    Route::get('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'create'])->name('papers.submit');
+    Route::post('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'store'])->name('papers.store');
+    Route::get('papers/{paper}', [App\Http\Controllers\Admin\PaperController::class, 'show'])->name('papers.show');
+    Route::get('papers/{paper}/pricing', [App\Http\Controllers\Admin\PaperController::class, 'getPaperPricing'])->name('papers.pricing');
 
-Route::get('payment/complete',[ProfileController::class,'paymentComplete'])->name('payment-complete');
-Route::get('payment/not-complete',[ProfileController::class,'paymentNotComplete'])->name('payment-not-complete');
+    // Payments
+    Route::get('set/payment/{data}', [PaymentController::class, 'setPayment'])->name('setPayment');
+    Route::get('my-payment', [PaymentController::class, 'myPayment'])->name('myPayment');
+    Route::post('pay-now', [PaymentController::class, 'payNow'])->name('payNow');
+    Route::post('pay-now-papers', [PaymentController::class, 'payNowPapers'])->name('payNowPapers');
+    Route::get('status/payment', [ProfileController::class, 'statusPayment'])->name('statusPayment');
+    Route::get('payment/complete', [ProfileController::class, 'paymentComplete'])->name('payment-complete');
+    Route::get('payment/not-complete', [ProfileController::class, 'paymentNotComplete'])->name('payment-not-complete');
+});
+
+Route::post('send-mail', [MailController::class, 'sendMail'])->name('send-message');
 
 
 Route::get('test-payment',[PaymentController::class,'testPayment'])->name('testPayment');
@@ -322,7 +349,7 @@ Route::get('test-payment',[PaymentController::class,'testPayment'])->name('testP
 Auth::routes();
 
 
-//Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'redirectHome'])->name('home_redirect');
 
 
 

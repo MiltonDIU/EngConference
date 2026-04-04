@@ -39,6 +39,25 @@ protected $noReferral = array(
     'developers.google.com',
 );
 
+    public function redirectHome()
+    {
+        if (!auth()->check()) {
+            return redirect('/');
+        }
+
+        $user = auth()->user();
+        if ($user->roles->contains('id', 1)) {
+            return redirect()->route('admin.home');
+        }
+
+        // If Role 3 (Participant/Author)
+        if ($user->roles->contains('id', 3)) {
+            return redirect()->route('show-profile');
+        }
+
+        return redirect('/');
+    }
+
     /**
      * Show the application dashboard.
      *
@@ -152,7 +171,9 @@ protected $noReferral = array(
                 ->groupBy('day_number');
             $settings = Setting::pluck('value', 'key');
             $aminities = Amenity::orderBy('id','desc')->get();
-            return view('main.registration',compact('settings','schedules','referral','aminities'));
+            $countries = \App\Models\Country::where('is_active', 1)->orderBy('name', 'asc')->get(['id', 'name']);
+            $tracks = \App\Models\Track::with('subTracks')->get();
+            return view('main.registration',compact('settings','schedules','referral','aminities', 'countries', 'tracks'));
         }
 
     }

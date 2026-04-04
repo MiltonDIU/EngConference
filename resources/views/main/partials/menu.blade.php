@@ -319,6 +319,16 @@
                         </a>
                     </li>
                 @endcan
+                <li class="nav-item">
+                    <a href="{{ route("papers.index") }}" class="nav-link {{ request()->is('papers*') ? 'active' : '' }}">
+                        <i class="fa-fw fas fa-file-alt">
+
+                        </i>
+                        <p>
+                            <span>Papers</span>
+                        </p>
+                    </a>
+                </li>
                 @can('schedule_access')
                     <li class="nav-item">
                         <a href="{{ route("admin.schedules.index") }}" class="nav-link {{ request()->is('admin/schedules') || request()->is('admin/schedules/*') ? 'active' : '' }}">
@@ -429,35 +439,43 @@
                 @endcan
 
                 {{-- Committee Management --}}
-                <li class="nav-item has-treeview {{ request()->is('admin/committee-types*') ? 'menu-open' : '' }} {{ request()->is('admin/committees*') ? 'menu-open' : '' }} {{ request()->is('admin/conference-members*') ? 'menu-open' : '' }}">
-                    <a class="nav-link nav-dropdown-toggle {{ request()->is('admin/committee-types*') ? 'active' : '' }} {{ request()->is('admin/committees*') ? 'active' : '' }} {{ request()->is('admin/conference-members*') ? 'active' : '' }}" href="#">
-                        <i class="fa-fw nav-icon fas fa-sitemap"></i>
-                        <p>
-                            Committee Management
-                            <i class="right fa fa-fw fa-angle-left nav-icon"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{{ route('admin.committee-types.index') }}" class="nav-link {{ request()->is('admin/committee-types') || request()->is('admin/committee-types/*') ? 'active' : '' }}">
-                                <i class="fa-fw nav-icon fas fa-tags"></i>
-                                <p>Committee Types</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.committees.index') }}" class="nav-link {{ request()->is('admin/committees') || request()->is('admin/committees/*') ? 'active' : '' }}">
-                                <i class="fa-fw nav-icon fas fa-users-cog"></i>
-                                <p>Committees</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.conference-members.index') }}" class="nav-link {{ request()->is('admin/conference-members') || request()->is('admin/conference-members/*') ? 'active' : '' }}">
-                                <i class="fa-fw nav-icon fas fa-user-tie"></i>
-                                <p>Committee  Members </p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+                @if(Gate::check('committee_type_access') || Gate::check('committee_access') || Gate::check('conference_member_access'))
+                    <li class="nav-item has-treeview {{ request()->is('admin/committee-types*') ? 'menu-open' : '' }} {{ request()->is('admin/committees*') ? 'menu-open' : '' }} {{ request()->is('admin/conference-members*') ? 'menu-open' : '' }}">
+                        <a class="nav-link nav-dropdown-toggle {{ request()->is('admin/committee-types*') ? 'active' : '' }} {{ request()->is('admin/committees*') ? 'active' : '' }} {{ request()->is('admin/conference-members*') ? 'active' : '' }}" href="#">
+                            <i class="fa-fw nav-icon fas fa-sitemap"></i>
+                            <p>
+                                Committee Management
+                                <i class="right fa fa-fw fa-angle-left nav-icon"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            @can('committee_type_access')
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.committee-types.index') }}" class="nav-link {{ request()->is('admin/committee-types') || request()->is('admin/committee-types/*') ? 'active' : '' }}">
+                                        <i class="fa-fw nav-icon fas fa-tags"></i>
+                                        <p>Committee Types</p>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('committee_access')
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.committees.index') }}" class="nav-link {{ request()->is('admin/committees') || request()->is('admin/committees/*') ? 'active' : '' }}">
+                                        <i class="fa-fw nav-icon fas fa-users-cog"></i>
+                                        <p>Committees</p>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('conference_member_access')
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.conference-members.index') }}" class="nav-link {{ request()->is('admin/conference-members') || request()->is('admin/conference-members/*') ? 'active' : '' }}">
+                                        <i class="fa-fw nav-icon fas fa-user-tie"></i>
+                                        <p>Committee  Members </p>
+                                    </a>
+                                </li>
+                            @endcan
+                        </ul>
+                    </li>
+                @endif
 
                 <li class="nav-item">
                     <a href="#" class="nav-link" onclick="event.preventDefault(); document.getElementById('logoutform').submit();">

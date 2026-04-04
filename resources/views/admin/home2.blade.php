@@ -7,7 +7,7 @@
 
         <div class="card-body">
             <div class="content">
-                @can('admin-dashboard')
+                @can('admin_report')
                     <div class="row">
 
                         <div class="col-lg-6">

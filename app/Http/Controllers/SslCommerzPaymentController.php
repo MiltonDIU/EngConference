@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\Profile;
-use DB;
+use App\Models\Paper;
+use App\Models\Setting;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Library\SslCommerz\SslCommerzNotification;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\RegistrationConfirmed;
+use Illuminate\Support\Facades\Log;
 class SslCommerzPaymentController extends Controller
 {
 
@@ -35,20 +40,43 @@ class SslCommerzPaymentController extends Controller
         # In "orders" table, order unique identity is "transaction_id". "status" field contain status of the transaction, "amount" is the order amount to be paid and "currency" is for storing Site Currency which will be checked with paid currency.
 
         $post_data = array();
-        if ($request->input('special_discount') ) {
-            $discountedAmount = $user->profile->pay_amount * 0.20; // Calculate the discount amount (20% of the original amount)
-            $newTotalAmount = $user->profile->pay_amount - $discountedAmount; // Calculate the new total amount after applying the discount
-            $post_data['total_amount'] = $newTotalAmount; # You cant not pay less than 10
-            $profile = Profile::where('user_id', $request->input('user_id'))->first();
-            $profile->discount = $discountedAmount;
-            $profile->save();
-        }else{
-            $post_data['total_amount'] = $user->profile->pay_amount; # You cant not pay less than 10
-            $profile = Profile::where('user_id', $request->input('user_id'))->first();
-            $profile->discount = 0;
-            $profile->save();
+        
+        if ($request->input('is_paper_checkout')) {
+            // Paper checkout flow
+            $post_data['total_amount'] = $request->input('calculated_amount');
+            $post_data['currency'] = $request->input('calculated_currency');
+            $paper_ids_json = json_encode($request->input('checkout_paper_ids'));
+        } else {
+            // Standard profile checkout flow
+            $paper_ids_json = null;
+            $profile = $user->profile;
+            if ($request->input('special_discount') && $profile) {
+                $discountedAmount = $profile->pay_amount * 0.20; // Calculate the discount amount (20% of the original amount)
+                $newTotalAmount = $profile->pay_amount - $discountedAmount; // Calculate the new total amount after applying the discount
+                $post_data['total_amount'] = $newTotalAmount; # You can not pay less than 10
+                
+                // Note: Only saving if the column exists to avoid further SQL errors
+                // If the discount column is missing, this will be skipped safely
+                try {
+                    $profile->discount = $discountedAmount;
+                    $profile->save();
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning("Could not save discount to profile: " . $e->getMessage());
+                }
+            } else {
+                $post_data['total_amount'] = $profile->pay_amount ?? 0;
+                if ($profile) {
+                    try {
+                        $profile->discount = 0;
+                        $profile->save();
+                    } catch (\Exception $e) {
+                        // Ignore if discount column doesn't exist
+                    }
+                }
+            }
+            $post_data['currency'] = $profile->currency ?? "BDT";
         }
-        $post_data['currency'] = "BDT";
+        
         $post_data['tran_id'] = $transaction_id;//uniqid(); // tran_id must be unique
 
         # CUSTOMER INFORMATION
@@ -61,7 +89,7 @@ class SslCommerzPaymentController extends Controller
         $post_data['cus_state'] = "";
         $post_data['cus_postcode'] = "";
         $post_data['cus_country'] = "Bangladesh";
-        $post_data['cus_phone'] = $user->profile->phone??"01811458857";
+        $post_data['cus_phone'] = $user->profile->whatsapp_number ?? "01811458857";
         $post_data['cus_fax'] = "";
 
         # SHIPMENT INFORMATION
@@ -97,7 +125,8 @@ class SslCommerzPaymentController extends Controller
                 'status' => 'Pending',
                 'address' => $post_data['cus_add1'],
                 'transaction_id' => $post_data['tran_id'],
-                'currency' => $post_data['currency']
+                'currency' => $post_data['currency'],
+                'paper_ids' => $paper_ids_json
             ]);
 
         $sslc = new SslCommerzNotification();
@@ -120,7 +149,7 @@ class SslCommerzPaymentController extends Controller
 
         $post_data = array();
         $post_data['total_amount'] = '10'; # You cant not pay less than 10
-        $post_data['currency'] = "BDT";
+        $post_data['currency'] = $request->input('currency', "BDT");
         $post_data['tran_id'] = uniqid(); // tran_id must be unique
 
         # CUSTOMER INFORMATION
@@ -194,7 +223,7 @@ class SslCommerzPaymentController extends Controller
         #Check order status in order tabel against the transaction id or order id.
         $order_details = DB::table('orders')
             ->where('transaction_id', $tran_id)
-            ->select('transaction_id', 'status', 'currency', 'amount')->first();
+            ->select('transaction_id', 'status', 'currency', 'amount', 'paper_ids')->first();
 
         if ($order_details->status == 'Pending') {
             $validation = $sslc->orderValidate($request->all(), $tran_id, $amount, $currency);
@@ -217,14 +246,45 @@ class SslCommerzPaymentController extends Controller
                     ->update(['status' => 1]);
                 $orderPayment = Payment::where('reff_id', $tran_id)->first();
                 $profile = $orderPayment->user->profile;
-                $newId = $this->uniqueIdGenerate();
-                DB::table('profiles')
-                    ->where('id', $profile->id)
-                    ->update([
-                        'payment_status' => '1',
-                        'identity_no' => $newId
-                    ]);
+                
+                if ($order_details->paper_ids) {
+                    $pIds = json_decode($order_details->paper_ids, true);
+                    if (is_array($pIds) && count($pIds) > 0) {
+                        \App\Models\Paper::whereIn('id', $pIds)->update([
+                            'payment_status' => '1',
+                            'pay_amount' => $amount / count($pIds),
+                            'currency' => $currency
+                        ]);
+                    }
+                } else {
+                    $newId = \App\Services\IdGeneratorService::generateRegistrationId();
+                    DB::table('profiles')
+                        ->where('id', $profile->id)
+                        ->update([
+                            'payment_status' => '1',
+                            'registration_id' => $newId
+                        ]);
+                    $profile->refresh();
+                }
 
+
+                // Send Registration Confirmation Email
+                try {
+                    $mailData = [
+                        'first_name' => $profile->first_name,
+                        'last_name' => $profile->last_name,
+                        'name' => $orderPayment->user->name,
+                        'registration_id' => $profile->registration_id,
+                        'category' => 'Presenter', // Default category
+                        'mode' => $profile->mode_of_participation ?? 'Onsite',
+                        'amount' => $amount,
+                        'currency' => $currency,
+                        'transaction_id' => $tran_id,
+                    ];
+                    Mail::to($orderPayment->user->email)->queue(new RegistrationConfirmed($mailData));
+                } catch (\Exception $e) {
+                    Log::error('Mail Sending Error (Payment Success): ' . $e->getMessage());
+                }
 
                 //echo "<br >Transaction is successfully Completed";
                 return redirect()->route('success')->with('message',' Transaction is successfully Completed');
@@ -250,7 +310,7 @@ class SslCommerzPaymentController extends Controller
 
         $order_details = DB::table('orders')
             ->where('transaction_id', $tran_id)
-            ->select('transaction_id', 'status', 'currency', 'amount')->first();
+            ->select('transaction_id', 'status', 'currency', 'amount', 'paper_ids')->first();
 
         if ($order_details->status == 'Pending') {
             $update_product = DB::table('orders')
@@ -262,9 +322,14 @@ class SslCommerzPaymentController extends Controller
                 ->update(['status' => 2]);
             $orderPayment = Payment::where('reff_id', $tran_id)->first();
             $profile = $orderPayment->user->profile;
-            DB::table('profiles')
-                ->where('id', $profile->id)
-                ->update(['payment_status' => '2']);
+            
+            if ($order_details->paper_ids) {
+                // Ignore paper updates on fail
+            } else {
+                DB::table('profiles')
+                    ->where('id', $profile->id)
+                    ->update(['payment_status' => '2']);
+            }
 
 
 
@@ -289,7 +354,7 @@ class SslCommerzPaymentController extends Controller
 
         $order_details = DB::table('orders')
             ->where('transaction_id', $tran_id)
-            ->select('transaction_id', 'status', 'currency', 'amount')->first();
+            ->select('transaction_id', 'status', 'currency', 'amount', 'paper_ids')->first();
 
         if ($order_details->status == 'Pending') {
             $update_product = DB::table('orders')
@@ -340,7 +405,7 @@ class SslCommerzPaymentController extends Controller
             #Check order status in order tabel against the transaction id or order id.
             $order_details = DB::table('orders')
                 ->where('transaction_id', $tran_id)
-                ->select('transaction_id', 'status', 'currency', 'amount')->first();
+                ->select('transaction_id', 'status', 'currency', 'amount', 'paper_ids')->first();
 
             if ($order_details->status == 'Pending') {
                 $sslc = new SslCommerzNotification();
@@ -360,10 +425,39 @@ class SslCommerzPaymentController extends Controller
                     ->update(['status' => 1]);
                 $orderPayment = Payment::where('reff_id', $tran_id)->first();
                 $profile = $orderPayment->user->profile;
-                DB::table('profiles')
-                    ->where('id', $profile->id)
-                    ->update(['payment_status' => '1']);
+                
+                if ($order_details->paper_ids) {
+                    $pIds = json_decode($order_details->paper_ids, true);
+                    if (is_array($pIds) && count($pIds) > 0) {
+                        \App\Models\Paper::whereIn('id', $pIds)->update([
+                            'payment_status' => '1',
+                            'pay_amount' => $order_details->amount / count($pIds),
+                            'currency' => $order_details->currency
+                        ]);
+                    }
+                } else {
+                    DB::table('profiles')
+                        ->where('id', $profile->id)
+                        ->update(['payment_status' => '1']);
+                }
 
+                // Send Registration Confirmation Email
+                try {
+                    $mailData = [
+                        'first_name' => $profile->first_name,
+                        'last_name' => $profile->last_name,
+                        'name' => $orderPayment->user->name,
+                        'registration_id' => $profile->registration_id,
+                        'category' => 'Presenter',
+                        'mode' => $profile->mode_of_participation ?? 'Onsite',
+                        'amount' => $order_details->amount,
+                        'currency' => $order_details->currency,
+                        'transaction_id' => $tran_id,
+                    ];
+                    Mail::to($orderPayment->user->email)->queue(new RegistrationConfirmed($mailData));
+                } catch (\Exception $e) {
+                    Log::error('Mail Sending Error (Payment IPN): ' . $e->getMessage());
+                }
 
                     return redirect()->route('success')->with('message',' Transaction is successfully Completed');
                   //  echo "Transaction is successfully Completed";
@@ -383,19 +477,5 @@ class SslCommerzPaymentController extends Controller
             return redirect()->route('fail')->with('message',' Invalid Data');
            // echo "Invalid Data";
         }
-    }
-
-
-   public function uniqueIdGenerate(){
-       $currentDate = Carbon::now();
-       $formattedDate = sprintf('%02d%02d%02d', $currentDate->format('y'), $currentDate->month, $currentDate->day);
-// Count existing profiles with non-zero identity numbers
-       $total = Profile::where('identity_no', '!=', '0')->count();
-// Increment the existing count
-       $newIdCount = $total + 1;
-// Pad the count with leading zeros to a specific width (e.g., 4 for "0001", 5 for "00001")
-       $sequenceNumber = str_pad($newIdCount, 4, '0', STR_PAD_LEFT);
-       $newId = $formattedDate . $sequenceNumber;
-        return $newId;
     }
 }

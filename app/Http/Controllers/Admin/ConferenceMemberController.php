@@ -5,18 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Committee;
 use App\Models\ConferenceMember;
+use Gate;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class ConferenceMemberController extends Controller
 {
     public function index()
     {
+        abort_if(Gate::denies('conference_member_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $members = ConferenceMember::all();
         return view('admin.conference_members.index', compact('members'));
     }
 
     public function create()
     {
+        abort_if(Gate::denies('conference_member_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $committees = $this->getHierarchicalCommittees();
         return view('admin.conference_members.create', compact('committees'));
     }
@@ -52,9 +58,11 @@ class ConferenceMemberController extends Controller
 
     public function edit(ConferenceMember $conferenceMember)
     {
+        abort_if(Gate::denies('conference_member_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $committees = $this->getHierarchicalCommittees();
         $conferenceMember->load('committees');
-        
+
         return view('admin.conference_members.edit', compact('conferenceMember', 'committees'));
     }
 
@@ -91,6 +99,8 @@ class ConferenceMemberController extends Controller
 
     public function destroy(ConferenceMember $conferenceMember)
     {
+        abort_if(Gate::denies('conference_member_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $conferenceMember->delete();
 
         return redirect()->route('admin.conference-members.index')->with('success', 'Member deleted successfully.');
@@ -98,6 +108,8 @@ class ConferenceMemberController extends Controller
 
     public function massDestroy(Request $request)
     {
+        abort_if(Gate::denies('conference_member_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         ConferenceMember::whereIn('id', request('ids'))->delete();
         return response(null, 204);
     }
@@ -111,25 +123,25 @@ class ConferenceMemberController extends Controller
         $groupedList = [];
         foreach ($committeeTypes as $type) {
             $options = [];
-            
+
             // Get root committees for this type
             $roots = $type->committees->where('parent_id', 0);
-            
+
             foreach ($roots as $root) {
                 $options[$root->id] = $root->name;
-                
+
                 // Get sub-committees for this root
                 $subs = $type->committees->where('parent_id', $root->id);
                 foreach ($subs as $sub) {
                     $options[$sub->id] = '-- ' . $sub->name;
                 }
             }
-            
+
             if (!empty($options)) {
                 $groupedList[$type->name] = $options;
             }
         }
-        
+
         return $groupedList;
     }
 }

@@ -6,22 +6,28 @@ use App\Http\Controllers\Controller;
 use App\Models\Committee;
 use App\Models\CommitteeType;
 use App\Models\ConferenceMember;
+use Gate;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class CommitteeController extends Controller
 {
     public function index()
     {
+        abort_if(Gate::denies('committee_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $committees = Committee::with(['committeeType', 'parent'])->get();
         return view('admin.committees.index', compact('committees'));
     }
 
     public function create()
     {
+        abort_if(Gate::denies('committee_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $committeeTypes = CommitteeType::pluck('name', 'id');
         $parentCommittees = $this->getGroupedParentCommittees();
         $members = ConferenceMember::all();
-        
+
         return view('admin.committees.create', compact('committeeTypes', 'parentCommittees', 'members'));
     }
 
@@ -59,10 +65,12 @@ class CommitteeController extends Controller
 
     public function edit(Committee $committee)
     {
+        abort_if(Gate::denies('committee_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $committeeTypes = CommitteeType::pluck('name', 'id');
         $parentCommittees = $this->getGroupedParentCommittees($committee->id);
         $members = ConferenceMember::all();
-        
+
         $committee->load('members');
 
         return view('admin.committees.edit', compact('committee', 'committeeTypes', 'parentCommittees', 'members'));
@@ -104,6 +112,8 @@ class CommitteeController extends Controller
 
     public function destroy(Committee $committee)
     {
+        abort_if(Gate::denies('committee_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $committee->delete();
 
         return redirect()->route('admin.committees.index')->with('success', 'Committee deleted successfully.');
@@ -111,6 +121,8 @@ class CommitteeController extends Controller
 
     public function massDestroy(Request $request)
     {
+        abort_if(Gate::denies('committee_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         Committee::whereIn('id', request('ids'))->delete();
         return response(null, 204);
     }
