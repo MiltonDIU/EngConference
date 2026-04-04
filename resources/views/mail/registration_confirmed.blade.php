@@ -7,6 +7,13 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
+        @font-face {
+            font-family: 'edo';
+            src: url('{{ config('app.url') }}/fonts/edo.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             line-height: 1.6;
@@ -21,6 +28,7 @@
             table-layout: fixed;
             background-color: #f3f4f6;
             padding-bottom: 40px;
+            padding-top:10px;
         }
 
         .main-content {
@@ -39,11 +47,21 @@
             color: #ffffff;
         }
 
+        .header-conference {
+            font-size: 11px;
+            font-weight: 400;
+            margin: 0 0 4px 0;
+            opacity: 0.75;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
         .header-title {
-            font-size: 24px;
-            font-weight: 700;
+            font-family: 'edo', sans-serif;
+            font-size: 30px;
+            font-weight: normal;
             margin: 0;
-            letter-spacing: -0.025em;
+            letter-spacing: 0.04em;
         }
 
         .header-subtitle {
@@ -159,6 +177,7 @@
     <div class="wrapper">
         <div class="main-content">
             <div class="header">
+                <p class="header-conference">International Conference on</p>
                 <h1 class="header-title">BNC2026</h1>
                 <p class="header-subtitle">Beyond Nature and Culture: Planetary Precarity in Literary-Cultural-Linguistic Representations</p>
             </div>

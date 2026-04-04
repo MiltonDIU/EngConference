@@ -26,6 +26,18 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('renderOembed', function ($expression) {
             return "<?php echo App\\Providers\\AppServiceProvider::renderOembed($expression); ?>";
         });
+
+        // Auto-trigger queue worker when a job is queued
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Queue\Events\JobQueued::class, function ($event) {
+            if (config('queue.default') === 'database') {
+                $command = 'php ' . base_path('artisan') . ' queue:work --stop-when-empty';
+                if (strncasecmp(PHP_OS, 'WIN', 3) === 0) {
+                    pclose(popen("start /B " . $command, "r"));
+                } else {
+                    exec($command . ' > /dev/null 2>&1 &');
+                }
+            }
+        });
     }
 
 // Add a static method to handle the rendering of oembed tags

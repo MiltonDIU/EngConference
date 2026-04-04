@@ -603,58 +603,78 @@ class PermissionsTableSeeder extends Seeder
 //            [
 //                'title' => 'custom_email_access',
 //            ],
-            [
-                'title' => 'admin_report',
-            ],
-            [
-                'title' => 'admin_dashboard',
-            ],
+//            [
+//                'title' => 'admin_report',
+//            ],
+//            [
+//                'title' => 'admin_dashboard',
+//            ],
+//
+//            [
+//                'title' => 'committee_type_create',
+//            ],
+//            [
+//                'title' => 'committee_type_edit',
+//            ],
+//            [
+//                'title' => 'committee_type_show',
+//            ],
+//            [
+//                'title' => 'committee_type_delete',
+//            ],
+//            [
+//                'title' => 'committee_type_access',
+//            ],
+//            [
+//                'title' => 'conference_member_create',
+//            ],
+//            [
+//                'title' => 'conference_member_edit',
+//            ],
+//            [
+//                'title' => 'conference_member_show',
+//            ],
+//            [
+//                'title' => 'conference_member_delete',
+//            ],
+//            [
+//                'title' => 'conference_member_access',
+//            ],
+//            [
+//                'title' => 'committee_create',
+//            ],
+//            [
+//                'title' => 'committee_edit',
+//            ],
+//            [
+//                'title' => 'committee_show',
+//            ],
+//            [
+//                'title' => 'committee_delete',
+//            ],
+//            [
+//                'title' => 'committee_access',
+//            ],
 
             [
-                'title' => 'committee_type_create',
+                'title' => 'paper_create',
             ],
             [
-                'title' => 'committee_type_edit',
+                'title' => 'paper_edit',
             ],
             [
-                'title' => 'committee_type_show',
+                'title' => 'paper_show',
             ],
             [
-                'title' => 'committee_type_delete',
+                'title' => 'paper_delete',
             ],
             [
-                'title' => 'committee_type_access',
+                'title' => 'paper_access',
             ],
             [
-                'title' => 'conference_member_create',
+                'title' => 'profile',
             ],
-            [
-                'title' => 'conference_member_edit',
-            ],
-            [
-                'title' => 'conference_member_show',
-            ],
-            [
-                'title' => 'conference_member_delete',
-            ],
-            [
-                'title' => 'conference_member_access',
-            ],
-            [
-                'title' => 'committee_create',
-            ],
-            [
-                'title' => 'committee_edit',
-            ],
-            [
-                'title' => 'committee_show',
-            ],
-            [
-                'title' => 'committee_delete',
-            ],
-            [
-                'title' => 'committee_access',
-            ],
+
         ];
 
         foreach ($permissions as $permission) {

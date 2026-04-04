@@ -6,7 +6,14 @@
     <title>Abstract Submission Received – BNC2026</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        
+
+        @font-face {
+            font-family: 'edo';
+            src: url('{{ config('app.url') }}/fonts/edo.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             line-height: 1.6;
@@ -15,14 +22,15 @@
             padding: 0;
             background-color: #f3f4f6;
         }
-        
+
         .wrapper {
             width: 100%;
             table-layout: fixed;
             background-color: #f3f4f6;
             padding-bottom: 40px;
+            padding-top:10px;
         }
-        
+
         .main-content {
             max-width: 600px;
             margin: 40px auto;
@@ -31,19 +39,29 @@
             overflow: hidden;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        
+
         .header {
             background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
             padding: 30px;
             text-align: center;
             color: #ffffff;
         }
-        
+
+        .header-conference {
+            font-size: 11px;
+            font-weight: 400;
+            margin: 0 0 4px 0;
+            opacity: 0.75;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
         .header-title {
-            font-size: 24px;
-            font-weight: 700;
+            font-family: 'edo', sans-serif;
+            font-size: 30px;
+            font-weight: normal;
             margin: 0;
-            letter-spacing: -0.025em;
+            letter-spacing: 0.04em;
         }
 
         .header-subtitle {
@@ -53,24 +71,24 @@
             opacity: 0.85;
             letter-spacing: 0.02em;
         }
-        
+
         .content {
             padding: 40px;
         }
-        
+
         .greeting {
             font-size: 18px;
             font-weight: 600;
             color: #111827;
             margin-bottom: 16px;
         }
-        
+
         .message-intro {
             font-size: 16px;
             color: #4b5563;
             margin-bottom: 24px;
         }
-        
+
         .submission-card {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;
@@ -78,7 +96,7 @@
             padding: 24px;
             margin: 24px 0;
         }
-        
+
         .card-title {
             font-size: 14px;
             font-weight: 700;
@@ -89,13 +107,13 @@
             border-bottom: 2px solid #e5e7eb;
             padding-bottom: 8px;
         }
-        
+
         .detail-row {
             margin-bottom: 12px;
             display: table;
             width: 100%;
         }
-        
+
         .detail-label {
             display: table-cell;
             width: 150px;
@@ -103,33 +121,33 @@
             color: #374151;
             font-size: 14px;
         }
-        
+
         .detail-value {
             display: table-cell;
             color: #111827;
             font-size: 14px;
         }
-        
+
         .disclaimer {
             font-size: 14px;
             color: #6b7280;
             font-style: italic;
             margin-top: 24px;
         }
-        
+
         .footer {
             padding: 30px;
             text-align: center;
             background-color: #ffffff;
             border-top: 1px solid #f3f4f6;
         }
-        
+
         .footer-text {
             font-size: 14px;
             color: #6b7280;
             margin: 0 0 5px 0;
         }
-        
+
         .contact-info {
             color: #3b82f6;
             text-decoration: none;
@@ -150,52 +168,53 @@
     <div class="wrapper">
         <div class="main-content">
             <div class="header">
+                <p class="header-conference">International Conference on</p>
                 <h1 class="header-title">BNC2026</h1>
                 <p class="header-subtitle">Beyond Nature and Culture: Planetary Precarity in Literary-Cultural-Linguistic Representations</p>
             </div>
-            
+
             <div class="content">
                 <p class="greeting">Dear {{ $paper->user?->profile?->first_name ?? '' }} {{ $paper->user?->profile?->last_name ?? '' }},</p>
-                
+
                 <p class="message-intro">
-                    Thank you for submitting your abstract to the international conference 
+                    Thank you for submitting your abstract to the international conference
                     <strong>Beyond Nature and Culture: Planetary Precarity in Literary-Cultural-Linguistic Representations (BNC2026)</strong>.
                 </p>
-                
+
                 <p class="message-intro">
                     We are pleased to confirm that your submission has been successfully received and has entered the review process.
                 </p>
 
                 <div class="submission-card">
                     <div class="card-title">Submission Details</div>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Submission ID:</div>
                         <div class="detail-value">{{ $paper->submission_id }}</div>
                     </div>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Paper Title:</div>
                         <div class="detail-value">{{ $paper->title }}</div>
                     </div>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Track:</div>
                         <div class="detail-value">{{ $paper->track->name ?? 'N/A' }}</div>
                     </div>
-                    
+
                     @if($paper->subTrack)
                     <div class="detail-row">
                         <div class="detail-label">Sub-Theme:</div>
                         <div class="detail-value">{{ $paper->subTrack->name }}</div>
                     </div>
                     @endif
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Corresponding Author:</div>
                         <div class="detail-value">{{ $paper->user->profile->first_name ?? '' }} {{ $paper->user->profile->last_name ?? '' }}</div>
                     </div>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Submission Date:</div>
                         <div class="detail-value">{{ $paper->created_at->format('M d, Y') }}</div>
@@ -203,12 +222,12 @@
                 </div>
 
                 <p class="disclaimer">Please note that this message confirms receipt of your abstract only. The final decision will be communicated after the review process is completed.</p>
-                
+
                 <p class="message-intro">If you have any questions, please contact the conference team at <a href="mailto:bnc2026@diu.edu.bd" class="contact-info">bnc2026@diu.edu.bd</a>.</p>
-                
+
                 <p class="message-intro">Thank you for your interest in BNC2026.</p>
             </div>
-            
+
             <div class="footer">
                 <p class="footer-text">Warm regards,</p>
                 <p class="footer-text"><strong>Conference Secretariat</strong></p>

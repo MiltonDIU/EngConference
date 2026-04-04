@@ -443,72 +443,72 @@ Total Program Schedule
 </div>
 </div>
 
-<div class="col-lg-6">
-                    {{--
-                    <div class="card">
-                        <div class="card-header">
-                            My Registered Workshop List
-                        </div>
-                        <div class="card-body">
-                            ... Content Omitted ...
-                        </div>
-                    </div>
-                    --}}
-<div class="card">
-<div class="card-header">
-Blogs
-</div>
-<div class="card-body">
-<table class="table table-bordered">
+{{--<div class="col-lg-6">--}}
+{{--                    --}}{{----}}
+{{--                    <div class="card">--}}
+{{--                        <div class="card-header">--}}
+{{--                            My Registered Workshop List--}}
+{{--                        </div>--}}
+{{--                        <div class="card-body">--}}
+{{--                            ... Content Omitted ...--}}
+{{--                        </div>--}}
+{{--                    </div>--}}
+{{--                    --}}
+{{--<div class="card">--}}
+{{--<div class="card-header">--}}
+{{--Blogs--}}
+{{--</div>--}}
+{{--<div class="card-body">--}}
+{{--<table class="table table-bordered">--}}
 
-    @foreach( $blogs as $key=> $blog)
+{{--    @foreach( $blogs as $key=> $blog)--}}
 
-        <tr>
-            <td>
-                <a class="link-muted" href="{{ route('blogDetails',[$blog->id,$blog->slug]) }}" target="_blank">  <strong>
-                        {{ $blog->title }}
-
-
-                    </strong></a>
-            </td>
-        </tr>
-    @endforeach
+{{--        <tr>--}}
+{{--            <td>--}}
+{{--                <a class="link-muted" href="{{ route('blogDetails',[$blog->id,$blog->slug]) }}" target="_blank">  <strong>--}}
+{{--                        {{ $blog->title }}--}}
 
 
-</table>
+{{--                    </strong></a>--}}
+{{--            </td>--}}
+{{--        </tr>--}}
+{{--    @endforeach--}}
 
-</div>
-</div>
 
-<div class="card">
-<div class="card-header">
-Relevant Resource
-</div>
-<div class="card-body">
-<table class="table table-bordered">
-    @foreach( $eventActivities as $key=> $eventActivity)
-        <tr>
-            <td>
-                @if($eventActivity->feature_image)
-                    <a href="{{ $eventActivity->link??"#" }}" target="_blank" style="float: left;margin-right: 20px">
-                        <img src="{{ $eventActivity->feature_image->getUrl() }}" width="200">
-                    </a>
-                @endif
-                <a href="{{ $eventActivity->link??"#" }}" target="_blank" style="color:#230134">
-                    <strong>    {!! $eventActivity->title !!}</strong>
+{{--</table>--}}
 
-                </a>
-                <p>
-                    {!! $eventActivity->summary !!}
-                </p>
-            </td>
-        </tr>
-    @endforeach
-</table>
-</div>
-</div>
-</div>
-</div>
+{{--</div>--}}
+{{--</div>--}}
+
+{{--<div class="card">--}}
+{{--<div class="card-header">--}}
+{{--Relevant Resource--}}
+{{--</div>--}}
+{{--<div class="card-body">--}}
+{{--<table class="table table-bordered">--}}
+{{--    @foreach( $eventActivities as $key=> $eventActivity)--}}
+{{--        <tr>--}}
+{{--            <td>--}}
+{{--                @if($eventActivity->feature_image)--}}
+{{--                    <a href="{{ $eventActivity->link??"#" }}" target="_blank" style="float: left;margin-right: 20px">--}}
+{{--                        <img src="{{ $eventActivity->feature_image->getUrl() }}" width="200">--}}
+{{--                    </a>--}}
+{{--                @endif--}}
+{{--                <a href="{{ $eventActivity->link??"#" }}" target="_blank" style="color:#230134">--}}
+{{--                    <strong>    {!! $eventActivity->title !!}</strong>--}}
+
+{{--                </a>--}}
+{{--                <p>--}}
+{{--                    {!! $eventActivity->summary !!}--}}
+{{--                </p>--}}
+{{--            </td>--}}
+{{--        </tr>--}}
+{{--    @endforeach--}}
+{{--</table>--}}
+{{--</div>--}}
+{{--</div>--}}
+{{--</div>--}}
+{{--</div>--}}
 @endif
 @endauth
 

@@ -281,6 +281,16 @@ class PaperController extends Controller
             // Recalculate and sync the total due amount on the profile
             \App\Services\PricingService::updateProfileTotalDue($profile->fresh());
 
+            // Send submission confirmation email
+            try {
+                Mail::to($user->email)->queue(new AbstractSubmitted($paper));
+            } catch (\Exception $e) {
+                Log::error('Abstract submission email failed: ' . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'paper_id' => $paper->id,
+                ]);
+            }
+
             return redirect()->route('papers.index')->with('message', 'Abstract submitted successfully. Submission ID: ' . $submissionId);
 
         } catch (\Exception $e) {
@@ -319,18 +329,18 @@ class PaperController extends Controller
         // Reload the paper with the reviewer relations
         $paper->load('reviewer');
 
-        // Send Email Notification (Queued)
+        // Send Email Notification (queued)
         try {
             if ($request->status == 'approved') {
                 Mail::to($paper->user->email)->queue(new AbstractAccepted($paper));
-                $message = 'Abstract approved and reviewer note saved successfully. Notification email queued.';
+                $message = 'Abstract approved and notification email queued for author.';
             } else {
                 Mail::to($paper->user->email)->queue(new AbstractRejected($paper));
-                $message = 'Abstract rejected and reviewer note saved successfully. Notification email queued.';
+                $message = 'Abstract rejected and notification email queued for author.';
             }
         } catch (\Exception $e) {
-            Log::error("Mail Sending Error ({$request->status}): " . $e->getMessage());
-            $message = "Status updated but email sending failed: " . $e->getMessage();
+            Log::error("Review email sending error ({$request->status}): " . $e->getMessage());
+            $message = "Status updated but email queuing failed: " . $e->getMessage();
         }
 
         return back()->with('message', $message);

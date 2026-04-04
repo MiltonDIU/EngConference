@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abstract Review Decision – BNC2026</title>
+    <title>Verify Your Email Address – BNC2026</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
@@ -89,40 +89,76 @@
             margin-bottom: 16px;
         }
 
-        .notice-box {
-            background-color: #f9fafb;
-            border-left: 4px solid #9ca3af;
-            border-radius: 0 8px 8px 0;
-            padding: 16px 20px;
-            margin: 24px 0;
+        .badge {
+            display: inline-block;
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-bottom: 20px;
+            letter-spacing: 0.04em;
         }
 
-        .notice-box p {
-            margin: 0;
+        .verify-box {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 28px 24px;
+            margin: 28px 0;
+            text-align: center;
+        }
+
+        .verify-box p {
+            font-size: 15px;
+            color: #374151;
+            margin: 0 0 20px 0;
+        }
+
+        .btn-verify {
+            display: inline-block;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 14px 36px;
+            border-radius: 8px;
+            letter-spacing: 0.025em;
+        }
+
+        .url-fallback {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 20px 0 0 0;
+            font-size: 13px;
+            color: #6b7280;
+            word-break: break-all;
+        }
+
+        .url-fallback a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .expiry-note {
+            background-color: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #92400e;
+            margin-top: 20px;
+        }
+
+        .disclaimer {
             font-size: 14px;
             color: #6b7280;
             font-style: italic;
-        }
-
-        .review-note {
-            background-color: #fef2f2;
-            border-left: 4px solid #dc2626;
-            padding: 16px 20px;
-            margin: 24px 0;
-            border-radius: 0 8px 8px 0;
-        }
-
-        .review-note h3 {
-            margin: 0 0 10px 0;
-            font-size: 15px;
-            color: #991b1b;
-        }
-
-        .review-note p {
-            margin: 0;
-            font-size: 14px;
-            color: #374151;
-            white-space: pre-wrap;
+            margin-top: 20px;
         }
 
         .footer {
@@ -152,6 +188,10 @@
             .content {
                 padding: 20px;
             }
+            .btn-verify {
+                padding: 12px 24px;
+                font-size: 15px;
+            }
         }
     </style>
 </head>
@@ -165,39 +205,37 @@
             </div>
 
             <div class="content">
-                <p class="greeting">Dear {{ $paper->user?->profile?->first_name ?? '' }} {{ $paper->user?->profile?->last_name ?? '' }},</p>
-
-                <p class="message-intro">
-                    Thank you for submitting your abstract to the international conference
-                    <strong>Beyond Nature and Culture: Planetary Precarity in Literary-Cultural-Linguistic Representations (BNC2026)</strong>.
+                <p class="greeting">
+                    Dear {{ $user->profile->first_name ?? $user->name }},
                 </p>
 
+                <span class="badge">✉ Email Verification Required</span>
+
                 <p class="message-intro">
-                    After careful review by the programme committee, we regret to inform you that your abstract has <strong>not been selected</strong> for presentation at this conference.
+                    Thank you for registering with <strong>BNC2026</strong>. To complete your registration and gain full access to your account, please verify your email address by clicking the button below.
                 </p>
 
-                @if($paper->review_note)
-                <div class="review-note">
-                    <h3>Reviewer Comments</h3>
-                    <p>{{ $paper->review_note }}</p>
-                </div>
-                @endif
+                <div class="verify-box">
+                    <p>Click the button below to verify your email address. This link will expire in <strong>60 minutes</strong>.</p>
+                    <a href="{{ $url }}" class="btn-verify">Verify Email Address</a>
 
-                <div class="notice-box">
-                    <p>This decision was made after consideration of overall fit with the conference theme and tracks, clarity of argument, originality, and the volume of submissions received. Please note that the review process is highly competitive, and many strong submissions could not be accommodated.</p>
+                    <div class="url-fallback">
+                        <strong>If the button doesn't work,</strong> copy and paste this URL into your browser:<br>
+                        <a href="{{ $url }}">{{ $url }}</a>
+                    </div>
                 </div>
 
+                <div class="expiry-note">
+                    ⚠️ This verification link will expire in <strong>60 minutes</strong>. If expired, please log in and request a new verification email.
+                </div>
 
-                <p class="message-intro">
-                    We sincerely appreciate your interest in BNC2026 and your willingness to share your scholarly work with us. We hope you will consider participating in the conference as a non-presenting participant, if you wish.
+                <p class="disclaimer">
+                    If you did not create an account at BNC2026, please ignore this email. No action is required on your part.
                 </p>
 
-                <p class="message-intro">
-                    Thank you again for your interest, time, and understanding. We wish you the very best in your future research endeavors.
-                </p>
-
-                <p class="message-intro">
-                    If you have any questions, please contact us at <a href="mailto:bnc2026@diu.edu.bd" class="contact-info">bnc2026@diu.edu.bd</a>.
+                <p class="message-intro" style="margin-top: 24px;">
+                    If you have any questions, please contact us at
+                    <a href="mailto:bnc2026@diu.edu.bd" class="contact-info">bnc2026@diu.edu.bd</a>.
                 </p>
             </div>
 

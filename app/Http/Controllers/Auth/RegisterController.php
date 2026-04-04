@@ -232,7 +232,10 @@ class RegisterController extends Controller
         $this->validator($request->all())->validate();
         event(new Registered($user = $this->create($request->all())));
         
-        if ($request->action == 'save-pay') {
+        $settings = Setting::pluck('value', 'key');
+        $isPaymentEnabled = ($settings['is_payment_enabled'] ?? 'true') == 'true';
+
+        if ($request->action == 'save-pay' && $isPaymentEnabled) {
             $payment = new PaymentController();
             $transaction_id = rand(100, 999) . '-' . "AIC-" . strtotime(now());
             $payment->paymentStore($user, $transaction_id, 'sslcommerz');
@@ -240,7 +243,13 @@ class RegisterController extends Controller
             $sslPayment = new SslCommerzPaymentController();
             return $sslPayment->index($request, $user, $transaction_id);
         } else {
-            return redirect('/book-ticket')->with('message', 'Registration Complete. Please complete your payment to confirm your seat. You can pay after login.');
+            $message = 'Registration Complete.';
+            if ($isPaymentEnabled) {
+                $message .= ' Please complete your payment to confirm your seat. You can pay after login.';
+            } else {
+                $message .= ' Thank you for registering.';
+            }
+            return redirect('/book-ticket')->with('message', $message);
         }
     }
 }

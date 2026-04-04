@@ -319,6 +319,7 @@
                         </a>
                     </li>
                 @endcan
+                @can('paper_access')
                 <li class="nav-item">
                     <a href="{{ route("papers.index") }}" class="nav-link {{ request()->is('papers*') ? 'active' : '' }}">
                         <i class="fa-fw fas fa-file-alt">
@@ -329,6 +330,7 @@
                         </p>
                     </a>
                 </li>
+                @endcan
                 @can('schedule_access')
                     <li class="nav-item">
                         <a href="{{ route("admin.schedules.index") }}" class="nav-link {{ request()->is('admin/schedules') || request()->is('admin/schedules/*') ? 'active' : '' }}">

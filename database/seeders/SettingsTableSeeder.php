@@ -125,6 +125,10 @@ class SettingsTableSeeder extends Seeder
                 'key'   => 'bdt_participant_price',
                 'value' => '2500'
             ],
+            [
+                'key'   => 'is_payment_enabled',
+                'value' => 'true'
+            ],
         ];
 
         foreach($settings as $setting)

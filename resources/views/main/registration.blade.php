@@ -73,9 +73,9 @@
                                 <div class="bg-color-form">
                                     <form method="POST" action="{{ route('register') }}" id="registrationForm">
                                         @csrf
-                                        
+
                                         <h4 class="mb-4 text-primary"><strong>Participant Information</strong></h4>
-                                        
+
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
                                                 <label for="first_name"><strong>First Name*</strong></label>
@@ -175,7 +175,7 @@
                                             </div>
                                             @if(($settings['is_abstract_submission_open'] ?? 'true') == 'false')
                                                 <div class="mt-2 text-danger small font-weight-bold">
-                                                    <i class="fa fa-info-circle"></i> Abstract submission is currently closed.
+{{--                                                    <i class="fa fa-info-circle"></i> Abstract submission is currently closed.--}}
                                                 </div>
                                             @endif
                                         </div>
@@ -183,7 +183,7 @@
                                         <!-- Abstract Section -->
                                         <div id="abstract_section" style="display: none;">
                                             <h4 class="mb-4 text-primary"><strong>Abstract Submission Details</strong></h4>
-                                            
+
                                             <div class="mb-3">
                                                 <label for="paper_title"><strong>Paper Title*</strong></label>
                                                 <input type="text" id="paper_title" name="paper_title" class="form-control" value="{{ old('paper_title') }}">
@@ -265,9 +265,15 @@
                                         <div class="row pt-4 border-top">
                                             <div class="col-md-12">
                                                 <div id="action_buttons_participant" style="display: {{ old('is_author') == '1' ? 'none' : 'block' }};">
-                                                    <button type="submit" class="btn btn-primary" name="action" value="save-pay">
-                                                        <i class="fa fa-credit-card"></i> Save & Continue to Payment
-                                                    </button>
+                                                    @if(($settings['is_payment_enabled'] ?? 'true') == 'true')
+                                                        <button type="submit" class="btn btn-primary" name="action" value="save-pay">
+                                                            <i class="fa fa-credit-card"></i> Save & Continue to Payment
+                                                        </button>
+                                                    @else
+                                                        <button type="submit" class="btn btn-primary" name="action" value="save-close">
+                                                            <i class="fa fa-user-plus"></i> Complete Registration
+                                                        </button>
+                                                    @endif
                                                 </div>
                                                 <div id="action_buttons_author" style="display: {{ old('is_author') == '1' ? 'block' : 'none' }};">
                                                     <button type="submit" class="btn btn-success" name="action" value="save-close">
@@ -345,9 +351,9 @@
             const trackId = document.getElementById('track_id').value;
             const subTrackSelect = document.getElementById('sub_track_id');
             const oldSubTrackId = "{{ old('sub_track_id') }}";
-            
+
             subTrackSelect.innerHTML = '<option value="">Select Sub-Theme</option>';
-            
+
             if (trackId) {
                 const selectedTrack = tracks.find(t => t.id == trackId);
                 if (selectedTrack && selectedTrack.sub_tracks) {
@@ -372,7 +378,7 @@
             const abstractSection = document.getElementById('abstract_section');
             if (abstractSection) {
                 abstractSection.style.display = showForm ? 'block' : 'none';
-                
+
                 // Toggle required attributes for ALL required fields within abstract section
                 const fields = abstractSection.querySelectorAll('[data-required="true"], input[required], textarea[required], select[required]');
                 fields.forEach(el => {
@@ -386,21 +392,26 @@
 
             const authorButtons = document.getElementById('action_buttons_author');
             const participantButtons = document.getElementById('action_buttons_participant');
-            
+
             if (authorButtons) authorButtons.style.display = showForm ? 'block' : 'none';
             if (participantButtons) participantButtons.style.display = showForm ? 'none' : 'block';
-            
+
             // If it's Author but submission is closed, show a "Register" button instead of "Submit Abstract"
             @if(($settings['is_abstract_submission_open'] ?? 'true') == 'false')
                 if (participantButtons) {
                     const btn = participantButtons.querySelector('button');
-                    if (isAuthor) {
-                        btn.innerHTML = '<i class="fa fa-user-plus"></i> Register as Author';
-                        btn.value = 'save-close';
-                    } else {
-                        btn.innerHTML = '<i class="fa fa-credit-card"></i> Save & Continue to Payment';
-                        btn.value = 'save-pay';
-                    }
+                        if (isAuthor) {
+                            btn.innerHTML = '<i class="fa fa-user-plus"></i> Register as Author';
+                            btn.value = 'save-close';
+                        } else {
+                            if ({{ ($settings['is_payment_enabled'] ?? 'true') == 'true' ? 'true' : 'false' }}) {
+                                btn.innerHTML = '<i class="fa fa-credit-card"></i> Save & Continue to Payment';
+                                btn.value = 'save-pay';
+                            } else {
+                                btn.innerHTML = '<i class="fa fa-user-plus"></i> Complete Registration';
+                                btn.value = 'save-close';
+                            }
+                        }
                 }
             @endif
         }
@@ -409,11 +420,11 @@
             const container = document.getElementById('co_authors_container');
             const template = document.getElementById('co_author_template').innerHTML;
             const html = template.replace(/{index}/g, coAuthorIndex);
-            
+
             const div = document.createElement('div');
             div.innerHTML = html;
             container.appendChild(div.firstElementChild);
-            
+
             updateAuthorIndices();
             coAuthorIndex++;
         }
@@ -438,8 +449,8 @@
                 // In a real app, you'd populate values or use Blade to render initial co-authors.
             @endforeach
         @endif
-        
-        
+
+
         document.addEventListener('DOMContentLoaded', () => {
             toggleAbstractSection();
             updateSubTracks();
