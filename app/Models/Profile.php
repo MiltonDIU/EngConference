@@ -31,6 +31,10 @@ class Profile extends Model
         'phone',
     ];
 
+    protected $casts = [
+        'is_author' => 'boolean',
+    ];
+
     public function getPhoneAttribute()
     {
         return $this->whatsapp_number;

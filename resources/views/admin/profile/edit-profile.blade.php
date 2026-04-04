@@ -161,7 +161,7 @@
                     <button class="btn btn-primary px-5 shadow-sm" type="submit">
                         <i class="fas fa-save mr-1"></i> {{ trans('global.save') }}
                     </button>
-                    <a href="{{ route('show/profile') }}" class="btn btn-light border ml-2">Cancel</a>
+                    <a href="{{ route('show-profile') }}" class="btn btn-light border ml-2">Cancel</a>
                 </div>
             </form>
             </form>

@@ -60,7 +60,7 @@
                 </form>
             </div>
         @endcan
-        
+
         @if(auth()->user()->roles->contains('id', 3))
             @php
                 $myProfile = $profiles->where('user_id', auth()->id())->first();
@@ -176,7 +176,7 @@
                             </div>
                             <div class="modal-body pt-3 pb-4">
                                 <p class="text-muted mb-4 small">Review the payment details for your approved abstracts before proceeding to checkout.</p>
-                                
+
                                 <div class="bg-light p-3 rounded mb-4 border">
                                     <table class="table table-borderless table-sm mb-0">
                                         <thead class="text-muted border-bottom">
@@ -209,7 +209,7 @@
                                                             </ul>
                                                         </div>
                                                         <div class="alert alert-success py-1 px-2 m-0 small d-inline-block border-0" style="background-color: #e8f5e9; border-radius: 4px;">
-                                                            <i class="fas fa-check-circle mr-1 text-success"></i> 
+                                                            <i class="fas fa-check-circle mr-1 text-success"></i>
                                                             Rate is <strong>{{ $pricing['currency'] }} {{ number_format($pricing['individual_final_price'], 2) }}</strong> per person.
                                                         </div>
                                                     </td>
@@ -225,23 +225,23 @@
                                     </table>
                                 </div>
 
-                                <form action="{{ route('payNowPapers') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="user_id" value="{{ auth()->id() }}">
-                                    @foreach($unpaidPapers as $up)
-                                        <input type="hidden" name="paper_ids[]" value="{{ $up->id }}">
-                                    @endforeach
-                                    <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">
-                                        <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
-                                    </button>
-                                </form>
+{{--                                <form action="{{ route('payNowPapers') }}" method="POST">--}}
+{{--                                    @csrf--}}
+{{--                                    <input type="hidden" name="user_id" value="{{ auth()->id() }}">--}}
+{{--                                    @foreach($unpaidPapers as $up)--}}
+{{--                                        <input type="hidden" name="paper_ids[]" value="{{ $up->id }}">--}}
+{{--                                    @endforeach--}}
+{{--                                    <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">--}}
+{{--                                        <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout--}}
+{{--                                    </button>--}}
+{{--                                </form>--}}
                             </div>
                         </div>
                     </div>
                 </div>
             @endif
         @endif
-        
+
         <div class="card-header">
             Profile
         </div>

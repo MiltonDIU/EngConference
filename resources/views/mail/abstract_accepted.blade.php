@@ -279,12 +279,12 @@
                     Your abstract was positively evaluated by the review committee and has been selected for inclusion in the conference program, subject to completion of registration and payment within the deadline.
                 </p>
 
-                @if($paper->review_note)
-                <div class="review-note">
-                    <h3>Reviewer Comments</h3>
-                    <p>{{ $paper->review_note }}</p>
-                </div>
-                @endif
+{{--                @if($paper->review_note)--}}
+{{--                <div class="review-note">--}}
+{{--                    <h3>Reviewer Comments</h3>--}}
+{{--                    <p>{{ $paper->review_note }}</p>--}}
+{{--                </div>--}}
+{{--                @endif--}}
 
 
                 <div class="next-steps">

@@ -176,12 +176,12 @@
                     After careful review by the programme committee, we regret to inform you that your abstract has <strong>not been selected</strong> for presentation at this conference.
                 </p>
 
-                @if($paper->review_note)
-                <div class="review-note">
-                    <h3>Reviewer Comments</h3>
-                    <p>{{ $paper->review_note }}</p>
-                </div>
-                @endif
+{{--                @if($paper->review_note)--}}
+{{--                <div class="review-note">--}}
+{{--                    <h3>Reviewer Comments</h3>--}}
+{{--                    <p>{{ $paper->review_note }}</p>--}}
+{{--                </div>--}}
+{{--                @endif--}}
 
                 <div class="notice-box">
                     <p>This decision was made after consideration of overall fit with the conference theme and tracks, clarity of argument, originality, and the volume of submissions received. Please note that the review process is highly competitive, and many strong submissions could not be accommodated.</p>

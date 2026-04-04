@@ -19,11 +19,11 @@
                         @endif
                     </button>
                 @endcan
-                @can('paper_edit')
-                <a href="#" class="btn btn-outline-info btn-sm px-3">
-                    <i class="fas fa-edit mr-1"></i> Edit
-                </a>
-                @endcan
+{{--                @can('paper_edit')--}}
+{{--                <a href="#" class="btn btn-outline-info btn-sm px-3">--}}
+{{--                    <i class="fas fa-edit mr-1"></i> Edit--}}
+{{--                </a>--}}
+{{--                @endcan--}}
             </div>
         </div>
 

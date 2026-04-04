@@ -96,7 +96,7 @@
                 </div>
                 <div id="modal-actual-content" style="display: none;">
                     <p class="text-muted mb-4 small">Review the payment details for your approved abstract before proceeding to checkout.</p>
-                    
+
                     <div class="bg-light p-3 rounded mb-4 border">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted font-weight-bold">Abstract ID</span>
@@ -107,7 +107,7 @@
                             <ul class="mb-0 small text-dark pl-3" style="line-height: 1.4;" id="modal-authors-list"></ul>
                         </div>
                         <div id="modal-per-person-alert" class="alert alert-success py-2 px-3 small border-0 mb-2 mt-2" style="background-color: #e8f5e9; border-radius: 6px; display: none;">
-                            <i class="fas fa-check-circle mr-1 text-success"></i> 
+                            <i class="fas fa-check-circle mr-1 text-success"></i>
                             Price is <strong id="modal-per-person-price"></strong> per person. The total payment covers all authors securely.
                         </div>
                         <hr class="my-2 border-dashed">
@@ -126,14 +126,14 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('payNowPapers') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="user_id" id="modal-form-user-id">
-                        <input type="hidden" name="paper_ids[]" id="modal-form-paper-id">
-                        <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">
-                            <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
-                        </button>
-                    </form>
+{{--                    <form action="{{ route('payNowPapers') }}" method="POST">--}}
+{{--                        @csrf--}}
+{{--                        <input type="hidden" name="user_id" id="modal-form-user-id">--}}
+{{--                        <input type="hidden" name="paper_ids[]" id="modal-form-paper-id">--}}
+{{--                        <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">--}}
+{{--                            <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout--}}
+{{--                        </button>--}}
+{{--                    </form>--}}
                 </div>
                 </div>
             </div>
@@ -149,9 +149,9 @@
     .card { border-radius: 12px; overflow: hidden; }
     .dataTables_wrapper .dataTables_filter { margin-bottom: 20px; }
     .dt-buttons { margin-bottom: 15px; }
-    .dt-button { 
-        padding: 5px 15px !important; 
-        border-radius: 4px !important; 
+    .dt-button {
+        padding: 5px 15px !important;
+        border-radius: 4px !important;
         font-size: 13px !important;
         border: 1px solid #dee2e6 !important;
         background: #fff !important;
@@ -240,7 +240,7 @@ $(function () {
         let modal = $('#paymentReviewModal');
         let loading = $('#modal-loading');
         let content = $('#modal-actual-content');
-        
+
         modal.modal('show');
         loading.show();
         content.hide();
@@ -253,7 +253,7 @@ $(function () {
                 $('#modal-submission-id').text(response.submission_id);
                 $('#modal-form-user-id').val(response.user_id);
                 $('#modal-form-paper-id').val(response.paper_id);
-                
+
                 let pricing = response.pricing;
                 $('#modal-pricing-stage').text(pricing.stage.charAt(0).toUpperCase() + pricing.stage.slice(1));
                 $('#modal-currency, #modal-currency-2, #modal-currency-3').text(pricing.currency);
@@ -269,7 +269,7 @@ $(function () {
                         authorListHtml += `<li>${author.name} <span class="text-muted small">(${author.designation || ''})</span></li>`;
                     });
                     $('#modal-authors-list').html(authorListHtml);
-                    
+
                     $('#modal-per-person-alert').show();
                     $('#modal-per-person-price').text(`${pricing.currency} ${pricing.individual_final_price.toLocaleString(undefined, {minimumFractionDigits: 2})}`);
                 } else {

@@ -29,7 +29,7 @@ class PaperController extends Controller
     {
         if ($request->ajax()) {
             $user = Auth::user();
-            
+
             if ($user->roles->contains('id', 3)) {
                 $query = Paper::where('user_id', $user->id)->with('user', 'track', 'subTrack', 'authors');
             } else {
@@ -55,7 +55,7 @@ class PaperController extends Controller
                 ->addColumn('actions', function ($row) {
                     $viewRoute = route('papers.show', $row->id);
                     $editBtn = Gate::allows('paper_edit') ? '<a href="#" class="btn btn-sm btn-white border text-info" title="Edit"><i class="fas fa-edit"></i></a>' : '';
-                    
+
                     $payBtn = '';
                     if ($row->status === 'approved' && $row->payment_status != '1' && Auth::user()->roles->contains('id', 3)) {
                         $payBtn = ' <button class="btn btn-sm btn-primary ml-1" onclick="openPaymentModal('.$row->id.')" title="Payment Review">
@@ -67,7 +67,7 @@ class PaperController extends Controller
                                 <a href="'.$viewRoute.'" class="btn btn-sm btn-white border text-primary" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                '.$editBtn.'
+                                <!--'.$editBtn.'-->
                                 '.$payBtn.'
                             </div>';
                 })
@@ -96,15 +96,15 @@ class PaperController extends Controller
                         'approved' => 'success',
                         'rejected' => 'danger'
                     ][$row->status] ?? 'secondary';
-                    
+
                     $badge = '<span class="badge badge-'.$statusClass.' px-3 py-2 text-uppercase shadow-none border-0" style="font-size: 0.75rem; letter-spacing: 0.5px;">'.$row->status.'</span>';
-                    
+
                     if ($row->status === 'approved') {
                         $pStatusClass = $row->payment_status == '1' ? 'success' : 'warning';
                         $pStatusText = $row->payment_status == '1' ? 'PAID' : 'UNPAID';
                         $badge .= '<span class="badge badge-'.$pStatusClass.' d-block mt-1" style="font-size: 0.65rem;">'.$pStatusText.'</span>';
                     }
-                    
+
                     return $badge;
                 })
                 ->editColumn('created_at', function ($row) {
@@ -169,6 +169,8 @@ class PaperController extends Controller
 
         // Check if user is an author
         $profile = Profile::where('user_id', $user->id)->first();
+
+
         if (!$profile || !$profile->is_author) {
             return redirect()->route('show-profile')->with('error', 'Only registered authors can submit papers.');
         }
