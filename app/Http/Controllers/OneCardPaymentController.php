@@ -75,6 +75,10 @@ class OneCardPaymentController extends Controller
             'response_type' => 'json',
         ];
 
+        // Store transaction ID and return URL in session
+        session(['onecard_reff_id' => $transaction_id]);
+        session(['payment_return_url' => url()->previous()]);
+
         try {
             $response = Http::asForm()->post($this->apiUrl, $params);
             
@@ -101,10 +105,11 @@ class OneCardPaymentController extends Controller
      */
     public function success(Request $request)
     {
-        $reff_id = $request->input('reff_id');
+        Log::info('OneCard IPN Received:', $request->all());
+        $reff_id = $request->input('reff_id') ?? $request->input('id') ?? $request->input('tran_id');
         
         if (!$reff_id) {
-            Log::warning('OneCard Push: No reff_id received');
+            Log::warning('OneCard Push: No transaction ID received');
             return response()->json(['message' => 'failed']);
         }
 
@@ -135,17 +140,29 @@ class OneCardPaymentController extends Controller
      */
     public function redirect(Request $request)
     {
-        $reff_id = $request->input('reff_id');
+        Log::info('OneCard Redirect Received:', $request->all());
         
-        // Wait a small bit for server push if needed, or just check DB
+        // Try to get transaction ID from request first, then fall back to session
+        $reff_id = $request->input('reff_id') ?? $request->input('id') ?? $request->input('tran_id') ?? session('onecard_reff_id');
+        
+        if (!$reff_id) {
+            Log::warning('OneCard Redirect: No transaction ID found in request or session.');
+            return redirect()->route('fail')->with('message', 'Transaction identification lost.');
+        }
+
+        $returnUrl = session('payment_return_url') ?? route('show-profile');
+
+        // Check DB first (IPN might have already processed this)
         $order = DB::table('orders')->where('transaction_id', $reff_id)->first();
         
         if ($order && ($order->status == 'Processing' || $order->status == 'Complete')) {
-            return redirect()->route('success')->with('message', 'Transaction is successfully Completed');
+            return redirect($returnUrl)->with('success', 'Payment successful! Your registration is confirmed.');
         } elseif ($order && $order->status == 'Failed') {
-            return redirect()->route('fail')->with('message', 'Transaction has failed');
+            return redirect($returnUrl)->with('error', 'Payment failed. Please try again.');
+        } elseif ($order && $order->status == 'Canceled') {
+            return redirect($returnUrl)->with('error', 'Payment was canceled.');
         } else {
-            // Check verification manually if push hasn't arrived yet
+            // Check verification manually if push hasn't arrived yet or status is still pending
             $validationResponse = Http::asForm()->post($this->verificationUrl, [
                 'reff_id' => $reff_id,
                 'token' => $this->token
@@ -157,10 +174,10 @@ class OneCardPaymentController extends Controller
 
                 if (isset($result['message']) && $result['message'] == 'success' && $status == 'VALIDATED') {
                     $this->processSuccessfulPayment($reff_id, $result);
-                    return redirect()->route('success')->with('message', 'Transaction is successfully Completed');
-                } elseif ($status == 'CANCELLED') {
+                    return redirect($returnUrl)->with('success', 'Payment successful! Your registration is confirmed.');
+                } elseif ($status == 'CANCELLED' || $status == 'INVALID') {
                     $this->updateStatus($reff_id, 'Canceled', 3, $result);
-                    return redirect()->route('cancel')->with('message', 'Your payment has been canceled');
+                    return redirect($returnUrl)->with('error', 'Your payment was canceled.');
                 } else {
                     $this->updateStatus($reff_id, 'Failed', 2, $result);
                 }
@@ -168,8 +185,40 @@ class OneCardPaymentController extends Controller
                 $this->updateStatus($reff_id, 'Failed', 2, ['error' => 'Validation request failed', 'body' => $validationResponse->body()]);
             }
             
-            return redirect()->route('fail')->with('message', 'Payment verification failed or was canceled.');
+            return redirect($returnUrl)->with('error', 'Payment verification failed or was denied.');
         }
+    }
+
+    /**
+     * Handle user-initiated cancellation.
+     */
+    public function cancel(Request $request)
+    {
+        Log::info('OneCard Cancel Route Hit:', $request->all());
+        $reff_id = $request->input('reff_id') ?? $request->input('id') ?? $request->input('tran_id') ?? session('onecard_reff_id');
+        
+        if ($reff_id) {
+            $this->updateStatus($reff_id, 'Canceled', 3, ['info' => 'User hit cancel route']);
+        }
+        
+        $returnUrl = session('payment_return_url') ?? route('show-profile');
+        return redirect($returnUrl)->with('error', 'Your payment was canceled.');
+    }
+
+    /**
+     * Handle payment failure.
+     */
+    public function fail(Request $request)
+    {
+        Log::info('OneCard Fail Route Hit:', $request->all());
+        $reff_id = $request->input('reff_id') ?? $request->input('id') ?? $request->input('tran_id') ?? session('onecard_reff_id');
+        
+        if ($reff_id) {
+            $this->updateStatus($reff_id, 'Failed', 2, ['info' => 'User hit fail route']);
+        }
+        
+        $returnUrl = session('payment_return_url') ?? route('show-profile');
+        return redirect($returnUrl)->with('error', 'Payment failed. Please try again.');
     }
 
     /**

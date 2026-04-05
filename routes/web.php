@@ -108,8 +108,8 @@ Route::get('/onecard/redirect', [OneCardPaymentController::class, 'redirect'])->
 // success
 Route::get('/success/{ord_token}', [HomeController::class, 'success'])->name('success');
 Route::get('/success/', [HomeController::class, 'success'])->name('success');
-Route::get('/cancel/', [HomeController::class, 'cancel'])->name('cancel');
-Route::get('/fail/', [HomeController::class, 'fail'])->name('fail');
+Route::get('/cancel/', [OneCardPaymentController::class, 'cancel'])->name('cancel');
+Route::get('/fail/', [OneCardPaymentController::class, 'fail'])->name('fail');
 
 //end ssl
 
