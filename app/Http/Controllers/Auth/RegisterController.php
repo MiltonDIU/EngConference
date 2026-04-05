@@ -177,11 +177,12 @@ class RegisterController extends Controller
                 $paperData = [
                     'user_id' => $user->id,
                     'submission_id' => \App\Services\IdGeneratorService::generateSubmissionId(),
-                    'paper_title' => $data['paper_title'] ?? 'N/A',
-                    'abstract_text' => $data['abstract_text'] ?? 'N/A',
+                    'title' => $data['paper_title'] ?? 'N/A',
+                    'abstract' => $data['abstract_text'] ?? 'N/A',
                     'keywords' => $data['keywords'] ?? 'N/A',
                     'track_id' => $data['track_id'] ?? null,
                     'sub_track_id' => $data['sub_track_id'] ?? null,
+                    'mode_of_participation' => $data['participation_mode'] ?? 'onsite',
                     'is_corresponding_author' => $data['is_corresponding_author'] ?? true,
                     'status' => 'pending',
                     'payment_status' => '0',
@@ -247,13 +248,13 @@ class RegisterController extends Controller
             $oneCardPayment = new OneCardPaymentController();
             return $oneCardPayment->index($request, $user, $transaction_id);
         } else {
-            $message = 'Registration Complete.';
+            $message = 'Registration Complete. Please check your email to verify your account or pay later from your dashboard after login.';
             if ($isPaymentEnabled) {
-                $message .= ' Please complete your payment to confirm your seat. You can pay after login.';
+                $message = 'Registration Complete. Please check your email to verify your account. Once verified, you can log in, track your paper approval, and complete your payment from your dashboard.';
             } else {
-                $message .= ' Thank you for registering.';
+                $message = 'Thank you for registering. Please verify your email to access your account.';
             }
-            return redirect('/book-ticket')->with('message', $message);
+            return redirect('/book-ticket')->with('info', $message);
         }
     }
 }

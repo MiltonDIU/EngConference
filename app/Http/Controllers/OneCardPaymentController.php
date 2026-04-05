@@ -156,11 +156,11 @@ class OneCardPaymentController extends Controller
         $order = DB::table('orders')->where('transaction_id', $reff_id)->first();
         
         if ($order && ($order->status == 'Processing' || $order->status == 'Complete')) {
-            return redirect($returnUrl)->with('success', 'Payment successful! Your registration is confirmed.');
+            return redirect($returnUrl)->with('success', 'Payment successful! Your account is now verified and your registration is confirmed.');
         } elseif ($order && $order->status == 'Failed') {
-            return redirect($returnUrl)->with('error', 'Payment failed. Please try again.');
+            return redirect($returnUrl)->with('error', 'Payment failed. Please try again or pay later from your dashboard.');
         } elseif ($order && $order->status == 'Canceled') {
-            return redirect($returnUrl)->with('error', 'Payment was canceled.');
+            return redirect($returnUrl)->with('warning', 'Payment was canceled. You can complete your payment later from your dashboard after logging in.');
         } else {
             // Check verification manually if push hasn't arrived yet or status is still pending
             $validationResponse = Http::asForm()->post($this->verificationUrl, [
@@ -174,10 +174,10 @@ class OneCardPaymentController extends Controller
 
                 if (isset($result['message']) && $result['message'] == 'success' && $status == 'VALIDATED') {
                     $this->processSuccessfulPayment($reff_id, $result);
-                    return redirect($returnUrl)->with('success', 'Payment successful! Your registration is confirmed.');
+                    return redirect($returnUrl)->with('success', 'Payment successful! Your account is now verified and your registration is confirmed.');
                 } elseif ($status == 'CANCELLED' || $status == 'INVALID') {
                     $this->updateStatus($reff_id, 'Canceled', 3, $result);
-                    return redirect($returnUrl)->with('error', 'Your payment was canceled.');
+                    return redirect($returnUrl)->with('warning', 'Your payment was canceled. You can complete your registration later from your dashboard.');
                 } else {
                     $this->updateStatus($reff_id, 'Failed', 2, $result);
                 }
@@ -185,7 +185,7 @@ class OneCardPaymentController extends Controller
                 $this->updateStatus($reff_id, 'Failed', 2, ['error' => 'Validation request failed', 'body' => $validationResponse->body()]);
             }
             
-            return redirect($returnUrl)->with('error', 'Payment verification failed or was denied.');
+            return redirect($returnUrl)->with('error', 'Payment verification failed. Please check your dashboard later for status updates.');
         }
     }
 
@@ -202,7 +202,7 @@ class OneCardPaymentController extends Controller
         }
         
         $returnUrl = session('payment_return_url') ?? route('show-profile');
-        return redirect($returnUrl)->with('error', 'Your payment was canceled.');
+        return redirect($returnUrl)->with('warning', 'Payment was canceled. You can complete your registration later from your dashboard after logging in.');
     }
 
     /**
@@ -218,7 +218,7 @@ class OneCardPaymentController extends Controller
         }
         
         $returnUrl = session('payment_return_url') ?? route('show-profile');
-        return redirect($returnUrl)->with('error', 'Payment failed. Please try again.');
+        return redirect($returnUrl)->with('error', 'Payment failed. Please try again or check your email for verification to pay later.');
     }
 
     /**
@@ -301,6 +301,12 @@ class OneCardPaymentController extends Controller
         
         $alreadyProcessed = ($order && ($order->status == 'Processing' || $order->status == 'Complete'));
 
+        $orderPayment = Payment::where('reff_id', $tran_id)->first();
+        if (!$orderPayment) return;
+        
+        $user = $orderPayment->user;
+        $profile = $user->profile;
+
         if (!$alreadyProcessed) {
             $amount = $data['amount'];
             $currency = $data['currency'];
@@ -318,6 +324,11 @@ class OneCardPaymentController extends Controller
                     'message' => $message,
                     'updated_at' => now()
                 ]);
+
+            // Auto-verify email
+            if ($user && empty($user->email_verified_at)) {
+                $user->update(['email_verified_at' => now()]);
+            }
 
             // 1. Update Paper status if this was a paper payment
             if ($order && $order->paper_ids) {
