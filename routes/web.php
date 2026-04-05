@@ -103,6 +103,7 @@ Route::get('/generate_ids/{id}', [HomeController::class, 'generateIds'])->name('
 Route::post('/onecard/pay', [OneCardPaymentController::class, 'index'])->name('onecard.pay');
 Route::post('/onecard/success', [OneCardPaymentController::class, 'success'])->name('onecard.success');
 Route::get('/onecard/redirect', [OneCardPaymentController::class, 'redirect'])->name('onecard.redirect');
+Route::post('/admin/onecard/verify', [OneCardPaymentController::class, 'verifyPayment'])->name('onecard.verify');
 // OneCard END
 
 // success

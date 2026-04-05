@@ -324,6 +324,17 @@
                                     <div class="alert alert-warning d-inline-block py-1 px-3 mb-0" style="border-radius: 20px;">
                                         <i class="fas fa-clock mr-1"></i> Unpaid
                                     </div>
+                                    @if(!auth()->user()->roles->contains(3))
+                                        <div class="mt-2">
+                                            <form action="{{ route('onecard.verify') }}" method="POST" onsubmit="return confirm('Verify all transaction attempts for this user with OneCard?')">
+                                                @csrf
+                                                <input type="hidden" name="profile_id" value="{{ $profile->id }}">
+                                                <button type="submit" class="btn btn-xs btn-outline-info shadow-sm" title="Check OneCard for all transaction attempts">
+                                                    <i class="fas fa-sync-alt mr-1"></i> Verify OneCard
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endif
                                 @endif
                             </td>
                             <td>

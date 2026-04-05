@@ -234,11 +234,55 @@ class OneCardPaymentController extends Controller
             'message' => $message,
             'updated_at' => now()
         ]);
-        
-        $orderPayment = Payment::where('reff_id', $tran_id)->first();
-        if ($orderPayment && $orderPayment->user && $orderPayment->user->profile) {
-            $orderPayment->user->profile->update(['payment_status' => (string)$paymentStatus]);
+    }
+
+    /**
+     * Admin tool to manually verify all payment attempts for a user.
+     */
+    public function verifyPayment(Request $request)
+    {
+        $profile_id = $request->input('profile_id');
+        $profile = Profile::findOrFail($profile_id);
+        $user = $profile->user;
+
+        if (!$user) {
+            return back()->with('error', 'User not found for this profile.');
         }
+
+        // Find all onecard payments for this user
+        $payments = DB::table('payments')
+            ->where('user_id', $user->id)
+            ->where('getaway', 'onecard')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        if ($payments->isEmpty()) {
+            return back()->with('error', 'No OneCard payment attempts found for this user.');
+        }
+
+        $checkedCount = 0;
+        foreach ($payments as $payment) {
+            $checkedCount++;
+            $reff_id = $payment->reff_id;
+
+            // Verify with OneCard API
+            $validationResponse = Http::asForm()->post($this->verificationUrl, [
+                'reff_id' => $reff_id,
+                'token' => $this->token
+            ]);
+
+            if ($validationResponse->successful()) {
+                $result = $validationResponse->json();
+                $status = $result['data']['status'] ?? '';
+
+                if (isset($result['message']) && $result['message'] == 'success' && $status == 'VALIDATED') {
+                    $this->processSuccessfulPayment($reff_id, $result);
+                    return back()->with('success', "Payment verified successfully using Ref: $reff_id!");
+                }
+            }
+        }
+
+        return back()->with('error', "Checked $checkedCount payment attempts, but no successful transaction was found on OneCard.");
     }
 
     /**
