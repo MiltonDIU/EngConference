@@ -320,6 +320,10 @@
                                     <div class="alert alert-success d-inline-block py-1 px-3 mb-0" style="border-radius: 20px;">
                                         <i class="fas fa-check-circle mr-1"></i> Paid
                                     </div>
+                                @elseif($profile->payment_status == '2')
+                                    <div class="alert alert-info d-inline-block py-1 px-3 mb-0" style="border-radius: 20px;">
+                                        <i class="fas fa-hourglass-half mr-1"></i> Partially Paid
+                                    </div>
                                 @else
                                     <div class="alert alert-warning d-inline-block py-1 px-3 mb-0" style="border-radius: 20px;">
                                         <i class="fas fa-clock mr-1"></i> Unpaid

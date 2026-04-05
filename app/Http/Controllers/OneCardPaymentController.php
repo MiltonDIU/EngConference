@@ -261,6 +261,7 @@ class OneCardPaymentController extends Controller
         }
 
         $checkedCount = 0;
+        $foundCount = 0;
         foreach ($payments as $payment) {
             $checkedCount++;
             $reff_id = $payment->reff_id;
@@ -277,9 +278,13 @@ class OneCardPaymentController extends Controller
 
                 if (isset($result['message']) && $result['message'] == 'success' && $status == 'VALIDATED') {
                     $this->processSuccessfulPayment($reff_id, $result);
-                    return back()->with('success', "Payment verified successfully using Ref: $reff_id!");
+                    $foundCount++;
                 }
             }
+        }
+
+        if ($foundCount > 0) {
+            return back()->with('success', "Verification complete! Found and synced $foundCount successful transaction(s). Profile status has been updated.");
         }
 
         return back()->with('error', "Checked $checkedCount payment attempts, but no successful transaction was found on OneCard.");
@@ -294,68 +299,92 @@ class OneCardPaymentController extends Controller
         $data = $fullResponse['data'];
         $message = json_encode($fullResponse);
         
-        if (!$order || $order->status == 'Processing' || $order->status == 'Complete') {
-            return; // Already processed
+        $alreadyProcessed = ($order && ($order->status == 'Processing' || $order->status == 'Complete'));
+
+        if (!$alreadyProcessed) {
+            $amount = $data['amount'];
+            $currency = $data['currency'];
+
+            // Update orders table
+            DB::table('orders')
+                ->where('transaction_id', $tran_id)
+                ->update(['status' => 'Processing', 'updated_at' => now()]);
+
+            // Update payments table
+            DB::table('payments')
+                ->where('reff_id', $tran_id)
+                ->update([
+                    'status' => 1,
+                    'message' => $message,
+                    'updated_at' => now()
+                ]);
+
+            // 1. Update Paper status if this was a paper payment
+            if ($order && $order->paper_ids) {
+                $pIds = json_decode($order->paper_ids, true);
+                if (is_array($pIds) && count($pIds) > 0) {
+                    Paper::whereIn('id', $pIds)->update([
+                        'payment_status' => '1',
+                        'pay_amount' => $amount / count($pIds),
+                        'currency' => $currency
+                    ]);
+                }
+            }
         }
 
-        $amount = $data['amount'];
-        $currency = $data['currency'];
-
-        // Update orders table
-        DB::table('orders')
-            ->where('transaction_id', $tran_id)
-            ->update(['status' => 'Processing', 'updated_at' => now()]);
-
-        // Update payments table
-        DB::table('payments')
-            ->where('reff_id', $tran_id)
-            ->update([
-                'status' => 1,
-                'message' => $message,
-                'updated_at' => now()
-            ]);
-
+        // ALWAYS find the user and profile to ensure status is synced
         $orderPayment = Payment::where('reff_id', $tran_id)->first();
         if (!$orderPayment) return;
         
-        $profile = $orderPayment->user->profile;
+        $user = $orderPayment->user;
+        $profile = $user->profile;
 
-        if ($order->paper_ids) {
-            $pIds = json_decode($order->paper_ids, true);
-            if (is_array($pIds) && count($pIds) > 0) {
-                Paper::whereIn('id', $pIds)->update([
-                    'payment_status' => '1',
-                    'pay_amount' => $amount / count($pIds),
-                    'currency' => $currency
-                ]);
+        // 2. Calculate Overall Profile Status (ALWAYS DO THIS)
+        $totalApproved = Paper::where('user_id', $user->id)->where('status', 'approved')->count();
+        $totalPaidApproved = Paper::where('user_id', $user->id)->where('status', 'approved')->where('payment_status', '1')->count();
+
+        $newStatus = 0;
+        if ($totalApproved > 0) {
+            if ($totalPaidApproved >= $totalApproved) {
+                $newStatus = 1; // Fully Paid
+            } elseif ($totalPaidApproved > 0) {
+                $newStatus = 2; // Partially Paid
+            } else {
+                $newStatus = 0; // Unpaid
             }
         } else {
-            $newId = IdGeneratorService::generateRegistrationId();
-            DB::table('profiles')
-                ->where('id', $profile->id)
-                ->update([
-                    'payment_status' => '1',
-                    'registration_id' => $newId
-                ]);
-            $profile->refresh();
+            // General registration (non-paper payment) or participant
+            $newStatus = 1; 
         }
 
-        // Send Email
-        try {
-            $mailData = [
-                'first_name' => $profile->first_name,
-                'last_name' => $profile->last_name,
-                'name' => $orderPayment->user->name,
-                'registration_id' => $profile->registration_id,
-                'category' => 'Presenter',
-                'mode' => $profile->mode_of_participation ?? 'Onsite',
-                'amount' => $amount,
-                'currency' => $currency,
-                'transaction_id' => $tran_id,
-            ];
-            Mail::to($orderPayment->user->email)->queue(new RegistrationConfirmed($mailData));
-        } catch (\Exception $e) {
-            Log::error('OneCard Mail Error: ' . $e->getMessage());
+        // 3. Update Profile (ALWAYS DO THIS)
+        $updateData = ['payment_status' => (string)$newStatus, 'updated_at' => now()];
+        
+        if ($newStatus > 0 && empty($profile->registration_id)) {
+            $updateData['registration_id'] = IdGeneratorService::generateRegistrationId();
+        }
+
+        DB::table('profiles')->where('id', $profile->id)->update($updateData);
+        $profile->refresh();
+
+        // 4. Only send email if it was NOT already processed to avoid spam
+        if (!$alreadyProcessed) {
+            try {
+                $mailData = [
+                    'first_name' => $profile->first_name,
+                    'last_name' => $profile->last_name,
+                    'name' => $user->name,
+                    'registration_id' => $profile->registration_id,
+                    'category' => 'Presenter',
+                    'mode' => $profile->participation_mode ?? 'Onsite',
+                    'amount' => $data['amount'] ?? 0,
+                    'currency' => $data['currency'] ?? 'BDT',
+                    'transaction_id' => $tran_id,
+                ];
+                Mail::to($user->email)->queue(new RegistrationConfirmed($mailData));
+            } catch (\Exception $e) {
+                Log::error('OneCard Mail Error: ' . $e->getMessage());
+            }
         }
     }
 }
