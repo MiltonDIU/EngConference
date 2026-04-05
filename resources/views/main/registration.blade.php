@@ -265,16 +265,19 @@
 
                                             <div class="mb-3">
                                                 <label for="abstract_text"><strong>Abstract (Max 300 words)*</strong></label>
-                                                <textarea id="abstract_text" name="abstract_text" class="form-control" rows="6">{{ old('abstract_text') }}</textarea>
+                                                <textarea id="abstract_text" name="abstract_text" class="form-control" rows="6" oninput="countWords()">{{ old('abstract_text') }}</textarea>
+                                                <div id="word_count_display" class="small mt-1 text-muted">Words: <span id="word_count">0</span> / 300</div>
                                                 @error('abstract_text') <span class="text-danger small"><strong>{{ $message }}</strong></span> @enderror
                                             </div>
 
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
-                                                    <label for="keywords"><strong>Keywords (3-5)*</strong></label>
-                                                    <input type="text" id="keywords" name="keywords" class="form-control" placeholder="keyword1, keyword2, ..." value="{{ old('keywords') }}">
+                                                    <label for="keywords"><strong>Keywords (3-5 separated by commas)*</strong></label>
+                                                    <input type="text" id="keywords" name="keywords" class="form-control" placeholder="keyword1, keyword2, ..." value="{{ old('keywords') }}" oninput="countKeywords('keywords', 'keyword_count')">
+                                                    <div id="keyword_count_display" class="small mt-1 text-muted">Keywords: <span id="keyword_count">0</span> / 5</div>
                                                     @error('keywords') <span class="text-danger small"><strong>{{ $message }}</strong></span> @enderror
                                                 </div>
+ Bond
                                                 <div class="col-md-6 mb-3">
                                                     <label for="track_id"><strong>Conference Track*</strong></label>
                                                     <select id="track_id" name="track_id" class="form-control" onchange="updateSubTracks()">
@@ -333,6 +336,11 @@
                                                     <label class="form-check-label small" for="consent_no_late_addition">No author can be added after the abstract is submitted.*</label>
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        {{-- Honeypot Bot Protection --}}
+                                        <div style="display: none;">
+                                            <input type="text" name="extra_info" id="extra_info" value="">
                                         </div>
 
                                         <div class="row pt-4 border-top">
@@ -419,6 +427,31 @@
     <script>
         let coAuthorIndex = {{ old('co_authors') ? count(old('co_authors')) : 0 }};
         const tracks = @json($tracks);
+
+        function countKeywords(inputId, countId) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(countId);
+            const display = document.getElementById(inputId + '_count_display');
+            
+            const keywords = input.value ? input.value.split(',').map(k => k.trim()).filter(k => k !== '') : [];
+            const count = keywords.length;
+            
+            counter.innerText = count;
+            
+            if (count < 3 || count > 5) {
+                display.classList.remove('text-muted');
+                display.classList.add('text-danger', 'font-weight-bold');
+            } else {
+                display.classList.remove('text-danger', 'font-weight-bold');
+                display.classList.add('text-muted');
+            }
+        }
+
+        // Initialize counts on load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.getElementById('abstract_text')) countWords();
+            if (document.getElementById('keywords')) countKeywords('keywords', 'keyword_count');
+        });
 
         function updateSubTracks() {
             const trackId = document.getElementById('track_id').value;

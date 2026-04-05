@@ -23,7 +23,8 @@
 
             <div class="form-group">
                 <label class="required" for="abstract_text">Abstract (Max 300 words)*</label>
-                <textarea class="form-control {{ $errors->has('abstract_text') ? 'is-invalid' : '' }}" name="abstract_text" id="abstract_text" rows="6" required>{{ old('abstract_text') }}</textarea>
+                <textarea class="form-control {{ $errors->has('abstract_text') ? 'is-invalid' : '' }}" name="abstract_text" id="abstract_text" rows="6" oninput="countWords()" required>{{ old('abstract_text') }}</textarea>
+                <div id="word_count_display" class="small mt-1 text-muted">Words: <span id="word_count">0</span> / 300</div>
                 @if($errors->has('abstract_text'))
                     <div class="invalid-feedback">
                         {{ $errors->first('abstract_text') }}
@@ -34,8 +35,9 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="required" for="keywords">Keywords (3-5)*</label>
-                        <input class="form-control {{ $errors->has('keywords') ? 'is-invalid' : '' }}" type="text" name="keywords" id="keywords" value="{{ old('keywords', '') }}" placeholder="keyword1, keyword2, ..." required>
+                        <label class="required" for="keywords">Keywords (3-5 separated by commas)*</label>
+                        <input class="form-control {{ $errors->has('keywords') ? 'is-invalid' : '' }}" type="text" name="keywords" id="keywords" value="{{ old('keywords', '') }}" placeholder="keyword1, keyword2, ..." required oninput="countKeywords('keywords', 'keyword_count')">
+                        <div id="keyword_count_display" class="small mt-1 text-muted">Keywords: <span id="keyword_count">0</span> / 5</div>
                         @if($errors->has('keywords'))
                             <div class="invalid-feedback">
                                 {{ $errors->first('keywords') }}
@@ -187,9 +189,30 @@
         }
     }
 
+    function countKeywords(inputId, countId) {
+        const input = document.getElementById(inputId);
+        const counter = document.getElementById(countId);
+        const display = document.getElementById(inputId + '_count_display');
+        
+        const keywords = input.value ? input.value.split(',').map(k => k.trim()).filter(k => k !== '') : [];
+        const count = keywords.length;
+        
+        counter.innerText = count;
+        
+        if (count < 3 || count > 5) {
+            display.classList.remove('text-muted');
+            display.classList.add('text-danger', 'font-weight-bold');
+        } else {
+            display.classList.remove('text-danger', 'font-weight-bold');
+            display.classList.add('text-muted');
+        }
+    }
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         updateSubTracks();
+        countWords();
+        countKeywords('keywords', 'keyword_count');
     });
 
     function addCoAuthor() {

@@ -221,10 +221,24 @@ class PaperController extends Controller
             return redirect()->route('papers.index')->with('error', 'You have reached the maximum allowed limit of ' . $maxSubmissions . ' abstract submissions.');
         }
 
+        // PHP Tag Check Regex
+        $noPhpTags = 'regex:/^((?!(<\?php|<\?|\?>)).)*$/is';
+
         $request->validate([
-            'paper_title' => ['required', 'string', 'max:255'],
-            'abstract_text' => ['required', 'string'],
-            'keywords' => ['required', 'string', 'max:255'],
+            'paper_title' => ['required', 'string', 'max:255', $noPhpTags],
+            'abstract_text' => ['required', 'string', $noPhpTags, function ($attribute, $value, $fail) {
+                $wordCount = !empty(trim($value)) ? preg_match_all('/\s+/', trim($value)) + 1 : 0;
+                if ($wordCount > 300) {
+                    $fail('The abstract must not exceed 300 words. (Current count: ' . $wordCount . ')');
+                }
+            }],
+            'keywords' => ['required', 'string', 'max:255', $noPhpTags, function ($attribute, $value, $fail) {
+                $keywords = array_filter(array_map('trim', explode(',', $value)));
+                $count = count($keywords);
+                if ($count < 3 || $count > 5) {
+                    $fail('Please provide between 3 and 5 keywords separated by commas. (Current count: ' . $count . ')');
+                }
+            }],
             'track_id' => ['required', 'exists:tracks,id'],
             'sub_track_id' => ['required', 'exists:sub_tracks,id'],
             'is_corresponding_author' => ['required', 'boolean'],
@@ -232,11 +246,13 @@ class PaperController extends Controller
             'consent_review' => ['accepted'],
             'consent_acceptance' => ['accepted'],
             'consent_no_late_addition' => ['accepted'],
-            'co_authors.*.name' => ['required', 'string', 'max:255'],
+            'co_authors.*.name' => ['required', 'string', 'max:255', $noPhpTags],
             'co_authors.*.email' => ['required', 'email', 'max:255'],
-            'co_authors.*.designation' => ['required', 'string', 'max:255'],
-            'co_authors.*.institution' => ['required', 'string', 'max:255'],
+            'co_authors.*.designation' => ['required', 'string', 'max:255', $noPhpTags],
+            'co_authors.*.institution' => ['required', 'string', 'max:255', $noPhpTags],
             'co_authors.*.country_id' => ['required', 'exists:countries,id'],
+        ], [
+            'regex' => 'The :attribute contains forbidden characters (PHP tags are not allowed).',
         ]);
 
         try {

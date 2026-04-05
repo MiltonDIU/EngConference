@@ -168,9 +168,9 @@
     <div class="wrapper">
         <div class="main-content">
             <div class="header">
-                <p class="header-conference">International Conference on</p>
+                <p class="header-conference">International Conference on Beyond Nature and Culture</p>
                 <h1 class="header-title">BNC2026</h1>
-                <p class="header-subtitle">Beyond Nature and Culture: Planetary Precarity in Literary-Cultural-Linguistic Representations</p>
+                <p class="header-subtitle">Planetary Precarity in Literary-Cultural-Linguistic Representations</p>
             </div>
 
             <div class="content">

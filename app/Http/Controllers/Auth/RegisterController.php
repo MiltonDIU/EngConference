@@ -85,17 +85,20 @@ class RegisterController extends Controller
 //    }
     protected function validator(array $data)
     {
+        $noPhpTags = 'regex:/^((?!(<\?php|<\?|\?>)).)*$/is';
+
         $rules = [
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255', $noPhpTags],
+            'last_name' => ['required', 'string', 'max:255', $noPhpTags],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'designation' => ['required', 'string', 'max:255'],
-            'institution' => ['required', 'string', 'max:255'],
+            'designation' => ['required', 'string', 'max:255', $noPhpTags],
+            'institution' => ['required', 'string', 'max:255', $noPhpTags],
             'country_id' => ['required', 'exists:countries,id'],
-            'whatsapp_number' => ['required', 'string', 'max:20'],
+            'whatsapp_number' => ['required', 'string', 'max:20', $noPhpTags],
             'participation_mode' => ['required', 'in:onsite,online'],
             'is_author' => ['required', 'boolean'],
+            'extra_info' => ['nullable', 'string', 'max:0'],
         ];
 
         if (isset($data['is_author']) && $data['is_author'] == "1") {
@@ -103,33 +106,48 @@ class RegisterController extends Controller
             $isSubmissionOpen = ($settings['is_abstract_submission_open'] ?? 'true') == 'true';
 
             if ($isSubmissionOpen) {
-                $rules['paper_title'] = ['required', 'string', 'max:500'];
-            $rules['abstract_text'] = ['required', 'string'];
-            $rules['keywords'] = ['required', 'string', 'max:255'];
-            $rules['track_id'] = ['required', 'exists:tracks,id'];
-            $rules['sub_track_id'] = ['required', 'exists:sub_tracks,id'];
-            $rules['is_corresponding_author'] = ['required', 'boolean'];
+                $rules['paper_title'] = ['required', 'string', 'max:500', $noPhpTags];
+                $rules['abstract_text'] = ['required', 'string', $noPhpTags, function ($attribute, $value, $fail) {
+                    $wordCount = !empty(trim($value)) ? preg_match_all('/\s+/', trim($value)) + 1 : 0;
+                    if ($wordCount > 300) {
+                        $fail('The abstract must not exceed 300 words. (Current count: ' . $wordCount . ')');
+                    }
+                }];
+                $rules['keywords'] = ['required', 'string', 'max:255', $noPhpTags, function ($attribute, $value, $fail) {
+                    $keywords = array_filter(array_map('trim', explode(',', $value)));
+                    $count = count($keywords);
+                    if ($count < 3 || $count > 5) {
+                        $fail('Please provide between 3 and 5 keywords separated by commas. (Current count: ' . $count . ')');
+                    }
+                }];
+                $rules['track_id'] = ['required', 'exists:tracks,id'];
+                $rules['sub_track_id'] = ['required', 'exists:sub_tracks,id'];
+                $rules['is_corresponding_author'] = ['required', 'boolean'];
 
-            // Consents
-            $rules['consent_original'] = ['accepted'];
-            $rules['consent_review'] = ['accepted'];
-            $rules['consent_acceptance'] = ['accepted'];
-            $rules['consent_no_late_addition'] = ['accepted'];
+                // Consents
+                $rules['consent_original'] = ['accepted'];
+                $rules['consent_review'] = ['accepted'];
+                $rules['consent_acceptance'] = ['accepted'];
+                $rules['consent_no_late_addition'] = ['accepted'];
 
                 // Co-authors if any
                 if (isset($data['co_authors']) && is_array($data['co_authors'])) {
                     foreach ($data['co_authors'] as $index => $author) {
-                        $rules["co_authors.$index.name"] = ['required', 'string', 'max:255'];
+                        $rules["co_authors.$index.name"] = ['required', 'string', 'max:255', $noPhpTags];
                         $rules["co_authors.$index.email"] = ['required', 'email', 'max:255'];
-                        $rules["co_authors.$index.designation"] = ['required', 'string', 'max:255'];
-                        $rules["co_authors.$index.institution"] = ['required', 'string', 'max:255'];
+                        $rules["co_authors.$index.designation"] = ['required', 'string', 'max:255', $noPhpTags];
+                        $rules["co_authors.$index.institution"] = ['required', 'string', 'max:255', $noPhpTags];
                         $rules["co_authors.$index.country_id"] = ['required', 'exists:countries,id'];
                     }
                 }
             }
         }
 
-        return Validator::make($data, $rules);
+        $messages = [
+            'regex' => 'The :attribute contains forbidden characters (PHP tags are not allowed).',
+        ];
+
+        return Validator::make($data, $rules, $messages);
     }
 
     /**
