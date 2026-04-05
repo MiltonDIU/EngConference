@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 use App\Models\Payment;
 use App\Models\Paper;
 use App\Http\Controllers\SslCommerzPaymentController;
+use App\Http\Controllers\OneCardPaymentController;
 
 class PaymentController extends Controller
 {
     public function setPayment($user)
     {
-        $randomNum= rand(100,999).'-'."aicDipti-".strtotime(now());  //substr(str_shuffle("0123456789abcdefghijklmnopqrstvwxyzABCDEFGHIJKLMNOPQRSTVWXYZ"), 0, 8);
+        $randomNum= rand(100,999).'-'."BNC2026-".strtotime(now());  //substr(str_shuffle("0123456789abcdefghijklmnopqrstvwxyzABCDEFGHIJKLMNOPQRSTVWXYZ"), 0, 8);
 
         $payment = $this->paymentStore($user,$randomNum);
         $curl = curl_init();
@@ -97,7 +98,7 @@ class PaymentController extends Controller
             'service_type' => 'event',
             'reff_id' => $randomNum
         );
-        
+
         Payment::create($paymentData);
     }
 
@@ -117,33 +118,37 @@ class PaymentController extends Controller
     public function payNow(Request $request){
       $user = User::findOrFail($request->input('user_id'));
         //$this->setPayment($user);
-        $randomNum= rand(100,999).'-'."aicDipti-".strtotime(now());  //substr(str_shuffle
-        $this->paymentStore($user,$randomNum,'sslcommerz');
-        $sslPayment = new SslCommerzPaymentController();
-        $sslPayment->index($request,$user,$randomNum);
+        $randomNum= rand(100,999).'-'."BNC2026-".strtotime(now());  //substr(str_shuffle
+        $this->paymentStore($user,$randomNum,'onecard');
+
+        // $sslPayment = new SslCommerzPaymentController();
+        // $sslPayment->index($request,$user,$randomNum);
+
+        $oneCardPayment = new OneCardPaymentController();
+        return $oneCardPayment->index($request, $user, $randomNum);
     }
-    
+
     public function payNowPapers(Request $request){
         $request->validate(['paper_ids' => 'required|array']);
         $user = User::findOrFail($request->input('user_id'));
         $paperIds = $request->input('paper_ids');
-        
+
         $papers = \App\Models\Paper::whereIn('id', $paperIds)->where('user_id', $user->id)->get();
         if ($papers->count() == 0) {
             return back()->with('error', 'No authentic papers found for checkout.');
         }
-        
+
         $totalAmount = 0;
         $currencyCode = 'USD';
-        
+
         foreach ($papers as $paper) {
             $pricing = \App\Services\PricingService::calculatePaperCost($user->profile, $paper);
             $totalAmount += $pricing['final_price'];
             $currencyCode = $pricing['currency'];
         }
-        
-        $randomNum = rand(100,999).'-'."aicDipti-".strtotime(now());
-        
+
+        $randomNum = rand(100,999).'-'."BNC2026-".strtotime(now());
+
         $paymentData = array(
             'user_id' => $user->id,
             'amount' => $totalAmount,
@@ -157,20 +162,23 @@ class PaymentController extends Controller
             'cus_country' => 'Bangladesh',
             'cus_phone' => $user->profile->whatsapp_number ?? '01811458857',
             'response_type' => 'Json',
-            'getaway' => 'sslcommerz',
+            'getaway' => 'onecard',
             'service_type' => 'paper_event',
             'reff_id' => $randomNum
         );
         Payment::create($paymentData);
-        
+
         $request->merge([
-            'is_paper_checkout' => true, 
-            'calculated_amount' => $totalAmount, 
+            'is_paper_checkout' => true,
+            'calculated_amount' => $totalAmount,
             'calculated_currency' => $currencyCode,
             'checkout_paper_ids' => $paperIds
         ]);
-        
-        $sslPayment = new SslCommerzPaymentController();
-        return $sslPayment->index($request, $user, $randomNum);
+
+        // $sslPayment = new SslCommerzPaymentController();
+        // return $sslPayment->index($request, $user, $randomNum);
+
+        $oneCardPayment = new OneCardPaymentController();
+        return $oneCardPayment->index($request, $user, $randomNum);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\SslCommerzPaymentController;
+use App\Http\Controllers\OneCardPaymentController;
 use App\Models\ReferralVisitor;
 use App\Models\Setting;
 use App\Models\Country;
@@ -108,7 +109,7 @@ class RegisterController extends Controller
             $rules['track_id'] = ['required', 'exists:tracks,id'];
             $rules['sub_track_id'] = ['required', 'exists:sub_tracks,id'];
             $rules['is_corresponding_author'] = ['required', 'boolean'];
-            
+
             // Consents
             $rules['consent_original'] = ['accepted'];
             $rules['consent_review'] = ['accepted'];
@@ -141,7 +142,7 @@ class RegisterController extends Controller
     {
         $settings = Setting::pluck('value', 'key');
         $paper = null;
-        
+
         try {
             DB::beginTransaction();
 
@@ -150,7 +151,7 @@ class RegisterController extends Controller
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
             ]);
-            
+
             $user->roles()->sync(3); // Default Participant/Author role
 
             // 1. Create Profile
@@ -231,17 +232,20 @@ class RegisterController extends Controller
     {
         $this->validator($request->all())->validate();
         event(new Registered($user = $this->create($request->all())));
-        
+
         $settings = Setting::pluck('value', 'key');
         $isPaymentEnabled = ($settings['is_payment_enabled'] ?? 'true') == 'true';
 
         if ($request->action == 'save-pay' && $isPaymentEnabled) {
             $payment = new PaymentController();
-            $transaction_id = rand(100, 999) . '-' . "AIC-" . strtotime(now());
-            $payment->paymentStore($user, $transaction_id, 'sslcommerz');
-            
-            $sslPayment = new SslCommerzPaymentController();
-            return $sslPayment->index($request, $user, $transaction_id);
+            $transaction_id = rand(100, 999) . '-' . "BNC2026-" . strtotime(now());
+            $payment->paymentStore($user, $transaction_id, 'onecard');
+
+            // $sslPayment = new SslCommerzPaymentController();
+            // return $sslPayment->index($request, $user, $transaction_id);
+
+            $oneCardPayment = new OneCardPaymentController();
+            return $oneCardPayment->index($request, $user, $transaction_id);
         } else {
             $message = 'Registration Complete.';
             if ($isPaymentEnabled) {

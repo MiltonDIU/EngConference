@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\CustomMailController;
 use App\Http\Controllers\Admin\MailController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\SslCommerzPaymentController;
+use App\Http\Controllers\OneCardPaymentController;
 
 use App\Http\Controllers\Admin\BlogCategoriesController;
 use App\Http\Controllers\Admin\TagsController;
@@ -85,18 +86,24 @@ Route::get('/generate_ids', [HomeController::class, 'generateIds'])->name('gener
 Route::get('/generate_ids/{id}', [HomeController::class, 'generateIds'])->name('generateIds');
 
 // SSLCOMMERZ Start
-Route::get('/example1', [SslCommerzPaymentController::class, 'exampleEasyCheckout']);
-Route::get('/example2', [SslCommerzPaymentController::class, 'exampleHostedCheckout']);
+// Route::get('/example1', [SslCommerzPaymentController::class, 'exampleEasyCheckout']);
+// Route::get('/example2', [SslCommerzPaymentController::class, 'exampleHostedCheckout']);
 
-Route::post('/pay', [SslCommerzPaymentController::class, 'index']);
-Route::post('/pay-via-ajax', [SslCommerzPaymentController::class, 'payViaAjax']);
+// Route::post('/pay', [SslCommerzPaymentController::class, 'index']);
+// Route::post('/pay-via-ajax', [SslCommerzPaymentController::class, 'payViaAjax']);
 
-Route::post('/success', [SslCommerzPaymentController::class, 'success']);
-Route::post('/fail', [SslCommerzPaymentController::class, 'fail']);
-Route::post('/cancel', [SslCommerzPaymentController::class, 'cancel']);
+// Route::post('/success', [SslCommerzPaymentController::class, 'success']);
+// Route::post('/fail', [SslCommerzPaymentController::class, 'fail']);
+// Route::post('/cancel', [SslCommerzPaymentController::class, 'cancel']);
 
-Route::post('/ipn', [SslCommerzPaymentController::class, 'ipn']);
+// Route::post('/ipn', [SslCommerzPaymentController::class, 'ipn']);
 //SSLCOMMERZ END
+
+// OneCard Start
+Route::post('/onecard/pay', [OneCardPaymentController::class, 'index'])->name('onecard.pay');
+Route::post('/onecard/success', [OneCardPaymentController::class, 'success'])->name('onecard.success');
+Route::get('/onecard/redirect', [OneCardPaymentController::class, 'redirect'])->name('onecard.redirect');
+// OneCard END
 
 // success
 Route::get('/success/{ord_token}', [HomeController::class, 'success'])->name('success');

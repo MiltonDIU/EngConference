@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             $table->text('paper_ids')->nullable()->after('transaction_id')->comment('JSON encoded array of paid paper IDs');
+            $table->timestamps();
         });
     }
 

@@ -126,14 +126,14 @@
                         </div>
                     </div>
 
-{{--                    <form action="{{ route('payNowPapers') }}" method="POST">--}}
-{{--                        @csrf--}}
-{{--                        <input type="hidden" name="user_id" id="modal-form-user-id">--}}
-{{--                        <input type="hidden" name="paper_ids[]" id="modal-form-paper-id">--}}
-{{--                        <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">--}}
-{{--                            <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout--}}
-{{--                        </button>--}}
-{{--                    </form>--}}
+                    <form action="{{ route('payNowPapers') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="user_id" id="modal-form-user-id">
+                        <input type="hidden" name="paper_ids[]" id="modal-form-paper-id">
+                        <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">
+                            <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
+                        </button>
+                    </form>
                 </div>
                 </div>
             </div>

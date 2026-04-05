@@ -133,7 +133,7 @@
                                     </button>
                                 </form>
                                 <p class="text-center mt-3 small text-muted">
-                                    <i class="fas fa-shield-alt mr-1"></i> Your payment is secured via SSLCommerz
+                                    <i class="fas fa-shield-alt mr-1"></i> Your payment is secured via OneCard
                                 </p>
                             </div>
                         </div>
@@ -225,16 +225,16 @@
                                     </table>
                                 </div>
 
-{{--                                <form action="{{ route('payNowPapers') }}" method="POST">--}}
-{{--                                    @csrf--}}
-{{--                                    <input type="hidden" name="user_id" value="{{ auth()->id() }}">--}}
-{{--                                    @foreach($unpaidPapers as $up)--}}
-{{--                                        <input type="hidden" name="paper_ids[]" value="{{ $up->id }}">--}}
-{{--                                    @endforeach--}}
-{{--                                    <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">--}}
-{{--                                        <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout--}}
-{{--                                    </button>--}}
-{{--                                </form>--}}
+                                <form action="{{ route('payNowPapers') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+                                    @foreach($unpaidPapers as $up)
+                                        <input type="hidden" name="paper_ids[]" value="{{ $up->id }}">
+                                    @endforeach
+                                    <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">
+                                        <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
