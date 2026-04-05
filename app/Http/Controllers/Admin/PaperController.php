@@ -67,7 +67,6 @@ class PaperController extends Controller
                                 <a href="'.$viewRoute.'" class="btn btn-sm btn-white border text-primary" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <!--'.$editBtn.'-->
                                 '.$payBtn.'
                             </div>';
                 })
@@ -121,37 +120,52 @@ class PaperController extends Controller
     public function getPaperPricing(Paper $paper)
     {
         $user = Auth::user();
-        if ($user->roles->contains('id', 3) && $paper->user_id !== $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if ($user->roles->contains('id', 3) && $paper->user_id != $user->id) {
+            return response()->json(['error' => 'Unauthorized access to this paper.'], 403);
         }
 
-        $pricing = \App\Services\PricingService::calculatePaperCost($user->profile, $paper);
-        $authors = $paper->authors->map(function($author) {
-            return [
-                'name' => $author->name,
-                'designation' => $author->designation
-            ];
-        });
+        if (!$user->profile) {
+            Log::warning('Paper pricing failed: Profile not found for User ID ' . $user->id);
+            return response()->json(['error' => 'Your profile details are missing. Please complete your profile first.'], 422);
+        }
 
-        return response()->json([
-            'submission_id' => $paper->submission_id,
-            'pricing' => $pricing,
-            'authors' => $authors,
-            'paper_id' => $paper->id,
-            'user_id' => $user->id
-        ]);
+        try {
+            $pricing = \App\Services\PricingService::calculatePaperCost($user->profile, $paper);
+            $authors = $paper->authors->map(function($author) {
+                return [
+                    'name' => $author->name,
+                    'designation' => $author->designation
+                ];
+            });
+
+            return response()->json([
+                'submission_id' => $paper->submission_id,
+                'pricing' => $pricing,
+                'authors' => $authors,
+                'paper_id' => $paper->id,
+                'user_id' => $user->id
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Paper pricing calculation error: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'paper_id' => $paper->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Failed to calculate pricing. Details: ' . $e->getMessage()], 500);
+        }
     }
 
     public function show(Paper $paper)
     {
         $user = Auth::user();
-
         // Access check: Participant can only see their own paper
         if ($user->roles->contains('id', 3)) {
-            if ($paper->user_id !== $user->id) {
+
+            if ($paper->user_id != $user->id) {
                 abort(403);
             }
         } else {
+            dd('test');
             abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         }
 

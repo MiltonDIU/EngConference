@@ -31,6 +31,9 @@ class Paper extends Model
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'user_id' => 'integer',
+        'payment_status' => 'integer',
+        'has_multiple_authors' => 'boolean',
     ];
 
     public function user()

@@ -7,7 +7,8 @@
                 <div class="container">
                     <div class="section-header">
                         <h3>Register Now</h3>
-                        <p>Registration Form</p>
+                        <p style="color: red">**Notice:** This registration form is currently under testing. Please do not submit any actual registration information at this time, as all submitted data will be deleted. The official registration will open soon.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -65,14 +66,59 @@
                         <div class="row">
                             <div class="col-md-5 line">
                                 <div class="bg-color">
-                                    <h4><strong> {!! $settings['title'] ?? 'Conference Title' !!}</strong></h4>
+{{--                                    <h4><strong> {!! $settings['title'] ?? 'Conference Title' !!}</strong></h4>--}}
+{{--                                    <span class="main-title">International Conference on</span>--}}
+{{--                                    <img src="{{ asset('/') }}img/eng-con_logo.png">--}}
+                                    <span class="second-title">International Conference on Beyond Nature and Culture </span>
+                                    <span class="sub-title">Planetarity Precarity in Literary-Cultural-Linguistic Representations</span>
+
+
                                     <div><img width="20px;" src="{{ asset('/') }}img/calendar.png"> {!! $settings['about_when'] ?? '' !!} </div>
                                     <div><img width="20px;" src="{{ asset('/') }}img/clock.png"> 08:30 AM - 06:00 PM</div>
                                     <div style="color:#000000;"><img width="20px;" src="{{ asset('/') }}img/location.png">Location: {{ $settings['about_where'] ?? '' }}</div>
                                     <br/>
                                     <div class="fee-information">
-                                        <div><strong>Regular Fee: {{ $settings['usd_regular_price'] ?? '0' }} USD / {{ $settings['bdt_regular_price'] ?? '0' }} BDT</strong></div>
-                                        <div><strong>Early Bird: {{ $settings['usd_earlybird_price'] ?? '0' }} USD / {{ $settings['bdt_earlybird_price'] ?? '0' }} BDT</strong></div>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm fee-table shadow-sm text-center">
+                                                <thead>
+                                                    <tr>
+                                                        <th rowspan="2" style="vertical-align: middle;">Currency</th>
+                                                        <th colspan="2" class="bg-light">Author</th>
+                                                        <th rowspan="2" style="vertical-align: middle;">Participant</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Early Bird</th>
+                                                        <th>Regular</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td><strong>USD</strong></td>
+                                                        <td class="text-primary font-weight-bold">{{ $settings['usd_earlybird_price'] ?? '0' }}</td>
+                                                        <td>{{ $settings['usd_regular_price'] ?? '0' }}</td>
+                                                        <td class="text-success font-weight-bold">{{ $settings['usd_participant_price'] ?? '0' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong>BDT</strong></td>
+                                                        <td class="text-primary font-weight-bold">{{ $settings['bdt_earlybird_price'] ?? '0' }}</td>
+                                                        <td>{{ $settings['bdt_regular_price'] ?? '0' }}</td>
+                                                        <td class="text-success font-weight-bold">{{ $settings['bdt_participant_price'] ?? '0' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong>INR</strong></td>
+                                                        <td class="text-primary font-weight-bold">{{ $settings['inr_earlybird_price'] ?? '0' }}</td>
+                                                        <td>{{ $settings['inr_regular_price'] ?? '0' }}</td>
+                                                        <td class="text-success font-weight-bold">{{ $settings['inr_participant_price'] ?? '0' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong>EUR</strong></td>
+                                                        <td class="text-primary font-weight-bold">{{ $settings['eur_earlybird_price'] ?? '0' }}</td>
+                                                        <td>{{ $settings['eur_regular_price'] ?? '0' }}</td>
+                                                        <td class="text-success font-weight-bold">{{ $settings['eur_participant_price'] ?? '0' }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                         <hr>
                                         <div><strong>Reg. Starting: {{ $eventStartDate->isoFormat('D MMMM YYYY HH:mm:ss') }} </strong></div>
                                         <div><strong>Early Deadline: {{ $eventEarlyRegDate->isoFormat('D MMMM YYYY HH:mm:ss') }} </strong></div>
@@ -80,19 +126,19 @@
                                     </div>
                                     <br/>
 
-                                    <h5><strong>Participation Benefits</strong> </h5>
-                                    <ul>
-                                        @isset($aminities)
-                                            @foreach($aminities as $aminity)
-                                                <li>{{ $aminity->name }}</li>
-                                            @endforeach
-                                        @endisset
-                                    </ul>
+{{--                                    <h5><strong>Participation Benefits</strong> </h5>--}}
+{{--                                    <ul>--}}
+{{--                                        @isset($aminities)--}}
+{{--                                            @foreach($aminities as $aminity)--}}
+{{--                                                <li>{{ $aminity->name }}</li>--}}
+{{--                                            @endforeach--}}
+{{--                                        @endisset--}}
+{{--                                    </ul>--}}
 
-                                    <hr>
-                                    <div style="text-align:justify;">
-                                        {!! $settings['about_description'] ?? '' !!}
-                                    </div>
+{{--                                    <hr>--}}
+{{--                                    <div style="text-align:justify;">--}}
+{{--                                        {!! $settings['about_description'] ?? '' !!}--}}
+{{--                                    </div>--}}
                                 </div>
                             </div>
 
@@ -194,7 +240,7 @@
                                                 <input class="form-check-input" type="radio" name="is_author" id="submit_abstract" value="1" {{ old('is_author') == '1' ? 'checked' : '' }} onchange="toggleAbstractSection()">
                                                 <label class="form-check-label" for="submit_abstract">
                                                     @if(($settings['is_abstract_submission_open'] ?? 'true') == 'true')
-                                                        Submit an Abstract (No initial payment)
+                                                        Submit an Abstract (Payment Required after Abstract Confirmation)
                                                     @else
                                                         Register as Paper Author (Submit abstract later after email verification)
                                                     @endif
@@ -515,5 +561,79 @@
             font-size: 15px;
             line-height: 1.8;
         }
+        .fee-table {
+            background: #fff;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .fee-table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #007bff;
+            color: #333;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 10px;
+        }
+        .fee-table td {
+            padding: 10px;
+            vertical-align: middle;
+            border-top: 1px solid #eee;
+        }
+        .fee-table tbody tr:hover {
+            background-color: #f0f7ff;
+        }
+
+
+        /*/*/
+        .main-title {
+            display: block;
+            font-size: 24px;
+            color: #000000;
+            font-weight: 700;
+            line-height: normal;
+            font-family: 'edo', sans-serif;
+        }
+        .second-title {
+            display: block;
+            font-family: 'edo', sans-serif;
+            font-size: 20px;
+            color: black;
+            line-height: normal;
+            margin: 10px 0;
+
+
+        }
+        .sub-title {
+            display: block;
+            font-family: 'GlacialIndifference-Regular', sans-serif;
+            font-size: 18px;
+            color: #000000;
+            line-height: normal;
+            font-weight: bold;
+            padding-bottom: 35px;
+        }
+
+        @font-face {
+            font-family: 'edo';
+            src: url('{{"fonts/edo.ttf"}}') format('truetype');
+        }
+        @font-face {
+            font-family: 'GlacialIndifference-Regular';
+            src: url('{{"fonts/GlacialIndifference-Regular.otf"}}') format('truetype');
+        }
+
+
+
+
+
+
     </style>
+
+
 @endpush

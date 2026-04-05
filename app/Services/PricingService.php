@@ -27,12 +27,22 @@ class PricingService
         
         // 2. Determine if earlybird or regular
         $currentDate = Carbon::now();
-        $earlyBirdDateLimit = Carbon::parse($settings['early_registration_last_date'] ?? '2000-01-01');
+        $earlyBirdSetting = $settings['early_registration_last_date'] ?? null;
+        
+        try {
+            $earlyBirdDateLimit = $earlyBirdSetting ? Carbon::parse($earlyBirdSetting) : Carbon::parse('2000-01-01');
+        } catch (\Exception $e) {
+            \Log::warning("PricingService: Invalid early_registration_last_date format: '{$earlyBirdSetting}'. Falling back to regular price.");
+            $earlyBirdDateLimit = Carbon::parse('2000-01-01'); // Force regular
+        }
         
         $stage = $earlyBirdDateLimit->gt($currentDate) ? 'earlybird' : 'regular';
         
         // 3. Construct setting key
         $settingKey = "{$prefix}_{$stage}_price";
+        if (!isset($settings[$settingKey])) {
+            \Log::error("PricingService: Missing pricing setting key: '{$settingKey}'");
+        }
         $basePrice = (float) ($settings[$settingKey] ?? 0);
         
         // 4. Check for special domain discount (DEN Users)
@@ -95,6 +105,9 @@ class PricingService
         $prefix = self::determineCurrencyPrefix($countryName);
         
         $settingKey = "{$prefix}_participant_price";
+        if (!isset($settings[$settingKey])) {
+            \Log::error("PricingService: Missing participant pricing setting key: '{$settingKey}'");
+        }
         $price = (float) ($settings[$settingKey] ?? 0);
         
         $currencyCode = strtoupper($prefix);
@@ -149,7 +162,11 @@ class PricingService
      */
     public static function determineCurrencyPrefix($countryName)
     {
-        $countryName = strtolower(trim($countryName));
+        $countryName = strtolower(trim($countryName ?? ''));
+        
+        if (empty($countryName)) {
+            return 'usd';
+        }
         
         if ($countryName === 'bangladesh') {
             return 'bdt';
