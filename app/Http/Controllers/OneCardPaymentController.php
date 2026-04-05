@@ -118,12 +118,15 @@ class OneCardPaymentController extends Controller
             $result = $validationResponse->json();
             
             if (isset($result['message']) && $result['message'] == 'success' && $result['data']['status'] == 'VALIDATED') {
-                $this->processSuccessfulPayment($reff_id, $result['data']);
+                $this->processSuccessfulPayment($reff_id, $result);
                 return response()->json(['message' => 'success']);
+            } else {
+                $this->updateStatus($reff_id, 'Failed', 2, $result);
             }
+        } else {
+            Log::error('OneCard Push Validation Failed for ' . $reff_id . ': ' . $validationResponse->body());
         }
-
-        Log::error('OneCard Validation Failed for ' . $reff_id . ': ' . $validationResponse->body());
+        
         return response()->json(['message' => 'failed']);
     }
 
@@ -153,15 +156,18 @@ class OneCardPaymentController extends Controller
                 $status = $result['data']['status'] ?? '';
 
                 if (isset($result['message']) && $result['message'] == 'success' && $status == 'VALIDATED') {
-                    $this->processSuccessfulPayment($reff_id, $result['data']);
+                    $this->processSuccessfulPayment($reff_id, $result);
                     return redirect()->route('success')->with('message', 'Transaction is successfully Completed');
                 } elseif ($status == 'CANCELLED') {
-                    $this->updateStatus($reff_id, 'Canceled', 3);
+                    $this->updateStatus($reff_id, 'Canceled', 3, $result);
                     return redirect()->route('cancel')->with('message', 'Your payment has been canceled');
+                } else {
+                    $this->updateStatus($reff_id, 'Failed', 2, $result);
                 }
+            } else {
+                $this->updateStatus($reff_id, 'Failed', 2, ['error' => 'Validation request failed', 'body' => $validationResponse->body()]);
             }
             
-            $this->updateStatus($reff_id, 'Failed', 2);
             return redirect()->route('fail')->with('message', 'Payment verification failed or was canceled.');
         }
     }
@@ -169,10 +175,16 @@ class OneCardPaymentController extends Controller
     /**
      * Update order and payment status for non-success cases.
      */
-    protected function updateStatus($tran_id, $orderStatus, $paymentStatus)
+    protected function updateStatus($tran_id, $orderStatus, $paymentStatus, $data = null)
     {
-        DB::table('orders')->where('transaction_id', $tran_id)->update(['status' => $orderStatus]);
-        DB::table('payments')->where('reff_id', $tran_id)->update(['status' => $paymentStatus]);
+        $message = $data ? json_encode($data) : null;
+        
+        DB::table('orders')->where('transaction_id', $tran_id)->update(['status' => $orderStatus, 'updated_at' => now()]);
+        DB::table('payments')->where('reff_id', $tran_id)->update([
+            'status' => $paymentStatus, 
+            'message' => $message,
+            'updated_at' => now()
+        ]);
         
         $orderPayment = Payment::where('reff_id', $tran_id)->first();
         if ($orderPayment && $orderPayment->user && $orderPayment->user->profile) {
@@ -183,9 +195,11 @@ class OneCardPaymentController extends Controller
     /**
      * Shared logic for success processing.
      */
-    protected function processSuccessfulPayment($tran_id, $data)
+    protected function processSuccessfulPayment($tran_id, $fullResponse)
     {
         $order = DB::table('orders')->where('transaction_id', $tran_id)->first();
+        $data = $fullResponse['data'];
+        $message = json_encode($fullResponse);
         
         if (!$order || $order->status == 'Processing' || $order->status == 'Complete') {
             return; // Already processed
@@ -197,12 +211,16 @@ class OneCardPaymentController extends Controller
         // Update orders table
         DB::table('orders')
             ->where('transaction_id', $tran_id)
-            ->update(['status' => 'Processing']);
+            ->update(['status' => 'Processing', 'updated_at' => now()]);
 
         // Update payments table
         DB::table('payments')
             ->where('reff_id', $tran_id)
-            ->update(['status' => 1]);
+            ->update([
+                'status' => 1,
+                'message' => $message,
+                'updated_at' => now()
+            ]);
 
         $orderPayment = Payment::where('reff_id', $tran_id)->first();
         if (!$orderPayment) return;
