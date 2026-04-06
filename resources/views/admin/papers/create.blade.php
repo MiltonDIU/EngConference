@@ -8,9 +8,9 @@
     <div class="card-body">
         <form method="POST" action="{{ route('papers.store') }}" enctype="multipart/form-data">
             @csrf
-            
+
             <h4 class="mb-4 text-primary"><strong>Abstract Submission Details</strong></h4>
-            
+
             <div class="form-group">
                 <label class="required" for="paper_title">Paper Title*</label>
                 <input class="form-control {{ $errors->has('paper_title') ? 'is-invalid' : '' }}" type="text" name="paper_title" id="paper_title" value="{{ old('paper_title', '') }}" required>
@@ -202,12 +202,12 @@
         const input = document.getElementById(inputId);
         const counter = document.getElementById(countId);
         const display = document.getElementById(inputId + '_count_display');
-        
+
         const keywords = input.value ? input.value.split(',').map(k => k.trim()).filter(k => k !== '') : [];
         const count = keywords.length;
-        
+
         counter.innerText = count;
-        
+
         if (count < 3 || count > 5) {
             display.classList.remove('text-muted');
             display.classList.add('text-danger', 'font-weight-bold');
@@ -229,7 +229,7 @@
             email: @json(Auth::user()->email ?? ''),
             designation: @json(Auth::user()->profile->designation ?? ''),
             department: @json(Auth::user()->profile->department ?? ''),
-            institution: @json(Auth::user()->profile->organization ?? ''),
+            institution: @json(Auth::user()->profile->institution ?? ''),
             country_id: @json(Auth::user()->profile->country_id ?? '')
         };
         addCoAuthor(currentUserData, true);
@@ -239,7 +239,7 @@
         const container = document.getElementById('co_authors_container');
         const template = document.getElementById('co_author_template').innerHTML;
         const html = template.replace(/{index}/g, coAuthorIndex);
-        
+
         const div = document.createElement('div');
         div.innerHTML = html;
 
@@ -259,14 +259,14 @@
             div.querySelector(`input[name="co_authors[${coAuthorIndex}][designation]"]`).value = data.designation || '';
             div.querySelector(`input[name="co_authors[${coAuthorIndex}][department]"]`).value = data.department || '';
             div.querySelector(`input[name="co_authors[${coAuthorIndex}][institution]"]`).value = data.institution || '';
-            
+
             if (data.country_id) {
                 const countrySelect = div.querySelector(`select[name="co_authors[${coAuthorIndex}][country_id]"]`);
                 const option = Array.from(countrySelect.options).find(opt => opt.value == data.country_id);
                 if (option) option.selected = true;
             }
         }
-        
+
         container.appendChild(div.firstElementChild);
         coAuthorIndex++;
     }

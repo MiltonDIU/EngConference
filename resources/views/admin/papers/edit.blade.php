@@ -9,9 +9,9 @@
         <form method="POST" action="{{ route('papers.update', [$paper->id]) }}" enctype="multipart/form-data">
             @method('PUT')
             @csrf
-            
+
             <h4 class="mb-4 text-primary"><strong>Abstract Submission Details</strong></h4>
-            
+
             <div class="form-group">
                 <label class="required" for="paper_title">Paper Title*</label>
                 <input class="form-control {{ $errors->has('paper_title') ? 'is-invalid' : '' }}" type="text" name="paper_title" id="paper_title" value="{{ old('paper_title', $paper->title) }}" required>
@@ -94,17 +94,17 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0"><strong>Co-Authors (If any)</strong></h5>
             </div>
-            
+
             <div id="co_authors_container">
-                @php 
-                    $coAuthorIndex = 0; 
+                @php
+                    $coAuthorIndex = 0;
                     $primaryAuthorFound = false;
                     $submitterEmail = $paper->user->email ?? '';
                 @endphp
-                
+
                 {{-- Loop through all existing DB authors --}}
                 @foreach($paper->authors as $index => $author)
-                    @php 
+                    @php
                         $isPrimary = ($author->email === $submitterEmail);
                         if ($isPrimary) $primaryAuthorFound = true;
                     @endphp
@@ -148,7 +148,7 @@
                     </div>
                     @php $coAuthorIndex++; @endphp
                 @endforeach
-                
+
                 {{-- Fallback: If DB is missing the primary author, ensure they are still rendered --}}
                 @if(!$primaryAuthorFound)
                     <div class="co-author-entry border p-3 mb-3 rounded position-relative bg-white shadow-sm">
@@ -174,7 +174,7 @@
                                 <input type="text" name="co_authors[{{ $coAuthorIndex }}][department]" class="form-control form-control-sm" placeholder="Department*" value="{{ $paper->user->profile->department ?? '' }}" required>
                             </div>
                             <div class="col-md-3 mb-2">
-                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][institution]" class="form-control form-control-sm" placeholder="Institution*" value="{{ $paper->user->profile->organization ?? '' }}" required>
+                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][institution]" class="form-control form-control-sm" placeholder="Institution*" value="{{ $paper->user->profile->institution ?? '' }}" required>
                             </div>
                             <div class="col-md-3 mb-2">
                                 <select name="co_authors[{{ $coAuthorIndex }}][country_id]" class="form-control form-control-sm" required>
@@ -278,7 +278,7 @@
         const text = document.getElementById('abstract_text').value.trim();
         const display = document.getElementById('word_count_display');
         const counter = document.getElementById('word_count');
-        
+
         let count = 0;
         if (text.length > 0) {
             count = text.split(/\s+/).length;
@@ -299,12 +299,12 @@
         const input = document.getElementById(inputId);
         const counter = document.getElementById(countId);
         const display = document.getElementById(inputId + '_count_display');
-        
+
         const keywords = input.value ? input.value.split(',').map(k => k.trim()).filter(k => k !== '') : [];
         const count = keywords.length;
-        
+
         counter.innerText = count;
-        
+
         if (count < 3 || count > 5) {
             display.classList.remove('text-muted');
             display.classList.add('text-danger', 'font-weight-bold');
@@ -325,7 +325,7 @@
         const container = document.getElementById('co_authors_container');
         const template = document.getElementById('co_author_template').innerHTML;
         const html = template.replace(/{index}/g, coAuthorIndex);
-        
+
         const div = document.createElement('div');
         div.innerHTML = html;
 
@@ -340,14 +340,14 @@
             div.querySelector(`input[name="co_authors[${coAuthorIndex}][designation]"]`).value = data.designation || '';
             div.querySelector(`input[name="co_authors[${coAuthorIndex}][department]"]`).value = data.department || '';
             div.querySelector(`input[name="co_authors[${coAuthorIndex}][institution]"]`).value = data.institution || '';
-            
+
             if (data.country_id) {
                 const countrySelect = div.querySelector(`select[name="co_authors[${coAuthorIndex}][country_id]"]`);
                 const option = Array.from(countrySelect.options).find(opt => opt.value == data.country_id);
                 if (option) option.selected = true;
             }
         }
-        
+
         container.appendChild(div.firstElementChild);
         coAuthorIndex++;
     }
