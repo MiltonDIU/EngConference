@@ -428,6 +428,26 @@
         let coAuthorIndex = {{ old('co_authors') ? count(old('co_authors')) : 0 }};
         const tracks = @json($tracks);
 
+        function countWords() {
+            const textarea = document.getElementById('abstract_text');
+            if (!textarea) return;
+            const counter = document.getElementById('word_count');
+            const display = document.getElementById('word_count_display');
+            
+            const text = textarea.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            
+            counter.innerText = words;
+            
+            if (words > 300) {
+                display.classList.remove('text-muted');
+                display.classList.add('text-danger', 'font-weight-bold');
+            } else {
+                display.classList.remove('text-danger', 'font-weight-bold');
+                display.classList.add('text-muted');
+            }
+        }
+
         function countKeywords(inputId, countId) {
             const input = document.getElementById(inputId);
             const counter = document.getElementById(countId);

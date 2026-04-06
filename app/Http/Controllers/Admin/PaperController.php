@@ -165,7 +165,7 @@ class PaperController extends Controller
                 abort(403);
             }
         } else {
-            dd('test');
+
             abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         }
 

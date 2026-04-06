@@ -192,6 +192,8 @@ class RegisterController extends Controller
 
             // 2. Handle Paper Submission if Author
             if ($profile->is_author && ($settings['is_abstract_submission_open'] ?? 'true') == 'true') {
+                $hasCoAuthors = isset($data['co_authors']) && is_array($data['co_authors']) && count($data['co_authors']) > 0;
+
                 $paperData = [
                     'user_id' => $user->id,
                     'submission_id' => \App\Services\IdGeneratorService::generateSubmissionId(),
@@ -201,22 +203,36 @@ class RegisterController extends Controller
                     'track_id' => $data['track_id'] ?? null,
                     'sub_track_id' => $data['sub_track_id'] ?? null,
                     'mode_of_participation' => $data['participation_mode'] ?? 'onsite',
-                    'is_corresponding_author' => $data['is_corresponding_author'] ?? true,
+                    'is_corresponding_author' => $hasCoAuthors ? ($data['is_corresponding_author'] ?? true) : true,
+                    'has_multiple_authors' => $hasCoAuthors,
                     'status' => 'pending',
                     'payment_status' => '0',
                 ];
 
                 $paper = Paper::create($paperData);
 
+                // Add the registering user as the first author
+                $paper->authors()->create([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'designation' => $profile->designation,
+                    'institution' => $profile->institution,
+                    'country_id' => $profile->country_id,
+                    'is_presenting_author' => $hasCoAuthors ? ($data['is_corresponding_author'] ?? true) : true,
+                    'author_order' => 1,
+                ]);
+
                 // Handle Co-authors
-                if (isset($data['co_authors']) && is_array($data['co_authors'])) {
-                    foreach ($data['co_authors'] as $co_author) {
+                if ($hasCoAuthors) {
+                    foreach ($data['co_authors'] as $index => $co_author) {
                         $paper->authors()->create([
                             'name' => $co_author['name'],
                             'email' => $co_author['email'],
                             'designation' => $co_author['designation'],
                             'institution' => $co_author['institution'],
                             'country_id' => $co_author['country_id'],
+                            'is_presenting_author' => false,
+                            'author_order' => $index + 2,
                         ]);
                     }
                 }
