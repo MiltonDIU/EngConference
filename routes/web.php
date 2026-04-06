@@ -331,6 +331,8 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     Route::get('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'create'])->name('papers.submit');
     Route::post('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'store'])->name('papers.store');
     Route::get('papers/{paper}', [App\Http\Controllers\Admin\PaperController::class, 'show'])->name('papers.show');
+    Route::get('papers/{paper}/edit', [App\Http\Controllers\Admin\PaperController::class, 'edit'])->name('papers.edit');
+    Route::put('papers/{paper}', [App\Http\Controllers\Admin\PaperController::class, 'update'])->name('papers.update');
     Route::get('papers/{paper}/pricing', [App\Http\Controllers\Admin\PaperController::class, 'getPaperPricing'])->name('papers.pricing');
 
     // Payments

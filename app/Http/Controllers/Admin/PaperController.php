@@ -54,7 +54,20 @@ class PaperController extends Controller
             return DataTables::of($query)
                 ->addColumn('actions', function ($row) {
                     $viewRoute = route('papers.show', $row->id);
-                    $editBtn = Gate::allows('paper_edit') ? '<a href="#" class="btn btn-sm btn-white border text-info" title="Edit"><i class="fas fa-edit"></i></a>' : '';
+                    $editRoute = route('papers.edit', $row->id);
+
+                    // Show Edit button for authors only if paper is pending
+                    $editBtn = '';
+                    if (Auth::user()->roles->contains('id', 3) && $row->status === 'pending' && $row->user_id === Auth::id()) {
+                        $editBtn = ' <a href="'.$editRoute.'" class="btn btn-sm btn-white border text-info" title="Edit Paper">
+                                        <i class="fas fa-edit"></i>
+                                    </a>';
+                    } elseif (Gate::allows('paper_edit')) {
+                        // For Admin/Others with mass edit permission
+                         $editBtn = ' <a href="'.$editRoute.'" class="btn btn-sm btn-white border text-info" title="Edit Paper">
+                                        <i class="fas fa-edit"></i>
+                                    </a>';
+                    }
 
                     $payBtn = '';
                     if ($row->status === 'approved' && $row->payment_status != '1' && Auth::user()->roles->contains('id', 3)) {
@@ -67,6 +80,7 @@ class PaperController extends Controller
                                 <a href="'.$viewRoute.'" class="btn btn-sm btn-white border text-primary" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                '.$editBtn.'
                                 '.$payBtn.'
                             </div>';
                 })
@@ -266,7 +280,7 @@ class PaperController extends Controller
                 $sequence = intval($matches[1]) + 1;
             }
             $submissionId = sprintf('ABS-%s-%03d', $datePart, $sequence);
-            $hasCoAuthors = $request->has('co_authors') && count($request->co_authors) > 0;
+            $hasCoAuthors = $request->has('co_authors') && count($request->co_authors) > 1;
             $paper = Paper::create([
                 'user_id' => $user->id,
                 'submission_id' => $submissionId,
@@ -280,32 +294,35 @@ class PaperController extends Controller
                 'has_multiple_authors' => $hasCoAuthors,
             ]);
 
-            // Add logged-in user as an author
-            PaperAuthor::create([
-                'paper_id' => $paper->id,
-                'name' => ($profile->first_name ?? '') . ' ' . ($profile->last_name ?? ''),
-                'email' => $user->email,
-                'designation' => $profile->designation ?? 'Author',
-                'institution' => $profile->institution ?? 'N/A',
-                'country_id' => $profile->country_id ?? 1, // Fallback if needed, but should be from profile
-                'is_presenting_author' => $request->is_corresponding_author,
-                'author_order' => 1,
-            ]);
+            $presentingAuthorIndex = $request->presenting_author_index ?? 0;
 
-            // Add co-authors
-            if ($hasCoAuthors) {
-                foreach ($request->co_authors as $index => $coAuthor) {
+            if ($request->has('co_authors') && count($request->co_authors) > 0) {
+                foreach ($request->co_authors as $index => $authorData) {
                     PaperAuthor::create([
                         'paper_id' => $paper->id,
-                        'name' => $coAuthor['name'],
-                        'email' => $coAuthor['email'],
-                        'designation' => $coAuthor['designation'],
-                        'institution' => $coAuthor['institution'],
-                        'country_id' => $coAuthor['country_id'],
-                        'is_presenting_author' => false,
-                        'author_order' => $index + 2,
+                        'name' => $authorData['name'],
+                        'email' => $authorData['email'],
+                        'designation' => $authorData['designation'],
+                        'department' => $authorData['department'] ?? 'N/A',
+                        'institution' => $authorData['institution'],
+                        'country_id' => $authorData['country_id'],
+                        'author_order' => $index + 1,
+                        'is_presenting_author' => ($index == $presentingAuthorIndex) ? 1 : 0,
                     ]);
                 }
+            } else {
+                // Fallback if no authors submitted from frontend
+                PaperAuthor::create([
+                    'paper_id' => $paper->id,
+                    'name' => trim(($profile->first_name ?? '') . ' ' . ($profile->last_name ?? '')) ?: $user->name,
+                    'designation' => $profile->designation ?? null,
+                    'department' => $profile->department ?? null,
+                    'institution' => $profile->institution ?? null,
+                    'country_id' => $profile->country_id ?? null,
+                    'email' => $user->email,
+                    'author_order' => 1,
+                    'is_presenting_author' => 1,
+                ]);
             }
 
             DB::commit();
@@ -332,6 +349,162 @@ class PaperController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return back()->withInput()->with('error', 'Error submitting abstract. Please try again or contact support. Details: ' . $e->getMessage());
+        }
+    }
+
+    public function edit(Paper $paper)
+    {
+        $user = Auth::user();
+
+        // Authorization check
+        if ($user->roles->contains('id', 3)) {
+            if ($paper->user_id !== $user->id || $paper->status !== 'pending') {
+                abort(Response::HTTP_FORBIDDEN, '403 Forbidden - Paper is not editable.');
+            }
+        } else {
+            abort_if(Gate::denies('paper_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        }
+
+        $tracks = Track::with('subTracks')->get();
+        $countries = Country::where('is_active', 1)->orderBy('name', 'asc')->get();
+        $paper->load('authors');
+
+        return view('admin.papers.edit', compact('paper', 'tracks', 'countries'));
+    }
+
+    public function update(Request $request, Paper $paper)
+    {
+        $user = Auth::user();
+
+        // Authorization check
+        if ($user->roles->contains('id', 3)) {
+            if ($paper->user_id !== $user->id || $paper->status !== 'pending') {
+                abort(Response::HTTP_FORBIDDEN, '403 Forbidden - Paper is not editable.');
+            }
+        } else {
+            abort_if(Gate::denies('paper_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        }
+
+        $noPhpTags = 'regex:/^((?!(<\?php|<\?|\?>)).)*$/is';
+
+        $request->validate([
+            'paper_title' => ['required', 'string', 'max:255', $noPhpTags],
+            'abstract_text' => ['required', 'string', $noPhpTags, function ($attribute, $value, $fail) {
+                // Simplified word count logic to match RegisterController logic
+                $wordCount = !empty(trim($value)) ? preg_match_all('/\s+/', trim($value)) + 1 : 0;
+                if ($wordCount > 300) {
+                    $fail('The abstract must not exceed 300 words. (Current count: ' . $wordCount . ')');
+                }
+            }],
+            'keywords' => ['required', 'string', 'max:255', $noPhpTags, function ($attribute, $value, $fail) {
+                $keywords = array_filter(array_map('trim', explode(',', $value)));
+                if (count($keywords) < 3 || count($keywords) > 5) {
+                    $fail('Please provide between 3 and 5 keywords.');
+                }
+            }],
+            'track_id' => 'required|exists:tracks,id',
+            'sub_track_id' => 'required|exists:sub_tracks,id',
+            'is_corresponding_author' => 'required|boolean',
+            'presenting_author_index' => 'nullable|integer',
+            'co_authors' => 'nullable|array',
+            'co_authors.*.id' => 'nullable|integer|exists:paper_authors,id',
+            'co_authors.*.name' => 'required|string|max:255',
+            'co_authors.*.email' => 'required|email|max:255',
+            'co_authors.*.designation' => 'required|string|max:255',
+            'co_authors.*.department' => 'required|string|max:255',
+            'co_authors.*.institution' => 'required|string|max:255',
+            'co_authors.*.country_id' => 'required|exists:countries,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $hasCoAuthors = !empty($request->co_authors) && count($request->co_authors) > 1;
+
+            $paper->update([
+                'title' => $request->paper_title,
+                'abstract' => $request->abstract_text,
+                'keywords' => $request->keywords,
+                'track_id' => $request->track_id,
+                'sub_track_id' => $request->sub_track_id,
+                'is_corresponding_author' => $request->is_corresponding_author,
+                'has_multiple_authors' => $hasCoAuthors,
+            ]);
+
+            $primaryEmail = $paper->user->email;
+            $profile = $paper->user->profile;
+            $incomingIds = [];
+            $orderOffset = 1;
+
+            $presentingAuthorIndex = $request->presenting_author_index ?? 0;
+
+            // 1. Maintain primary author robustly (update if available, create if missing somehow)
+            $primaryAuthorFromForm = collect($request->co_authors ?? [])->firstWhere('email', $primaryEmail);
+            $primaryAuthorIndexInForm = $primaryAuthorFromForm ? array_search((object)$primaryAuthorFromForm, json_decode(json_encode($request->co_authors), true)) : 0;
+
+            $primaryData = [
+                'name' => $primaryAuthorFromForm['name'] ?? trim(($profile->first_name ?? '') . ' ' . ($profile->last_name ?? '')) ?: $paper->user->name,
+                'designation' => $primaryAuthorFromForm['designation'] ?? ($profile->designation ?? 'N/A'),
+                'department' => $primaryAuthorFromForm['department'] ?? ($profile->department ?? 'N/A'),
+                'institution' => $primaryAuthorFromForm['institution'] ?? ($profile->institution ?? 'N/A'),
+                'country_id' => $primaryAuthorFromForm['country_id'] ?? ($profile->country_id ?? 1),
+                'email' => $primaryEmail,
+                'author_order' => $orderOffset++,
+                'is_presenting_author' => ($presentingAuthorIndex == $primaryAuthorIndexInForm) ? 1 : 0,
+            ];
+
+            $primaryAuthorModel = $paper->authors()->where('email', $primaryEmail)->first();
+            if ($primaryAuthorModel) {
+                $primaryAuthorModel->update($primaryData);
+                $incomingIds[] = $primaryAuthorModel->id;
+            } else {
+                $newPrimary = $paper->authors()->create($primaryData);
+                $incomingIds[] = $newPrimary->id;
+            }
+
+            // 2. Sync Co-authors gracefully
+            if (!empty($request->co_authors)) {
+                foreach ($request->co_authors as $index => $authorData) {
+                    if ($authorData['email'] === $primaryEmail) {
+                        continue;
+                    }
+
+                    $coAuthorData = [
+                        'name' => $authorData['name'],
+                        'email' => $authorData['email'],
+                        'designation' => $authorData['designation'],
+                        'department' => $authorData['department'] ?? 'N/A',
+                        'institution' => $authorData['institution'],
+                        'country_id' => $authorData['country_id'],
+                        'author_order' => $orderOffset++,
+                        'is_presenting_author' => ($presentingAuthorIndex == $index) ? 1 : 0,
+                    ];
+
+                    $authorId = $authorData['id'] ?? null;
+                    if ($authorId) {
+                        $existingAuthor = $paper->authors()->find($authorId);
+                        if ($existingAuthor) {
+                            $existingAuthor->update($coAuthorData);
+                            $incomingIds[] = $existingAuthor->id;
+                            continue;
+                        }
+                    }
+
+                    // Create new if no match or no ID provided
+                    $newCoAuthor = $paper->authors()->create($coAuthorData);
+                    $incomingIds[] = $newCoAuthor->id;
+                }
+            }
+
+            // 3. Delete any strictly removed authors from the database (cleanup orphans)
+            $paper->authors()->whereNotIn('id', $incomingIds)->delete();
+            DB::commit();
+
+            return redirect()->route('papers.index')->with('success', 'Paper updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Paper Update Error: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Error updating abstract. Please try again.');
         }
     }
 
