@@ -40,7 +40,7 @@ class PaymentController extends Controller
                 'cus_country' => 'Bangladesh',
                 'cus_phone' => $user->profile->whatsapp_number ?? '01811458857',
                 'response_type' => 'Json',
-                'service_type' => 'event',
+                'service_type' => 'paper_event',
                 'success' => route('successPayment'),
                 'redirect' => route('statusPayment'),
                 'reff_id' => $randomNum
@@ -95,7 +95,7 @@ class PaymentController extends Controller
             'cus_phone' => $user->profile->whatsapp_number ?? '01811458857',
             'response_type' => 'Json',
             'getaway' => $getaway,
-            'service_type' => 'event',
+            'service_type' => 'paper_event',
             'reff_id' => $randomNum
         );
 

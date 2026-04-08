@@ -16,21 +16,20 @@ class IdGeneratorService
      */
     public static function generateRegistrationId()
     {
-        $date = Carbon::now()->format('Ymd');
+        $now = Carbon::now();
+        $date = $now->format('y') . $now->month . $now->day;
         $prefix = 'REG-' . $date . '-';
         
-        // Find the last ID for today to get the highest sequence number
-        $lastProfile = Profile::where('registration_id', 'like', $prefix . '%')
-            ->orderBy('registration_id', 'desc')
+        // Find the absolute last profile to get the highest sequence number regardless of date
+        $lastProfile = Profile::orderBy('id', 'desc')
             ->lockForUpdate()
             ->first();
 
-        if ($lastProfile) {
-            // Extract the number from 'REG-YYYYMMDD-XXX'
-            $lastNumber = (int) substr($lastProfile->registration_id, -3);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
+        $nextNumber = 1;
+        if ($lastProfile && preg_match('/-(\d+)$/', $lastProfile->registration_id, $matches)) {
+            $nextNumber = (int) $matches[1] + 1;
+        } elseif ($lastProfile) {
+            $nextNumber = Profile::count() + 1;
         }
 
         return $prefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
@@ -44,20 +43,20 @@ class IdGeneratorService
      */
     public static function generateSubmissionId()
     {
-        $date = Carbon::now()->format('Ymd');
+        $now = Carbon::now();
+        $date = $now->format('y') . $now->month . $now->day;
         $prefix = 'ABS-' . $date . '-';
 
-        // Find the last submission for today
-        $lastPaper = Paper::where('submission_id', 'like', $prefix . '%')
-            ->orderBy('submission_id', 'desc')
+        // Find the absolute last submission to get the highest sequence number regardless of date
+        $lastPaper = Paper::orderBy('id', 'desc')
             ->lockForUpdate()
             ->first();
 
-        if ($lastPaper) {
-            $lastNumber = (int) substr($lastPaper->submission_id, -3);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
+        $nextNumber = 1;
+        if ($lastPaper && preg_match('/-(\d+)$/', $lastPaper->submission_id, $matches)) {
+            $nextNumber = (int) $matches[1] + 1;
+        } elseif ($lastPaper) {
+            $nextNumber = Paper::count() + 1;
         }
 
         return $prefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);

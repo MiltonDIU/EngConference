@@ -272,14 +272,8 @@ class PaperController extends Controller
         try {
             DB::beginTransaction();
 
-            // Generation Submission ID
-            $datePart = Carbon::now()->format('Ymd');
-            $lastPaper = Paper::whereDate('created_at', Carbon::today())->orderBy('id', 'desc')->first();
-            $sequence = 1;
-            if ($lastPaper && preg_match('/ABS-\d+-(\d+)/', $lastPaper->submission_id, $matches)) {
-                $sequence = intval($matches[1]) + 1;
-            }
-            $submissionId = sprintf('ABS-%s-%03d', $datePart, $sequence);
+            // Generate Submission ID
+            $submissionId = \App\Services\IdGeneratorService::generateSubmissionId();
             $hasCoAuthors = $request->has('co_authors') && count($request->co_authors) > 1;
             $paper = Paper::create([
                 'user_id' => $user->id,
