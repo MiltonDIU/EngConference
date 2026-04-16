@@ -96,8 +96,12 @@ class RegisterController extends Controller
             'institution' => ['required', 'string', 'max:255', $noPhpTags],
             'country_id' => ['required', 'exists:countries,id'],
             'whatsapp_number' => ['required', 'string', 'max:20', $noPhpTags],
+//            'participation_mode' => ['required', 'in:onsite,online'],
+//            'is_author' => ['required', 'boolean'],
+
+            'is_author' => ['required', 'in:0,1'], // boolean এর বদলে in:0,1
             'participation_mode' => ['required', 'in:onsite,online'],
-            'is_author' => ['required', 'boolean'],
+
             'extra_info' => ['nullable', 'string', 'max:0'],
         ];
 
@@ -143,8 +147,15 @@ class RegisterController extends Controller
             }
         }
 
+//        $messages = [
+//            'regex' => 'The :attribute contains forbidden characters (PHP tags are not allowed).',
+//        ];
         $messages = [
             'regex' => 'The :attribute contains forbidden characters (PHP tags are not allowed).',
+            'is_author.required' => 'Please select whether you want to register as a participant or submit an abstract.',
+            'is_author.in' => 'Please select a valid participation type.',
+            'participation_mode.required' => 'Please select a mode of participation (Onsite or Online).',
+            'participation_mode.in' => 'Please select a valid mode of participation.',
         ];
 
         return Validator::make($data, $rules, $messages);
@@ -265,6 +276,7 @@ class RegisterController extends Controller
 
     public function register(Request $request)
     {
+
         $this->validator($request->all())->validate();
         event(new Registered($user = $this->create($request->all())));
 

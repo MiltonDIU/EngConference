@@ -7,7 +7,7 @@
                 <div class="container">
                     <div class="section-header">
                         <h3>Register Now</h3>
-                        <p style="color: red">**Notice:** This registration form is currently under testing. Please do not submit any actual registration information at this time, as all submitted data will be deleted. The official registration will open soon.
+{{--                        <p style="color: red">**Notice:** This registration form is currently under testing. Please do not submit any actual registration information at this time, as all submitted data will be deleted. The official registration will open soon.--}}
                         </p>
                     </div>
                 </div>
@@ -218,40 +218,101 @@
                                             </div>
                                         </div>
 
-                                        <div class="mb-4">
-                                            <label><strong>Mode of Participation*</strong></label><br>
-                                            <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" name="participation_mode" id="onsite" value="onsite" {{ old('participation_mode', 'onsite') == 'onsite' ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="onsite">Onsite</label>
-                                            </div>
-                                            <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" name="participation_mode" id="online" value="online" {{ old('participation_mode') == 'online' ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="online">Online</label>
-                                            </div>
-                                        </div>
+{{--                                        <div class="mb-4">--}}
+{{--                                            <label><strong>Mode of Participation*</strong></label><br>--}}
+{{--                                            <div class="form-check form-check-inline">--}}
+{{--                                                <input class="form-check-input" type="radio" name="participation_mode" id="onsite" value="onsite" {{ old('participation_mode', 'onsite') == 'onsite' ? 'checked' : '' }}>--}}
+{{--                                                <label class="form-check-label" for="onsite">Onsite</label>--}}
+{{--                                            </div>--}}
+{{--                                            <div class="form-check form-check-inline">--}}
+{{--                                                <input class="form-check-input" type="radio" name="participation_mode" id="online" value="online" {{ old('participation_mode') == 'online' ? 'checked' : '' }}>--}}
+{{--                                                <label class="form-check-label" for="online">Online</label>--}}
+{{--                                            </div>--}}
+{{--                                        </div>--}}
 
-                                        <div class="mb-4 p-3 bg-light rounded border">
-                                            <label><strong>I want to:*</strong></label><br>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="is_author" id="participant_only" value="0" {{ old('is_author', '0') == '0' ? 'checked' : '' }} onchange="toggleAbstractSection()">
-                                                <label class="form-check-label" for="participant_only">Register as Participant Only (Payment Required)</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="is_author" id="submit_abstract" value="1" {{ old('is_author') == '1' ? 'checked' : '' }} onchange="toggleAbstractSection()">
-                                                <label class="form-check-label" for="submit_abstract">
-                                                    @if(($settings['is_abstract_submission_open'] ?? 'true') == 'true')
-                                                        Submit an Abstract (Payment Required after Abstract Confirmation)
-                                                    @else
-                                                        Register as Paper Author (Submit abstract later after email verification)
-                                                    @endif
+                                        <div class="mb-4">
+                                            <label><strong>Mode of Participation*</strong></label>
+                                            <div class="participation-pill-group">
+                                                <label class="participation-pill" for="onsite">
+                                                    <input type="radio" name="participation_mode" id="onsite" value="onsite"
+                                                           {{ old('participation_mode') == 'onsite' ? 'checked' : '' }}
+                                                           onchange="checkFormValidity();">
+                                                    <span>Onsite</span>
+                                                </label>
+                                                <label class="participation-pill" for="online">
+                                                    <input type="radio" name="participation_mode" id="online" value="online"
+                                                           {{ old('participation_mode') == 'online' ? 'checked' : '' }}
+                                                           onchange="checkFormValidity();">
+                                                    <span>Online</span>
                                                 </label>
                                             </div>
-                                            @if(($settings['is_abstract_submission_open'] ?? 'true') == 'false')
-                                                <div class="mt-2 text-danger small font-weight-bold">
-{{--                                                    <i class="fa fa-info-circle"></i> Abstract submission is currently closed.--}}
-                                                </div>
-                                            @endif
+                                            @error('participation_mode')
+                                            <div class="text-danger small mt-1"><strong>{{ $message }}</strong></div>
+                                            @enderror
                                         </div>
+
+{{--                                        <div class="mb-4 p-3 bg-light rounded border">--}}
+{{--                                            <label><strong>I want to:*</strong></label><br>--}}
+{{--                                            <div class="form-check">--}}
+{{--                                                <input class="form-check-input" type="radio" name="is_author" id="participant_only" value="0" {{ old('is_author', '0') == '0' ? 'checked' : '' }} onchange="toggleAbstractSection()">--}}
+{{--                                                <label class="form-check-label" for="participant_only">Register as Participant Only (Payment Required)</label>--}}
+{{--                                            </div>--}}
+{{--                                            <div class="form-check">--}}
+{{--                                                <input class="form-check-input" type="radio" name="is_author" id="submit_abstract" value="1" {{ old('is_author') == '1' ? 'checked' : '' }} onchange="toggleAbstractSection()">--}}
+{{--                                                <label class="form-check-label" for="submit_abstract">--}}
+{{--                                                    @if(($settings['is_abstract_submission_open'] ?? 'true') == 'true')--}}
+{{--                                                        Submit an Abstract (Payment Required after Abstract Confirmation)--}}
+{{--                                                    @else--}}
+{{--                                                        Register as Paper Author (Submit abstract later after email verification)--}}
+{{--                                                    @endif--}}
+{{--                                                </label>--}}
+{{--                                            </div>--}}
+{{--                                            @if(($settings['is_abstract_submission_open'] ?? 'true') == 'false')--}}
+{{--                                                <div class="mt-2 text-danger small font-weight-bold">--}}
+{{--                                                    <i class="fa fa-info-circle"></i> Abstract submission is currently closed.--}}
+{{--                                                </div>--}}
+{{--                                            @endif--}}
+{{--                                        </div>--}}
+
+                                        <div class="mb-4">
+                                            <label><strong>I want to:*</strong></label>
+                                            <div class="intent-card-group">
+
+                                                <label class="intent-card participant" for="participant_only">
+                                                    <input type="radio" name="is_author" id="participant_only" value="0"
+                                                           {{ old('is_author') == '0' ? 'checked' : '' }}
+                                                           onchange="toggleAbstractSection(); checkFormValidity();">
+                                                    <span class="radio-circle"></span>
+                                                    <span class="intent-text">
+                <span class="intent-title">Register as Participant Only</span>
+                <span class="intent-sub">Payment required upon registration</span>
+            </span>
+                                                </label>
+
+                                                <label class="intent-card author" for="submit_abstract">
+                                                    <input type="radio" name="is_author" id="submit_abstract" value="1"
+                                                           {{ old('is_author') == '1' ? 'checked' : '' }}
+                                                           onchange="toggleAbstractSection(); checkFormValidity();">
+                                                    <span class="radio-circle"></span>
+                                                    <span class="intent-text">
+                <span class="intent-title">Submit an Abstract</span>
+                <span class="intent-sub">
+                    @if(($settings['is_abstract_submission_open'] ?? 'true') == 'true')
+                        Payment required after abstract confirmation
+                    @else
+                        Register as paper author — submit abstract after email verification
+                    @endif
+                </span>
+            </span>
+                                                </label>
+
+                                            </div>
+                                            @error('is_author')
+                                            <div class="text-danger small mt-1"><strong>{{ $message }}</strong></div>
+                                            @enderror
+                                        </div>
+
+
 
                                         <!-- Abstract Section -->
                                         <div id="abstract_section" style="display: none;">
@@ -433,12 +494,12 @@
             if (!textarea) return;
             const counter = document.getElementById('word_count');
             const display = document.getElementById('word_count_display');
-            
+
             const text = textarea.value.trim();
             const words = text ? text.split(/\s+/).length : 0;
-            
+
             counter.innerText = words;
-            
+
             if (words > 300) {
                 display.classList.remove('text-muted');
                 display.classList.add('text-danger', 'font-weight-bold');
@@ -452,12 +513,12 @@
             const input = document.getElementById(inputId);
             const counter = document.getElementById(countId);
             const display = document.getElementById(inputId + '_count_display');
-            
+
             const keywords = input.value ? input.value.split(',').map(k => k.trim()).filter(k => k !== '') : [];
             const count = keywords.length;
-            
+
             counter.innerText = count;
-            
+
             if (count < 3 || count > 5) {
                 display.classList.remove('text-muted');
                 display.classList.add('text-danger', 'font-weight-bold');
@@ -581,6 +642,8 @@
             toggleAbstractSection();
             updateSubTracks();
         });
+
+
     </script>
 @endpush
 
@@ -682,9 +745,73 @@
         }
 
 
+        /* Pill — Mode of Participation */
+        .participation-pill-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .participation-pill { display: inline-flex; align-items: center; cursor: pointer; }
+        .participation-pill input { display: none; }
+        .participation-pill span {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 18px; font-size: 13px; font-weight: 500;
+            border: 1.5px solid #dee2e6; border-radius: 999px;
+            color: #666; background: #fff; transition: all 0.18s;
+        }
+        .participation-pill span::before {
+            content: ''; width: 8px; height: 8px; border-radius: 50%;
+            background: #ccc; transition: all 0.18s;
+        }
+        /* Onsite — Orange */
+        .participation-pill:nth-child(1) input:checked + span {
+            background: #fff4ec; border-color: #E8650A; color: #b84e07;
+        }
+        .participation-pill:nth-child(1) input:checked + span::before { background: #E8650A; }
+        /* Online — Green */
+        .participation-pill:nth-child(2) input:checked + span {
+            background: #edf7ea; border-color: #3A7D2C; color: #2a5e1f;
+        }
+        .participation-pill:nth-child(2) input:checked + span::before { background: #3A7D2C; }
+        .participation-pill span:hover { border-color: #adb5bd; background: #f8f9fa; }
 
+        /* Card — I want to */
+        .intent-card-group { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+        .intent-card {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 14px 16px; border: 1.5px solid #dee2e6; border-radius: 10px;
+            cursor: pointer; background: #fff; transition: all 0.18s;
+        }
+        .intent-card:hover { border-color: #adb5bd; background: #fafafa; }
+        .intent-card input { display: none; }
+        .radio-circle {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid #ccc; flex-shrink: 0; margin-top: 1px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.18s;
+        }
+        .intent-card input:checked ~ .radio-circle::after {
+            content: ''; width: 8px; height: 8px; border-radius: 50%; background: white;
+        }
+        .intent-text { display: flex; flex-direction: column; }
+        .intent-title { font-size: 14px; font-weight: 600; color: #333; }
+        .intent-sub { font-size: 12px; color: #888; margin-top: 3px; }
 
+        /* Participant card — Green (ছবির right side) */
+        .intent-card.participant:has(input:checked) { background: #edf7ea; border-color: #3A7D2C; }
+        .intent-card.participant input:checked ~ .radio-circle { background: #3A7D2C; border-color: #3A7D2C; }
+        .intent-card.participant input:checked ~ .intent-text .intent-title { color: #2a5e1f; }
+        .intent-card.participant input:checked ~ .intent-text .intent-sub { color: #3A7D2C; }
 
+        /* Author card — Orange (ছবির left side) */
+        .intent-card.author:has(input:checked) { background: #fff4ec; border-color: #E8650A; }
+        .intent-card.author input:checked ~ .radio-circle { background: #E8650A; border-color: #E8650A; }
+        .intent-card.author input:checked ~ .intent-text .intent-title { color: #b84e07; }
+        .intent-card.author input:checked ~ .intent-text .intent-sub { color: #E8650A; }
+
+        /* এই দুটো line ঠিক আছে কারণ :has() parent কে target করে */
+        .intent-card.participant:has(input:checked) { background: #edf7ea; border-color: #3A7D2C; }
+        .intent-card.author:has(input:checked) { background: #fff4ec; border-color: #E8650A; }
+
+        /* এগুলো input এর পরের sibling target করে — input label এর direct child হলে কাজ করবে */
+        .intent-card.participant input:checked ~ .radio-circle { background: #3A7D2C; border-color: #3A7D2C; }
+        .intent-card.author input:checked ~ .radio-circle { background: #E8650A; border-color: #E8650A; }
 
     </style>
 
