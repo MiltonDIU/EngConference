@@ -338,7 +338,6 @@
                                                     <div id="keyword_count_display" class="small mt-1 text-muted">Keywords: <span id="keyword_count">0</span> / 5</div>
                                                     @error('keywords') <span class="text-danger small"><strong>{{ $message }}</strong></span> @enderror
                                                 </div>
- Bond
                                                 <div class="col-md-6 mb-3">
                                                     <label for="track_id"><strong>Conference Track*</strong></label>
                                                     <select id="track_id" name="track_id" class="form-control" onchange="updateSubTracks()">
@@ -360,6 +359,7 @@
 
                                             <div class="mb-4">
                                                 <div class="form-check">
+                                                    <input type="hidden" name="is_corresponding_author" value="0">
                                                     <input class="form-check-input" type="checkbox" name="is_corresponding_author" id="is_corresponding_author" value="1" {{ old('is_corresponding_author') ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="is_corresponding_author">I am the corresponding author</label>
                                                 </div>
@@ -603,14 +603,29 @@
             @endif
         }
 
-        function addCoAuthor() {
+        function addCoAuthor(data = null) {
             const container = document.getElementById('co_authors_container');
             const template = document.getElementById('co_author_template').innerHTML;
             const html = template.replace(/{index}/g, coAuthorIndex);
 
             const div = document.createElement('div');
             div.innerHTML = html;
-            container.appendChild(div.firstElementChild);
+            const entry = div.firstElementChild;
+
+            if (data) {
+                entry.querySelector(`input[name="co_authors[${coAuthorIndex}][name]"]`).value = data.name || '';
+                entry.querySelector(`input[name="co_authors[${coAuthorIndex}][email]"]`).value = data.email || '';
+                entry.querySelector(`input[name="co_authors[${coAuthorIndex}][designation]"]`).value = data.designation || '';
+                entry.querySelector(`input[name="co_authors[${coAuthorIndex}][department]"]`).value = data.department || '';
+                entry.querySelector(`input[name="co_authors[${coAuthorIndex}][institution]"]`).value = data.institution || '';
+
+                const countrySelect = entry.querySelector(`select[name="co_authors[${coAuthorIndex}][country_id]"]`);
+                if (countrySelect && data.country_id) {
+                    countrySelect.value = data.country_id;
+                }
+            }
+
+            container.appendChild(entry);
 
             updateAuthorIndices();
             coAuthorIndex++;
@@ -631,9 +646,7 @@
         // Initialize co-authors if we have old data (validation failed)
         @if(old('co_authors'))
             @foreach(old('co_authors') as $idx => $author)
-                addCoAuthor();
-                // We'd ideally populate the fields here, but for simplicity we just add the rows.
-                // In a real app, you'd populate values or use Blade to render initial co-authors.
+                addCoAuthor(@json($author));
             @endforeach
         @endif
 

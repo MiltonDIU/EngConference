@@ -127,6 +127,7 @@ class RegisterController extends Controller
                 $rules['track_id'] = ['required', 'exists:tracks,id'];
                 $rules['sub_track_id'] = ['required', 'exists:sub_tracks,id'];
                 $rules['is_corresponding_author'] = ['required', 'boolean'];
+                $rules['presenting_author_index'] = ['nullable'];
 
                 // Consents
                 $rules['consent_original'] = ['accepted'];
@@ -204,6 +205,8 @@ class RegisterController extends Controller
             // 2. Handle Paper Submission if Author
             if ($profile->is_author && ($settings['is_abstract_submission_open'] ?? 'true') == 'true') {
                 $hasCoAuthors = isset($data['co_authors']) && is_array($data['co_authors']) && count($data['co_authors']) > 0;
+                $presentingAuthorIndex = $data['presenting_author_index'] ?? 'submitter';
+                $submitterIsPresenting = $presentingAuthorIndex === 'submitter';
 
                 $paperData = [
                     'user_id' => $user->id,
@@ -227,9 +230,10 @@ class RegisterController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'designation' => $profile->designation,
+                    'department' => $profile->department,
                     'institution' => $profile->institution,
                     'country_id' => $profile->country_id,
-                    'is_presenting_author' => $hasCoAuthors ? ($data['is_corresponding_author'] ?? true) : true,
+                    'is_presenting_author' => $submitterIsPresenting,
                     'author_order' => 1,
                 ]);
 
@@ -240,9 +244,10 @@ class RegisterController extends Controller
                             'name' => $co_author['name'],
                             'email' => $co_author['email'],
                             'designation' => $co_author['designation'],
+                            'department' => $co_author['department'] ?? null,
                             'institution' => $co_author['institution'],
                             'country_id' => $co_author['country_id'],
-                            'is_presenting_author' => false,
+                            'is_presenting_author' => (string) $presentingAuthorIndex === (string) $index,
                             'author_order' => $index + 2,
                         ]);
                     }

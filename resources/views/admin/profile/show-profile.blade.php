@@ -347,7 +347,11 @@
                                         <a href="{{ route('edit-profile',['id' => $profile->id ]) }}" class="btn btn-xs btn-primary">Edit</a>
                                     @endcan
 
-                                    @if(auth()->id() == $profile->user_id && $profile->is_author && !$profile->user->paper && ($settings['is_abstract_submission_open'] ?? 'true') == 'true')
+                                    @php
+                                        $maxSubmissions = (int) (($settings['maximum_abstract_submission'] ?? $settings['maximum_abastract_submission'] ?? 1));
+                                        $submittedCount = $profile->user ? $profile->user->papers()->count() : 0;
+                                    @endphp
+                                    @if(auth()->id() == $profile->user_id && $profile->is_author && $submittedCount < $maxSubmissions && ($settings['is_abstract_submission_open'] ?? 'true') == 'true')
                                         <a href="{{ route('papers.submit') }}" class="btn btn-xs btn-warning">Submit Abstract</a>
                                     @endif
                                 </div>

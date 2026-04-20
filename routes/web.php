@@ -311,12 +311,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
     // Paper Submission (Post-registration)
    // Route::get('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'create'])->name('papers.submit');
   //  Route::post('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'store'])->name('papers.store');
-Route::resource('papers', PaperController::class);
-
-
-
-
 //Route::get('book-ticket',[ProfileController::class,'create'])->name('book-ticket');
+Route::resource('papers', PaperController::class);
 // Participant Routes (Authenticated & Verified)
 Route::group(['middleware' => ['auth', 'verified']], function () {
     // Profile
@@ -360,6 +356,5 @@ Auth::routes();
 
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'redirectHome'])->name('home_redirect');
-
 
 

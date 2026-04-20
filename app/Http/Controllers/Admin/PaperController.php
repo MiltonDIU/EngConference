@@ -225,9 +225,20 @@ class PaperController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
         $profile = Profile::where('user_id', $user->id)->first();
+        if (!$profile || !$profile->is_author) {
+            return redirect()->route('show-profile')->with('error', 'Only registered authors can submit papers.');
+        }
 
         $settings = Setting::pluck('value', 'key');
+        if (($settings['is_abstract_submission_open'] ?? 'true') == 'false') {
+            return redirect()->route('show-profile')->with('error', 'Abstract submission is currently closed.');
+        }
+
         $maxSubmissions = (int) ($settings['maximum_abstract_submission'] ?? $settings['maximum_abastract_submission'] ?? 1);
         $userPaperCount = Paper::where('user_id', $user->id)->count();
 
@@ -283,7 +294,7 @@ class PaperController extends Controller
                 'keywords' => $request->keywords,
                 'track_id' => $request->track_id,
                 'sub_track_id' => $request->sub_track_id,
-                'mode_of_participation' => 'onsite',
+                'mode_of_participation' => $profile->participation_mode ?? 'onsite',
                 'is_corresponding_author' => $request->is_corresponding_author,
                 'has_multiple_authors' => $hasCoAuthors,
             ]);

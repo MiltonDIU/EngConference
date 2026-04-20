@@ -10,7 +10,7 @@
                 <a href="{{ route('papers.index') }}" class="btn btn-outline-secondary btn-sm px-3">
                     <i class="fas fa-arrow-left mr-1"></i> Back to List
                 </a>
-                @can('paper_access')
+                @can('abstract_review')
                     <button type="button" class="btn btn-outline-primary btn-sm px-3 ml-1" data-toggle="modal" data-target="#reviewModal">
                         @if($paper->status == 'pending')
                             <i class="fas fa-gavel mr-1"></i> Review Abstract
