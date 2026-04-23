@@ -30,10 +30,10 @@ class ProfileController extends Controller
         $loged = Auth::user();
         if ($user === true){
             $emails = 'Null';
-            $profiles = Profile::where('user_id',$loged->id)->get();
+            $profiles = Profile::where('user_id',$loged->id)->with(['user.papers.authors', 'country'])->get();
         }else{
             $emails = CustomMail::where('publication_status',1)->get();
-            $profiles = Profile::orderBy('registration_id','asc')->get();
+            $profiles = Profile::with(['user.papers.authors', 'country'])->orderBy('registration_id','asc')->get();
         }
         $settings = Setting::pluck('value', 'key');
 
@@ -246,10 +246,10 @@ class ProfileController extends Controller
         $loged = Auth::user();
         if ($user === true){
             $emails = 'Null';
-            $profiles = Profile::where('user_id',$loged->id)->get();
+            $profiles = Profile::where('user_id',$loged->id)->with(['user.papers.authors', 'country'])->get();
         }else{
             $emails = CustomMail::where('publication_status',1)->get();
-            $profiles = Profile::where('user_id',1261)->get();
+            $profiles = Profile::where('user_id',1261)->with(['user.papers.authors', 'country'])->get();
         }
         return view('admin.profile.show-profile-test',[
             'profiles'=>$profiles,

@@ -44,8 +44,8 @@
         {{--                </div>--}}
         <p class="organize" style="margin-top: 20px"> Organized by</p>
         <img src="{{ asset('/') }}img/eng-dept_logo.png">
-        <br>
-        <p>Department of English | Daffodil International University</p>
+        <br><br>
+        <p style="margin-top:20px">Department of English | Daffodil International University</p>
         <div class="organize">
             {{--            <img src="{{ asset('/') }}img/AWS-DIU-DIPTI.png">
                         <!--<img src="{{ asset('/') }}img/banner-logo.png">-->
@@ -56,7 +56,7 @@
             {{--            @endforeach--}}
 
 
-            <img  src="{{ asset('/') }}img/hero-partner_engcon2.png">
+            <!--<img  src="{{ asset('/') }}img/hero-partner_engcon2.png">-->
 
 
 

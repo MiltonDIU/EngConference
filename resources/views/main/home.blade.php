@@ -4,6 +4,8 @@
     @include('main.sections.intro')
 
     <main id="main">
+
+        @include('main.sections.sponsors')
         @include('main.sections.about')
 
         @include('main.sections.CallforPapers')
@@ -22,7 +24,6 @@
 
 {{--        @include('main.sections.strategic-partner')--}}
 
-        @include('main.sections.sponsors')
 
 {{-- @include('main.sections.club-partner')--}}
 

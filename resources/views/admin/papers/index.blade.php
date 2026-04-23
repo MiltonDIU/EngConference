@@ -65,7 +65,11 @@
                         <tr>
                             <th>Submission ID</th>
                             <th>Full Title</th>
+                            <th>Submitted By</th>
                             <th>Authors</th>
+                            <th>Department</th>
+                            <th>University</th>
+                            <th>Country</th>
                             <th>Track</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Date</th>
@@ -212,14 +216,18 @@ $(function () {
         columns: [
             { data: 'submission_id', name: 'submission_id' },
             { data: 'title', name: 'title' },
+            { data: 'submitted_by', name: 'submitted_by' },
             { data: 'authors', name: 'authors' },
+            { data: 'department', name: 'department' },
+            { data: 'institution', name: 'institution' },
+            { data: 'country', name: 'country' },
             { data: 'track', name: 'track' },
             { data: 'status', name: 'status', class: 'text-center' },
             { data: 'created_at', name: 'created_at', class: 'text-center' },
             { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false, class: 'text-right' }
         ],
         orderCellsTop: true,
-        order: [[4, 'desc']],
+        order: [[8, 'desc']],
         pageLength: 25,
         dom: 'Bfrtip',
         buttons: dtButtons

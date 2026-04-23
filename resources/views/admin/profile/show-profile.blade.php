@@ -261,6 +261,7 @@
                         <th>Date</th>
                         <th>Amount</th>
                         <th>Payment</th>
+                        <th>Authors</th>
                         <th>Action</th>
                     </tr>
                     </thead>
@@ -342,6 +343,25 @@
                                 @endif
                             </td>
                             <td>
+                                @if($profile->user && $profile->user->papers->count() > 0)
+                                    @foreach($profile->user->papers as $paper)
+                                        <div class="small mb-2">
+                                            @can('paper_show')
+                                                <a href="{{ route('papers.show', $paper->id) }}" class="font-weight-bold text-primary" title="View Abstract Details">
+                                                    {{ $paper->submission_id }}:
+                                                </a>
+                                            @else
+                                                <strong class="text-primary">{{ $paper->submission_id }}:</strong>
+                                            @endcan
+                                            <br>
+                                            <span class="text-dark">{{ $paper->authors->pluck('name')->implode(', ') }}</span>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                            <td>
                                 <div class="btn-group">
                                     @can('profile_edit')
                                         <a href="{{ route('edit-profile',['id' => $profile->id ]) }}" class="btn btn-xs btn-primary">Edit</a>
@@ -355,12 +375,6 @@
                                         <a href="{{ route('papers.submit') }}" class="btn btn-xs btn-warning">Submit Abstract</a>
                                     @endif
                                 </div>
-
-                                @if($profile->user && $profile->user->paper)
-                                    <div class="mt-1">
-                                        <span class="badge badge-dark">Submitted: {{ $profile->user->paper->submission_id }}</span>
-                                    </div>
-                                @endif
                             </td>
                         </tr>
                         @endif

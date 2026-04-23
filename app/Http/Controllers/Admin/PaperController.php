@@ -31,10 +31,10 @@ class PaperController extends Controller
             $user = Auth::user();
 
             if ($user->roles->contains('id', 3)) {
-                $query = Paper::where('user_id', $user->id)->with('user', 'track', 'subTrack', 'authors');
+                $query = Paper::where('user_id', $user->id)->with('user', 'track', 'subTrack', 'authors.country');
             } else {
                 abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-                $query = Paper::with('user', 'track', 'subTrack', 'authors');
+                $query = Paper::with('user', 'track', 'subTrack', 'authors.country');
             }
 
             // Apply Filters
@@ -87,21 +87,36 @@ class PaperController extends Controller
                 ->editColumn('submission_id', function ($row) {
                     return '<span class="font-weight-bold text-primary">'.$row->submission_id.'</span>';
                 })
+                ->addColumn('submitted_by', function ($row) {
+                    return $row->user->name ?? 'N/A';
+                })
                 ->addColumn('authors', function ($row) {
                     $authors = $row->authors->pluck('name')->toArray();
                     if (empty($authors) && $row->user) {
                         $authors[] = $row->user->name;
                     }
                     $authorText = implode(', ', $authors);
-                    return '<div class="text-muted small text-truncate" style="max-width: 200px;" title="'.$authorText.'">'.$authorText.'</div>';
+                    return '<div class="text-muted small" title="'.$authorText.'">'.$authorText.'</div>';
+                })
+                ->addColumn('department', function ($row) {
+                    $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
+                    return $author->department ?? 'N/A';
+                })
+                ->addColumn('institution', function ($row) {
+                    $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
+                    return $author->institution ?? 'N/A';
+                })
+                ->addColumn('country', function ($row) {
+                    $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
+                    return $author->country->name ?? 'N/A';
                 })
                 ->editColumn('title', function ($row) {
-                    return '<div class="text-dark font-weight-600 text-truncate" style="max-width: 350px;" title="'.$row->title.'">'.$row->title.'</div>';
+                    return '<div class="text-dark font-weight-600 text-truncate" style="max-width: 300px;" title="'.$row->title.'">'.$row->title.'</div>';
                 })
                 ->editColumn('track', function ($row) {
                     $trackName = $row->track->name ?? 'N/A';
-                    $subTrackHtml = $row->subTrack ? '<small class="text-muted d-block px-2" style="font-size: 0.7rem; line-height: 1.2;"><i class="fas fa-caret-right mr-1"></i> '.$row->subTrack->name.'</small>' : '';
-                    return '<span class="badge badge-light border text-dark px-3 py-2 rounded-pill d-block mb-1 text-truncate" style="max-width: 250px;" title="'.$trackName.'">'.$trackName.'</span>' . $subTrackHtml;
+                    $subTrackHtml = $row->subTrack ? '<small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1.2;"><i class="fas fa-caret-right mr-1"></i> '.$row->subTrack->name.'</small>' : '';
+                    return '<span class="badge badge-light border text-dark px-2 py-1 rounded-pill d-block mb-1 text-truncate" style="max-width: 150px;" title="'.$trackName.'">'.$trackName.'</span>' . $subTrackHtml;
                 })
                 ->editColumn('status', function ($row) {
                     $statusClass = [

@@ -11,7 +11,7 @@
             <img src="{{ $sponsor->logo!=null ? $sponsor->logo->getUrl() : '' }}"
                  alt="{{ $sponsor->name }}"
                  class="img-fluid"
-                 style="max-height:120px; object-fit:contain; border:none;">
+                 style=" object-fit:contain; border:none;">
           </div>
         </div>
       @endforeach
@@ -32,10 +32,10 @@
   justify-content: center;
   align-items: center;
   transition: transform 0.3s ease; /* smooth hover */
+    width: 100%;
 }
 
 #supporters .supporter-logo img {
-  max-height: 120px;
   object-fit: contain;
   transition: transform 0.3s ease; /* smooth zoom */
 }
