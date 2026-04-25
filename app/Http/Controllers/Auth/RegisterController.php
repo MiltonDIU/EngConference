@@ -126,7 +126,7 @@ class RegisterController extends Controller
                 }];
                 $rules['track_id'] = ['required', 'exists:tracks,id'];
                 $rules['sub_track_id'] = ['required', 'exists:sub_tracks,id'];
-                $rules['is_corresponding_author'] = ['required', 'boolean'];
+                $rules['is_corresponding_author'] = ['accepted'];
 
                 // Consents
                 $rules['consent_original'] = ['accepted'];
@@ -156,6 +156,7 @@ class RegisterController extends Controller
             'is_author.in' => 'Please select a valid participation type.',
             'participation_mode.required' => 'Please select a mode of participation (Onsite or Online).',
             'participation_mode.in' => 'Please select a valid mode of participation.',
+            'is_corresponding_author.accepted' => 'You must be the corresponding author to submit an abstract.',
         ];
 
         return Validator::make($data, $rules, $messages);

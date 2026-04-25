@@ -173,7 +173,7 @@
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
                                                 <label for="password"><strong>Password*</strong></label>
-                                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required>
+                                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password"  required>
                                                 @error('password') <span class="invalid-feedback"><strong>{{ $message }}</strong></span> @enderror
                                             </div>
                                             <div class="col-md-6 mb-3">
@@ -360,8 +360,9 @@
 
                                             <div class="mb-4">
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="is_corresponding_author" id="is_corresponding_author" value="1" {{ old('is_corresponding_author') ? 'checked' : '' }}>
+                                                    <input class="form-check-input @error('is_corresponding_author') is-invalid @enderror" type="checkbox" name="is_corresponding_author" id="is_corresponding_author" value="1" {{ (old('is_corresponding_author') || !session()->hasOldInput()) ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="is_corresponding_author">I am the corresponding author</label>
+                                                    @error('is_corresponding_author') <span class="invalid-feedback" style="display: block;"><strong>{{ $message }}</strong></span> @enderror
                                                 </div>
                                             </div>
 
@@ -381,20 +382,24 @@
                                             <h5 class="mb-3"><strong>Declarations</strong></h5>
                                             <div class="bg-light p-3 border rounded mb-4">
                                                 <div class="form-check mb-2">
-                                                    <input class="form-check-input @error('consent_original') is-invalid @enderror" type="checkbox" name="consent_original" id="consent_original" value="1" required>
+                                                    <input class="form-check-input @error('consent_original') is-invalid @enderror" type="checkbox" name="consent_original" id="consent_original" value="1" {{ (old('consent_original') || !session()->hasOldInput()) ? 'checked' : '' }} required>
                                                     <label class="form-check-label small" for="consent_original">I confirm that this abstract is original and not plastered elsewhere.*</label>
+                                                    @error('consent_original') <span class="invalid-feedback" style="display: block;"><strong>{{ $message }}</strong></span> @enderror
                                                 </div>
                                                 <div class="form-check mb-2">
-                                                    <input class="form-check-input @error('consent_review') is-invalid @enderror" type="checkbox" name="consent_review" id="consent_review" value="1" required>
+                                                    <input class="form-check-input @error('consent_review') is-invalid @enderror" type="checkbox" name="consent_review" id="consent_review" value="1" {{ (old('consent_review') || !session()->hasOldInput()) ? 'checked' : '' }} required>
                                                     <label class="form-check-label small" for="consent_review">I agree to the peer-review process of the conference.*</label>
+                                                    @error('consent_review') <span class="invalid-feedback" style="display: block;"><strong>{{ $message }}</strong></span> @enderror
                                                 </div>
                                                 <div class="form-check mb-2">
-                                                    <input class="form-check-input @error('consent_acceptance') is-invalid @enderror" type="checkbox" name="consent_acceptance" id="consent_acceptance" value="1" required>
+                                                    <input class="form-check-input @error('consent_acceptance') is-invalid @enderror" type="checkbox" name="consent_acceptance" id="consent_acceptance" value="1" {{ (old('consent_acceptance') || !session()->hasOldInput()) ? 'checked' : '' }} required>
                                                     <label class="form-check-label small" for="consent_acceptance">If accepted, at least one author will register and present.*</label>
+                                                    @error('consent_acceptance') <span class="invalid-feedback" style="display: block;"><strong>{{ $message }}</strong></span> @enderror
                                                 </div>
                                                 <div class="form-check mb-2">
-                                                    <input class="form-check-input @error('consent_no_late_addition') is-invalid @enderror" type="checkbox" name="consent_no_late_addition" id="consent_no_late_addition" value="1" required>
+                                                    <input class="form-check-input @error('consent_no_late_addition') is-invalid @enderror" type="checkbox" name="consent_no_late_addition" id="consent_no_late_addition" value="1" {{ (old('consent_no_late_addition') || !session()->hasOldInput()) ? 'checked' : '' }} required>
                                                     <label class="form-check-label small" for="consent_no_late_addition">No author can be added after the abstract is submitted.*</label>
+                                                    @error('consent_no_late_addition') <span class="invalid-feedback" style="display: block;"><strong>{{ $message }}</strong></span> @enderror
                                                 </div>
                                             </div>
                                         </div>
