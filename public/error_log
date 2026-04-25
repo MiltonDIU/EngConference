@@ -1,0 +1,81 @@
+[14-Mar-2026 07:00:12 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:00:59 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:01:04 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:01:23 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:03:15 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:03:16 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:35:31 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:35:32 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:35:54 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 07:48:37 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.4.0". You are running 8.3.30. in /home/zxcengconv/public_html/vendor/composer/platform_check.php:26
+Stack trace:
+#0 /home/zxcengconv/public_html/vendor/composer/autoload_real.php(25): require()
+#1 /home/zxcengconv/public_html/vendor/autoload.php(22): ComposerAutoloaderInit6dafd9de1ba58b495ef6a63122e2de54::getLoader()
+#2 /home/zxcengconv/public_html/public/index.php(34): require('/home/zxcengcon...')
+#3 {main}
+  thrown in /home/zxcengconv/public_html/vendor/composer/platform_check.php on line 26
+[14-Mar-2026 08:01:02 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:01:04 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:01:46 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:01:54 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:04:34 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:05:19 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:05:25 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:06:08 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:07:35 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:07:42 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425
+[14-Mar-2026 08:08:16 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 1048576 bytes) in /home/zxcengconv/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php on line 425

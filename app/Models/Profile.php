@@ -4,16 +4,47 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Profile extends Model
 {
-    use HasFactory;
-    public const ID_SELECT = [
-        'aiconnect'   => '0000',
+    use HasFactory, SoftDeletes;
+ protected $casts = [
+        'is_author' => 'boolean',
+    ];
+    protected $fillable = [
+        'user_id',
+        'first_name',
+        'last_name',
+        'designation',
+        'department',
+        'institution',
+        'country_id',
+        'registration_id',
+        'whatsapp_number',
+        'is_author',
+        'participation_mode',
+        'pay_amount',
+        'payment_status',
+        'currency',
     ];
 
-    protected $fillable = ['user_id','phone','institute_name','academic_major','part_aws_cloud_club','tracks_like','aws_familiar','comments','payment_status','coupon_code','pay_amount','production_app','application_url','logo_url','identity_no','event_attendance'];
-    public function user(){
-        return $this->belongsTo(User::class,'user_id','id');
+    protected $appends = [
+        'phone',
+    ];
+
+    public function getPhoneAttribute()
+    {
+        return $this->whatsapp_number;
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
     }
 }

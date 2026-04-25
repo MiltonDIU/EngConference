@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Hash;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -62,6 +63,11 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new ResetPassword($token));
     }
 
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new VerifyEmailNotification());
+    }
+
     public function roles()
     {
         return $this->belongsToMany(Role::class);
@@ -99,5 +105,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
     public function attendance(){
         return $this->hasMany(Attendance::class,'user_id','id');
+    }
+
+    public function paper()
+    {
+        return $this->hasOne(Paper::class, 'user_id', 'id');
+    }
+        public function papers()
+    {
+        return $this->hasMany(Paper::class, 'user_id', 'id');
     }
 }

@@ -29,7 +29,7 @@
                     @endif
                 </div>
                 <div class="form-group {{ $errors->has('part_aws_cloud_club') ? 'has-error' : '' }}">
-                    <label for="part_aws_cloud_club">Publication Status*</label><br/>
+                    <label for="part_aws_cloud_club">Status*</label><br/>
                     <input type="radio" name="status" value="1" {{ $domain->status == 1?'checked':'' }}> Publish <br/>
                     <input type="radio" name="status" value="0" {{ $domain->status == 0?'checked':'' }}> UnPublish <br/>
                     @if($errors->has('status'))

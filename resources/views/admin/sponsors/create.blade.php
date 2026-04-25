@@ -49,7 +49,7 @@
             </div>
             <div class="form-group {{ $errors->has('serial') ? 'has-error' : '' }}">
                 <label for="serial">{{ trans('cruds.sponsor.fields.serial') }}</label>
-                <input type="number" id="serial" name="serial" class="form-control" value="{{ old('serial', isset($sponsor) ? $sponsor->serial : '') }}">
+                <input type="number" id="serial" name="serial" class="form-control" value="{{ old('serial', isset($sponsor) ? $sponsor->serial : '0') }}">
                 @if($errors->has('serial'))
                     <p class="help-block">
                         {{ $errors->first('serial') }}
@@ -77,7 +77,7 @@
 
             <div class="form-group {{ $errors->has('amount') ? 'has-error' : '' }}">
                 <label for="serial">Amount/Value</label>
-                <input type="number" id="amount" name="amount" class="form-control" value="{{ old('amount', isset($sponsor) ? $sponsor->amount : '') }}">
+                <input type="number" id="amount" name="amount" class="form-control" value="{{ old('amount', isset($sponsor) ? $sponsor->amount : '0') }}">
                 @if($errors->has('amount'))
                     <p class="help-block">
                         {{ $errors->first('amount') }}

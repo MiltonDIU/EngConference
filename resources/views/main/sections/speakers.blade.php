@@ -1,8 +1,8 @@
 <section id="speakers" class="wow fadeInUp">
   <div class="container">
     <div class="section-header">
-      <h2>Trainers and Speakers</h2>
-      <p>Here are some of our trainers and speakers</p>
+      <h2>Speakers</h2>
+      <p>Here are some of our speakers</p>
     </div>
 
     <div class="row">
@@ -42,8 +42,8 @@
         margin: 0 10px;
     }
     .img-fluid {
-        width: 100%;
-        object-fit: cover;
-    }
+  width: 100%;
+  object-fit: cover;
+}
 </style>
 @endpush

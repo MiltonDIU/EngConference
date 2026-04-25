@@ -16,12 +16,12 @@ class StoreSponsorRequest extends FormRequest
         return true;
     }
 
-    public function rules()
+       public function rules()
     {
         return [
-            'name' => [
-                'required',
-            ],
+            'name'   => ['required', 'string', 'max:255'],
+            'amount' => ['required', 'numeric'],
+            'serial' => ['required', 'integer'],
         ];
     }
 }

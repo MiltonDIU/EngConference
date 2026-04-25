@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
+use App\Models\Hotel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class DomainController extends Controller
 {
@@ -104,6 +106,7 @@ class DomainController extends Controller
      */
     public function destroy($id)
     {
-        //
+        Domain::find($id)->delete();
+        return redirect('/admin/domain')->with('message','Domain Delete Successfully');
     }
 }

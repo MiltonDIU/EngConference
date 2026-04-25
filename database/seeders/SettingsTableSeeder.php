@@ -109,6 +109,22 @@ class SettingsTableSeeder extends Seeder
                 'key'   => 'event_date',
                 'value' => '2027-01-01'
             ],
+            [
+                'key'   => 'eur_participant_price',
+                'value' => '18'
+            ],
+            [
+                'key'   => 'inr_participant_price',
+                'value' => '2000'
+            ],
+            [
+                'key'   => 'usd_participant_price',
+                'value' => '20'
+            ],
+            [
+                'key'   => 'bdt_participant_price',
+                'value' => '2500'
+            ],
         ];
 
         foreach($settings as $setting)

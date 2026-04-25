@@ -18,5 +18,6 @@ class VerifyCsrfToken extends Middleware
         '/ipn',
         '/pay',
         '/pay-via-ajax', // only required to run example codes. Please see bellow.
+        '/onecard/success',
     ];
 }

@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\CheckUniquePostView;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
+use App\Models\CommitteeType;
 class HomeController extends Controller
 {
 protected $noReferral = array(
@@ -35,7 +36,27 @@ protected $noReferral = array(
     'facebookexternalhit',
     'WhatsApp',
     'LinkedInBot',
+    'developers.google.com',
 );
+
+    public function redirectHome()
+    {
+        if (!auth()->check()) {
+            return redirect('/');
+        }
+
+        $user = auth()->user();
+        if ($user->roles->contains('id', 1)) {
+            return redirect()->route('admin.home');
+        }
+
+        // If Role 3 (Participant/Author)
+        if ($user->roles->contains('id', 3)) {
+            return redirect()->route('show-profile');
+        }
+
+        return redirect('/');
+    }
 
     /**
      * Show the application dashboard.
@@ -61,12 +82,32 @@ protected $noReferral = array(
         $faqs = Faq::all();
         $prices = Price::with('amenities')->get();
         $amenities = Amenity::with('prices')->get();
+
+        // Fetch Advisory Boards
+        $advisoryBoardType = CommitteeType::where('name', 'Academic Advisory Boards')->first();
+        $advisoryBoards = $advisoryBoardType
+            ? $advisoryBoardType->committees()->orderBy('sort_order', 'asc')->with(['members' => function($q) {
+                $q->orderBy('committee_conference_member.sort_order', 'asc');
+            }])->get()
+            : collect();
+
+        // Fetch Conference Committees (Organizers)
+        $conferenceCommitteeType = CommitteeType::where('name', 'Conference Committee Structure')->first();
+        $conferenceCommittees = $conferenceCommitteeType
+            ? $conferenceCommitteeType->committees()->where('parent_id', 0)->orderBy('sort_order', 'asc')->with(['subCommittees' => function($q) {
+                $q->orderBy('sort_order', 'asc')->with(['members' => function($mq) {
+                    $mq->orderBy('committee_conference_member.sort_order', 'asc');
+                }]);
+            }])->get()
+            : collect();
+
+        $viewData = compact('settings', 'speakers', 'schedules', 'venues', 'hotels', 'galleries', 'sponsors', 'strategics', 'faqs', 'prices', 'amenities', 'advisoryBoards', 'conferenceCommittees');
+
         if (Auth::user()) {
-            $profile = Profile::where('user_id', $user->id)->first();
-            return view('main.home', compact('settings', 'speakers', 'schedules', 'venues', 'hotels', 'galleries', 'sponsors', 'strategics', 'faqs', 'prices', 'amenities','profile'));
-        }else {
-            return view('main.home', compact('settings', 'speakers', 'schedules', 'venues', 'hotels', 'galleries', 'sponsors', 'strategics', 'faqs', 'prices', 'amenities'));
+            $viewData['profile'] = Profile::where('user_id', $user->id)->first();
         }
+
+        return view('main.home', $viewData);
     }
 
     public function singleEvent($id,$slug)
@@ -130,7 +171,9 @@ protected $noReferral = array(
                 ->groupBy('day_number');
             $settings = Setting::pluck('value', 'key');
             $aminities = Amenity::orderBy('id','desc')->get();
-            return view('main.registration',compact('settings','schedules','referral','aminities'));
+            $countries = \App\Models\Country::where('is_active', 1)->orderBy('name', 'asc')->get(['id', 'name']);
+            $tracks = \App\Models\Track::with('subTracks')->get();
+            return view('main.registration',compact('settings','schedules','referral','aminities', 'countries', 'tracks'));
         }
 
     }
@@ -363,6 +406,12 @@ $link = true;
         }else{
             return redirect(url('/'));
         }
+    }
+
+    public function callForPepper()
+    {
+        $settings = Setting::pluck('value', 'key');
+        return view('main.call_for_pepper',compact('settings'));
     }
 
 }

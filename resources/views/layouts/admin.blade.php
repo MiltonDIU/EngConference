@@ -89,7 +89,21 @@
                         </div>
                     </div>
                 @endif
-                      @if(session('feedbackErrors'))
+                @if(session('success'))
+                    <div class="row mb-2">
+                        <div class="col-lg-12">
+                            <div class="alert alert-success" role="alert">{{ session('success') }}</div>
+                        </div>
+                    </div>
+                @endif
+                @if(session('error'))
+                    <div class="row mb-2">
+                        <div class="col-lg-12">
+                            <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
+                        </div>
+                    </div>
+                @endif
+                @if(session('feedbackErrors'))
                     <div class="alert alert-danger">
                         {{ session('feedbackErrors') }}
                     </div>

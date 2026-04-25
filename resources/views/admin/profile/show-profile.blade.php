@@ -60,6 +60,188 @@
                 </form>
             </div>
         @endcan
+
+        @if(auth()->user()->roles->contains('id', 3))
+            @php
+                $myProfile = $profiles->where('user_id', auth()->id())->first();
+            @endphp
+
+            @if($myProfile && $myProfile->payment_status == '0' && !$myProfile->is_author)
+                <div class="card mb-4 border-info shadow-sm" style="border-width: 2px;">
+                    <div class="card-body bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h4 class="text-info font-weight-bold mb-2">
+                                    <i class="fas fa-user-check mr-2"></i> Registration Review & Pay
+                                </h4>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge badge-secondary mr-2" style="font-size: 0.9rem;">
+                                        {{ $myProfile->is_author ? 'Author Registration' : 'Participant Only Registration' }}
+                                    </span>
+                                    <span class="text-muted"><i class="fas fa-info-circle mr-1"></i> Your registration is currently pending payment.</span>
+                                </div>
+                                <h5 class="mb-0 text-dark">Amount Due: <strong>{{ $myProfile->currency ?? 'BDT' }} {{ number_format($myProfile->pay_amount, 2) }}</strong></h5>
+                            </div>
+                            <div class="col-md-4 text-md-right mt-3 mt-md-0">
+                                <button class="btn btn-info btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#registrationPayModal" style="border-radius: 8px;">
+                                    <i class="fas fa-credit-card mr-2"></i> Review & Pay Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registration Payment Modal -->
+                <div class="modal fade" id="registrationPayModal" tabindex="-1" role="dialog" aria-labelledby="registrationPayModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title font-weight-bold text-dark" id="registrationPayModalLabel">Registration Summary</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body pt-3 pb-4">
+                                <div class="bg-light p-4 rounded border mb-4">
+                                    <div class="text-center mb-4">
+                                        <div class="text-muted small text-uppercase font-weight-bold">Status</div>
+                                        <div class="badge badge-warning px-3 py-2" style="border-radius: 20px;">Unpaid</div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Registration Type:</span>
+                                        <span class="font-weight-bold text-dark">{{ $myProfile->is_author ? 'Author' : 'Participant Only' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Country:</span>
+                                        <span class="font-weight-bold text-dark">{{ $myProfile->country->name ?? 'International' }}</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between align-items-baseline mt-3">
+                                        <span class="h5 text-dark">Registration Fee:</span>
+                                        <span class="h4 font-weight-bold text-info">{{ $myProfile->currency ?? 'BDT' }} {{ number_format($myProfile->pay_amount, 2) }}</span>
+                                    </div>
+                                </div>
+
+                                <form action="{{ route('payNow') }}" method="post">
+                                    @csrf
+                                    <input type="hidden" name="user_id" value="{{ $myProfile->user_id }}">
+                                    @if($settings['special_discount_is_true']=='true' && $myProfile->coupon_code==null && $myProfile->special_coupon=='REGSP300')
+                                        <input type="hidden" name="special_discount" value="REGSP300">
+                                    @endif
+                                    <button type="submit" class="btn btn-info btn-block btn-lg shadow-sm" style="border-radius: 8px;">
+                                        <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
+                                    </button>
+                                </form>
+                                <p class="text-center mt-3 small text-muted">
+                                    <i class="fas fa-shield-alt mr-1"></i> Your payment is secured via OneCard
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @php
+                $unpaidPapers = \App\Models\Paper::where('user_id', auth()->id())
+                    ->where('status', 'approved')
+                    ->where(function($q) {
+                        $q->whereNull('payment_status')
+                          ->orWhere('payment_status', '!=', '1');
+                    })->get();
+            @endphp
+            @if($unpaidPapers->count() > 0)
+                <div class="card mb-4 border-primary shadow-sm" style="border-width: 2px;">
+                    <div class="card-body bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="text-primary font-weight-bold mb-1"><i class="fas fa-shopping-cart mr-2"></i> Abstract Bulk Checkout</h4>
+                                <p class="text-muted mb-0">You have <strong>{{ $unpaidPapers->count() }}</strong> approved abstract(s) pending payment. You can pay for all of them securely through a single transaction.</p>
+                            </div>
+                            <button class="btn btn-primary btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#bulkPaymentModal" style="border-radius: 8px;">
+                                <i class="fas fa-credit-card mr-2"></i> Review & Pay All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bulk Payment Review Modal -->
+                <div class="modal fade" id="bulkPaymentModal" tabindex="-1" role="dialog" aria-labelledby="bulkPaymentModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title font-weight-bold text-dark" id="bulkPaymentModalLabel">Bulk Payment Review</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body pt-3 pb-4">
+                                <p class="text-muted mb-4 small">Review the payment details for your approved abstracts before proceeding to checkout.</p>
+
+                                <div class="bg-light p-3 rounded mb-4 border">
+                                    <table class="table table-borderless table-sm mb-0">
+                                        <thead class="text-muted border-bottom">
+                                            <tr>
+                                                <th>Abstract ID</th>
+                                                <th>Base Rate</th>
+                                                <th class="text-right">Price</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @php $totalPrice = 0; @endphp
+                                            @foreach($unpaidPapers as $up)
+                                                @php
+                                                    $pricing = \App\Services\PricingService::calculatePaperCost(auth()->user()->profile, $up);
+                                                @endphp
+                                                <tr>
+                                                    <td class="font-weight-bold">{{ $up->submission_id }} <small class="text-muted">({{ $pricing['authors_count'] }} author{{ $pricing['authors_count'] > 1 ? 's' : '' }})</small></td>
+                                                    <td>{{ ucfirst($pricing['stage']) }} Price @if($pricing['discount'] > 0)<br><small class="text-success">-{{ $pricing['currency'] }} {{ number_format($pricing['individual_discount'], 2) }} discount per author</small>@endif</td>
+                                                    <td class="text-right">{{ $pricing['currency'] }} {{ number_format($pricing['final_price'], 2) }}</td>
+                                                </tr>
+                                                @if($pricing['authors_count'] > 1)
+                                                <tr class="bg-light">
+                                                    <td colspan="3" class="py-2 px-4 shadow-sm border-0" style="border-radius: 8px;">
+                                                        <div class="mb-2">
+                                                            <span class="text-muted font-weight-bold d-block mb-1" style="font-size: 0.85rem;">Authors Details:</span>
+                                                            <ul class="mb-0 small text-dark pl-3" style="line-height: 1.4;">
+                                                                @foreach($up->authors as $author)
+                                                                    <li>{{ $author->name }} @if($author->designation)<span class="text-muted">({{ $author->designation }})</span>@endif</li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                        <div class="alert alert-success py-1 px-2 m-0 small d-inline-block border-0" style="background-color: #e8f5e9; border-radius: 4px;">
+                                                            <i class="fas fa-check-circle mr-1 text-success"></i>
+                                                            Rate is <strong>{{ $pricing['currency'] }} {{ number_format($pricing['individual_final_price'], 2) }}</strong> per person.
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                @endif
+                                                @php $totalPrice += $pricing['final_price']; @endphp
+                                            @endforeach
+                                            <tr class="border-top">
+                                                <td colspan="2" class="font-weight-bold text-dark" style="font-size: 1.1rem; padding-top: 15px;">Total Amount</td>
+                                                <td class="font-weight-bold text-primary text-right" style="font-size: 1.25rem; padding-top: 15px;">{{ $pricing['currency'] }} {{ number_format($totalPrice, 2) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <form action="{{ route('payNowPapers') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+                                    @foreach($unpaidPapers as $up)
+                                        <input type="hidden" name="paper_ids[]" value="{{ $up->id }}">
+                                    @endforeach
+                                    <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">
+                                        <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @endif
+
         <div class="card-header">
             Profile
         </div>
@@ -69,166 +251,130 @@
                 <table class=" table table-bordered table-striped table-hover datatable datatable-Speaker">
                     <thead>
                     <tr>
-                        <th width="10">
-
-                        </th>
-                        <th>
-                            &nbsp;Reg. No.
-                        </th>
-                        <th>
-                            Name
-                        </th>
-                        <th>
-                            Email
-                        </th>
-                        <th>
-                            Phone
-                        </th>
-                        <th>
-                            Registrerd For
-                        </th>
-
-                        <th>
-                            Date
-                        </th>
-                        <th>
-                            Coupon
-                        </th>
-                        <th>
-                            Amount
-                        </th>
-
-                        @can('profile_edit')
-                        <th>Institution Name </th>
-
-                        @endcan
-                        <th>
-                            Payment
-                        </th>
-                        <th>
-                            Action
-                        </th>
-
+                        <th width="10"></th>
+                        <th>Reg. ID</th>
+                        <th>Name</th>
+                        <th>Contact</th>
+                        <th>Professional info</th>
+                        <th>Country</th>
+                        <th>Mode</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Payment</th>
+                        <th>Authors</th>
+                        <th>Action</th>
                     </tr>
                     </thead>
                     <tbody>
-                        @php $i = 1; @endphp
                     @foreach($profiles as $key => $profile)
                         @if($profile->user)
                         <tr data-entry-id="{{ $profile->id }}">
-                            <td>
-
-                            </td>
-                            <td>
-                                 @php
-                                    $number = $profile->identity_no;
-                                    $serial = str_pad($number, 4, '0', STR_PAD_LEFT);
-                                @endphp
-                                @if($profile->payment_status==1 && $profile->identity_no==null)
-                                    <a href="{{ route('generateIds',[$profile->id]) }}">
-                                        {{ 'Generate Ids' }}
+                            <td></td>
+                            <td class="font-weight-bold text-dark">
+                                @if($profile->payment_status == 1 && $profile->registration_id == null)
+                                    <a href="{{ route('generateIds', [$profile->id]) }}" class="btn btn-xs btn-outline-primary">
+                                        Generate ID
                                     </a>
-                                    @else
-                                    {{ $serial }}
+                                @else
+                                    {{ $profile->registration_id ?? 'N/A' }}
                                 @endif
-
                             </td>
                             <td>
                                 {{ $profile->user->name ?? '' }}
+                                <div class="mt-1">
+                                    @if($profile->is_author)
+                                        <span class="badge badge-primary px-2" style="font-size: 0.7rem;">Author</span>
+                                    @else
+                                        <span class="badge badge-info px-2" style="font-size: 0.7rem;">Participant Only</span>
+                                    @endif
+                                </div>
                             </td>
                             <td>
-                                {{ $profile->user->email ?? '' }}
+                                <div class="small">
+                                    <i class="fas fa-envelope text-muted mr-1"></i> {{ $profile->user->email ?? '' }}<br>
+                                    <i class="fab fa-whatsapp text-success mr-1"></i> {{ $profile->whatsapp_number ?? '' }}
+                                </div>
                             </td>
                             <td>
-                                {{ $profile->phone ?? '' }}
+                                <div class="small">
+                                    <strong>{{ $profile->designation ?? 'N/A' }}</strong><br>
+                                    {{ $profile->department ?? '' }} @if($profile->department && $profile->institution)<br>@endif
+                                    <span class="text-muted">{{ $profile->institution ?? '' }}</span>
+                                </div>
                             </td>
                             <td>
-
-
-@if($profile->user!=null)
-       @foreach($profile->user->schedules as $schedule)
-
-               {{ $schedule->title??'' }}
-<br>
-        <span class="badge-info"> Day: {{ $schedule->day_number.'--'.$schedule->start_time }} </span>
-           <br>
-       @endforeach
-        @endif
+                                {{ $profile->country->name ?? 'N/A' }}
                             </td>
                             <td>
-                                {{ date('d/m/Y', strtotime($profile->created_at)) ?? '' }}
+                                <span class="badge badge-{{ $profile->participation_mode == 'onsite' ? 'success' : 'warning' }} px-2 py-1">
+                                    {{ ucfirst($profile->participation_mode ?? 'N/A') }}
+                                </span>
                             </td>
-                            <td>
-{{ $profile->coupon_code ?? '' }}
-
-{{--                                @if($profile->payment_status==1)--}}
-{{--                                    @if($profile->coupon_code!=null)--}}
-{{--                                        {{ $profile->coupon_code }}--}}
-{{--                                    @else--}}
-{{--                                        {{ $profile->pay_amount }}--}}
-{{--                                    @endif--}}
-{{--                                @endif--}}
-{{--                                {{ $profile->payment_status==1 ? $profile->coupon_code!=null?$profile->coupon_code:$profile->pay_amount:"" }}--}}
+                            <td class="small">
+                                {{ date('d M, Y', strtotime($profile->created_at)) }}
                             </td>
-
-                            <td>
-                                {{ $profile->pay_amount ?? '' }}
-
+                            <td class="font-weight-bold">
+                                {{ $profile->currency ?? 'BDT' }} {{ number_format($profile->pay_amount ?? 0, 2) }}
                             </td>
-                            @can('profile_edit')
-                            <td>{{ $profile->institute_name??'' }}</td>
-                             @endcan
                             <td>
                                 @if($profile->payment_status == '1')
-                                    <button class="btn btn-success">Payment Complete</button>
+                                    <div class="alert alert-success d-inline-block py-1 px-3 mb-0" style="border-radius: 20px;">
+                                        <i class="fas fa-check-circle mr-1"></i> Paid
+                                    </div>
+                                @elseif($profile->payment_status == '2')
+                                    <div class="alert alert-info d-inline-block py-1 px-3 mb-0" style="border-radius: 20px;">
+                                        <i class="fas fa-hourglass-half mr-1"></i> Partially Paid
+                                    </div>
                                 @else
-
-                                    @if($settings['seat_is_full']=='false')
-                                        <button class="btn btn-info" style="float: left;margin-right: 5px">Pending</button>
-                                    <br>
-                                    <br>
-                                        @php
-                                            $domain = explode('@', $profile->user->email);
-                                        @endphp
-
-                                        @if($settings['special_discount_is_true']=='true' and $profile->coupon_code==null and $profile->special_coupon=='REGSP300' and (in_array($domain[1], $allowedDomain)!=true) )
-                                            <form action="{{ route('payNow') }}" method="post" style="width: 50px;float: left;">
+                                    <div class="alert alert-warning d-inline-block py-1 px-3 mb-0" style="border-radius: 20px;">
+                                        <i class="fas fa-clock mr-1"></i> Unpaid
+                                    </div>
+                                    @if(!auth()->user()->roles->contains(3))
+                                        <div class="mt-2">
+                                            <form action="{{ route('onecard.verify') }}" method="POST" onsubmit="return confirm('Verify all transaction attempts for this user with OneCard?')">
                                                 @csrf
-                                                <input type="hidden" name="user_id" value="{{ $profile->user_id }}">
-                                                <input type="hidden" name="special_discount" value="REGSP300">
-                                                <input  class="btn btn-danger" type="submit" value="Pay With Coupon extra {{ $settings['special_discount']??"0" }}% (REGSP300)">
+                                                <input type="hidden" name="profile_id" value="{{ $profile->id }}">
+                                                <button type="submit" class="btn btn-xs btn-outline-info shadow-sm" title="Check OneCard for all transaction attempts">
+                                                    <i class="fas fa-sync-alt mr-1"></i> Verify OneCard
+                                                </button>
                                             </form>
-                                        @else
-                                            <form action="{{ route('payNow') }}" method="post" style="width: 50px;float: left">
-                                                @csrf
-                                                <input type="hidden" name="user_id" value="{{ $profile->user_id }}">
-                                                <input  class="btn btn-danger" type="submit" value="Pay Now">
-                                            </form>
-
-                                        @endif
-
-                                    @else
-                                        <button class="btn btn-primary" style="float: left;margin-right: 5px">The Event is Temporarily Postponed</button>
+                                        </div>
+                                    @endif
+                                @endif
+                            </td>
+                            <td>
+                                @if($profile->user && $profile->user->papers->count() > 0)
+                                    @foreach($profile->user->papers as $paper)
+                                        <div class="small mb-2">
+                                            @can('paper_show')
+                                                <a href="{{ route('papers.show', $paper->id) }}" class="font-weight-bold text-primary" title="View Abstract Details">
+                                                    {{ $paper->submission_id }}:
+                                                </a>
+                                            @else
+                                                <strong class="text-primary">{{ $paper->submission_id }}:</strong>
+                                            @endcan
+                                            <br>
+                                            <span class="text-dark">{{ $paper->authors->pluck('name')->implode(', ') }}</span>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    @can('profile_edit')
+                                        <a href="{{ route('edit-profile',['id' => $profile->id ]) }}" class="btn btn-xs btn-primary">Edit</a>
                                     @endcan
 
-
-
-                                @endif
-{{--                                @if($profile->user_id == 1681)--}}
-{{--                                    <form action="{{ route('payNow') }}" method="post" style="width: 50px;float: left">--}}
-{{--                                        @csrf--}}
-{{--                                        <input type="hidden" name="user_id" value="{{ $profile->user_id }}">--}}
-{{--                                        <input  class="btn btn-danger" type="submit" value="Pay Now">--}}
-{{--                                    </form>--}}
-{{--                                @endif--}}
-                            </td>
-
-
-
-                            <td>
-                                @can('profile_edit')
-                                    <a href="{{ route('edit-profile',['id' => $profile->id ]) }}" class="btn btn-primary">Edit</a>
-                                @endcan
+                                    @php
+                                        $maxSubmissions = (int) (($settings['maximum_abstract_submission'] ?? $settings['maximum_abastract_submission'] ?? 1));
+                                        $submittedCount = $profile->user ? $profile->user->papers()->count() : 0;
+                                    @endphp
+                                    @if(auth()->id() == $profile->user_id && $profile->is_author && $submittedCount < $maxSubmissions && ($settings['is_abstract_submission_open'] ?? 'true') == 'true')
+                                        <a href="{{ route('papers.submit') }}" class="btn btn-xs btn-warning">Submit Abstract</a>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                         @endif

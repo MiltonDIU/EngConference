@@ -8,128 +8,162 @@
         <div class="card-body">
             <form action="{{ route("update-profile") }}" method="POST" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" name="id" value="{{ $profile->id }}">
 
-                <div class="form-group {{ $errors->has('name') ? 'has-error' : '' }}">
-                    <label for="phone">Name</label>
-                    <input type="text" id="name" name="name" class="form-control" value="{{ old('name', isset($user) ? $user->name : '') }}" disabled>
-                    @if($errors->has('name'))
-                        <p class="help-block">
-                            {{ $errors->first('name') }}
-                        </p>
-                    @endif
-                </div>
-                <div class="form-group {{ $errors->has('email') ? 'has-error' : '' }}">
-                    <label for="phone">Email</label>
-                    <input type="text" id="email" name="email" class="form-control" value="{{ old('email', isset($user) ? $user->email : '') }}" disabled>
-                    @if($errors->has('email'))
-                        <p class="help-block">
-                            {{ $errors->first('email') }}
-                        </p>
-                    @endif
-                </div>
-                <div class="form-group {{ $errors->has('phone') ? 'has-error' : '' }}">
-                    <label for="phone">Phone Number*</label>
-                    <input type="hidden" name="id" value="{{ $profile->id }}">
-                    <input type="text" id="phone" name="phone" class="form-control" value="{{ old('phone', isset($profile) ? $profile->phone : '') }}" required>
-                    @if($errors->has('phone'))
-                        <p class="help-block">
-                            {{ $errors->first('phone') }}
-                        </p>
-                    @endif
-                </div>
-
-                <div class="form-group {{ $errors->has('institute_name') ? 'has-error' : '' }}">
-                    <label for="description">Institute Nane *</label>
-                    <input type="text" id="institute_name" name="institute_name" class="form-control" value="{{ old('institute_name', isset($profile) ? $profile->institute_name : '') }}" required>
-                    @if($errors->has('institute_name'))
-                        <p class="help-block">
-                            {{ $errors->first('institute_name') }}
-                        </p>
-                    @endif
-                </div>
-
-                <div class="row form-group" >
-                    <div class="col-md-12">
-                        <label for="phone"><strong>Coupon Code</strong></label>
-                        <input type="text" id="coupon_code" name="coupon_code" class="form-control" value="{{ old('coupon_code', isset($profile) ? $profile->coupon_code : '') }}">
-                        @if($errors->has('coupon_code'))
-                            <p class="help-block">
-                                {{ $errors->first('coupon_code') }}
-                            </p>
-                        @endif
+                <!-- Section 1: Personal Information -->
+                <h5 class="text-primary mb-3 border-bottom pb-2"><i class="fas fa-user-circle mr-2"></i> Personal Information</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="first_name">First Name *</label>
+                            <input type="text" id="first_name" name="first_name" class="form-control" value="{{ old('first_name', $profile->first_name) }}" required>
+                        </div>
                     </div>
-                    <h4 id="coupon_validation_message"></h4>
-                </div>
-                <div class="form-group {{ $errors->has('payment_status') ? 'has-error' : '' }}">
-                    <label for="payment_status"><strong>Payment Status</strong></label>
-                    <select name="payment_status" class="form-control">
-                        <option value=""> ========= Select One =========== </option>
-                        <option value="0" {{ $profile->payment_status == 0?'selected':'' }}> Payment Not Complete</option>
-                        <option value="1" {{ $profile->payment_status == 1?'selected':'' }}> Payment Complete.</option>
-                    </select>
-                    @if($errors->has('payment_status'))
-                        <p class="help-block">
-                            {{ $errors->first('payment_status') }}
-                        </p>
-                    @endif
-                </div>
-
-
-
-
-
-{{--                value="{{ $schedule->id }}"--}}
-{{--                {{ in_array($schedule->id, $registration->schedule_ids) --}}
-{{--            --}}
-
-            <div class="form-group {{ $errors->has('pay_amount') ? 'has-error' : '' }}">
-                    <label for="description">Pay Amount *</label>
-                    <input type="number" id="pay_amount" name="pay_amount" class="form-control" value="{{ old('pay_amount', isset($profile) ? $profile->pay_amount : '') }}" required>
-                    @if($errors->has('pay_amount'))
-                        <p class="help-block">
-                            {{ $errors->first('pay_amount') }}
-                        </p>
-                    @endif
-                </div>
-
-                <div class="row form-group {{ $errors->has('schedule_ids') ? 'has-error' : '' }}">
-                    <div class="col-md-12">
-                        <label for="part_aws_cloud_club"><strong>Select Workshop(s) *</strong></label>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="last_name">Last Name *</label>
+                            <input type="text" id="last_name" name="last_name" class="form-control" value="{{ old('last_name', $profile->last_name) }}" required>
+                        </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Email (Read-only)</label>
+                            <input type="text" class="form-control bg-light" value="{{ $user->email }}" readonly disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="whatsapp_number">WhatsApp Number *</label>
+                            <input type="text" id="whatsapp_number" name="whatsapp_number" class="form-control" value="{{ old('whatsapp_number', $profile->whatsapp_number) }}" required>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Section 2: Professional Information -->
+                <h5 class="text-primary mt-4 mb-3 border-bottom pb-2"><i class="fas fa-briefcase mr-2"></i> Professional Information</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="designation">Designation *</label>
+                            <input type="text" id="designation" name="designation" class="form-control" value="{{ old('designation', $profile->designation) }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="department">Department</label>
+                            <input type="text" id="department" name="department" class="form-control" value="{{ old('department', $profile->department) }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="institution">Institution *</label>
+                            <input type="text" id="institution" name="institution" class="form-control" value="{{ old('institution', $profile->institution) }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="country_id">Country *</label>
+                            <select name="country_id" id="country_id" class="form-control select2" required>
+                                <option value="">--- Select Country ---</option>
+                                @foreach($countries as $country)
+                                    <option value="{{ $country->id }}" {{ $profile->country_id == $country->id ? 'selected' : '' }}>
+                                        {{ $country->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Registration & Payment -->
+                <h5 class="text-primary mt-4 mb-3 border-bottom pb-2"><i class="fas fa-file-invoice-dollar mr-2"></i> Registration & Payment</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="registration_id">Registration ID</label>
+                            <input type="text" id="registration_id" name="registration_id" class="form-control" value="{{ old('registration_id', $profile->registration_id) }}">
+                            <small class="text-muted">Usually generated automatically upon payment.</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="participation_mode">Participation Mode *</label>
+                            <select name="participation_mode" id="participation_mode" class="form-control" required>
+                                <option value="onsite" {{ $profile->participation_mode == 'onsite' ? 'selected' : '' }}>Onsite</option>
+                                <option value="online" {{ $profile->participation_mode == 'online' ? 'selected' : '' }}>Online</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group py-4">
+                            <div class="custom-control custom-switch">
+                                <input type="hidden" name="is_author" value="0">
+                                <input type="checkbox" class="custom-control-input" id="is_author" name="is_author" value="1" {{ $profile->is_author ? 'checked' : '' }}>
+                                <label class="custom-control-label font-weight-bold" for="is_author">Registered as Author?</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="pay_amount">Pay Amount *</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" id="pay_amount" name="pay_amount" class="form-control" value="{{ old('pay_amount', $profile->pay_amount) }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="currency">Currency</label>
+                            <input type="text" id="currency" name="currency" class="form-control" value="{{ old('currency', $profile->currency) }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="coupon_code">Coupon Code</label>
+                            <input type="text" id="coupon_code" name="coupon_code" class="form-control" value="{{ old('coupon_code', $profile->coupon_code) }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="payment_status">Payment Status *</label>
+                            <select name="payment_status" id="payment_status" class="form-control" required>
+                                <option value="0" {{ $profile->payment_status == '0' ? 'selected' : '' }}>Not Complete</option>
+                                <option value="1" {{ $profile->payment_status == '1' ? 'selected' : '' }}>Complete</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Workshops -->
+                <h5 class="text-primary mt-4 mb-3 border-bottom pb-2"><i class="fas fa-laptop-code mr-2"></i> Workshops / Selected Sessions</h5>
+                <div class="row">
                     @foreach ($schedules as $dayKey => $daySchedules)
-                        <div class="col-md-4">
-
-                            <span>{{ "Day - " . $dayKey }}</span>
-                            <br>
-                            @foreach ($daySchedules as $schedule)
-                                <input
-                                    type="checkbox"
-                                    class="schedule-checkbox {{ $dayKey }}"
-                                    data-start-time="{{ $schedule->start_time }}"
-                                    data-day="{{ $dayKey }}"
-                                    name="schedule_ids[]"
-                                    value="{{ $schedule->id }}"
-                                    {{ in_array($schedule->id, $workshops) ? 'checked' : '' }}
-                                >
-                                {{ $schedule->title }}
-                                <br>
-                                <strong><i class="fa fa-clock-o"></i> {{ \Carbon\Carbon::parse($schedule->start_time)->format('h:i A') }}</strong>
-                                -- Available Seats: {{ $schedule->total_seat - $schedule->users->count() }}
-                                <br>
-                                <br>
-                            @endforeach
+                        <div class="col-md-4 mb-4">
+                            <div class="p-3 bg-light rounded border h-100">
+                                <h6 class="font-weight-bold mb-3"><i class="calendar-day mr-2"></i> {{ "Day - " . $dayKey }}</h6>
+                                @foreach ($daySchedules as $schedule)
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input" id="schedule_{{ $schedule->id }}" name="schedule_ids[]" value="{{ $schedule->id }}" {{ in_array($schedule->id, $workshops) ? 'checked' : '' }}>
+                                        <label class="custom-control-label small" for="schedule_{{ $schedule->id }}">
+                                            <strong>{{ $schedule->title }}</strong>
+                                            <br>
+                                            <span class="text-muted"><i class="far fa-clock mr-1"></i> {{ \Carbon\Carbon::parse($schedule->start_time)->format('h:i A') }}</span>
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                     @endforeach
-                    @if($errors->has('schedule_ids'))
-                        <p class="text-danger">{{ $errors->first('schedule_ids') }}</p>
-                    @endif
-
-
                 </div>
-                <div>
-                    <input class="btn btn-primary" type="submit" value="{{ trans('global.update') }}">
+
+                <div class="mt-4 pt-3 border-top">
+                    <button class="btn btn-primary px-5 shadow-sm" type="submit">
+                        <i class="fas fa-save mr-1"></i> {{ trans('global.save') }}
+                    </button>
+                    <a href="{{ route('show-profile') }}" class="btn btn-light border ml-2">Cancel</a>
                 </div>
+            </form>
             </form>
         </div>
     </div>

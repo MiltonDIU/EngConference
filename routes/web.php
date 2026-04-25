@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\CustomMailController;
 use App\Http\Controllers\Admin\MailController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\SslCommerzPaymentController;
+use App\Http\Controllers\OneCardPaymentController;
 
 use App\Http\Controllers\Admin\BlogCategoriesController;
 use App\Http\Controllers\Admin\TagsController;
@@ -39,6 +40,10 @@ use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\DataBankCategoriesController;
 use App\Http\Controllers\Admin\DataBanksController;
 use App\Http\Controllers\Admin\FeedbackController;
+use App\Http\Controllers\Admin\CommitteeTypeController;
+use App\Http\Controllers\Admin\CommitteeController;
+use App\Http\Controllers\Admin\ConferenceMemberController;
+use App\Http\Controllers\Admin\PaperController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -65,6 +70,10 @@ Route::get('/clear-cache', function() {
     return '<h1>Cache facade value cleared</h1>';
 });
 
+
+Route::get('call-for-papers', [HomeController::class,'callForPepper'])->name('callForPepper');
+
+
 Route::get('unsubscribe/{unsubscribe_link}', [HomeController::class,'unsubscribe'])->name('data-banks.unsubscribe');
 Route::get('subscribe/{unsubscribe_link}', [HomeController::class,'subscribe'])->name('data-banks.subscribe');
 
@@ -77,18 +86,26 @@ Route::get('/generate_ids', [HomeController::class, 'generateIds'])->name('gener
 Route::get('/generate_ids/{id}', [HomeController::class, 'generateIds'])->name('generateIds');
 
 // SSLCOMMERZ Start
-Route::get('/example1', [SslCommerzPaymentController::class, 'exampleEasyCheckout']);
-Route::get('/example2', [SslCommerzPaymentController::class, 'exampleHostedCheckout']);
+// Route::get('/example1', [SslCommerzPaymentController::class, 'exampleEasyCheckout']);
+// Route::get('/example2', [SslCommerzPaymentController::class, 'exampleHostedCheckout']);
 
-Route::post('/pay', [SslCommerzPaymentController::class, 'index']);
-Route::post('/pay-via-ajax', [SslCommerzPaymentController::class, 'payViaAjax']);
+// Route::post('/pay', [SslCommerzPaymentController::class, 'index']);
+// Route::post('/pay-via-ajax', [SslCommerzPaymentController::class, 'payViaAjax']);
 
-Route::post('/success', [SslCommerzPaymentController::class, 'success']);
-Route::post('/fail', [SslCommerzPaymentController::class, 'fail']);
-Route::post('/cancel', [SslCommerzPaymentController::class, 'cancel']);
+// Route::post('/success', [SslCommerzPaymentController::class, 'success']);
+// Route::post('/fail', [SslCommerzPaymentController::class, 'fail']);
+// Route::post('/cancel', [SslCommerzPaymentController::class, 'cancel']);
 
-Route::post('/ipn', [SslCommerzPaymentController::class, 'ipn']);
+// Route::post('/ipn', [SslCommerzPaymentController::class, 'ipn']);
 //SSLCOMMERZ END
+
+// OneCard Start
+Route::post('/onecard/pay', [OneCardPaymentController::class, 'index'])->name('onecard.pay');
+Route::post('/onecard/success', [OneCardPaymentController::class, 'success'])->name('onecard.success');
+Route::get('/onecard/redirect', [OneCardPaymentController::class, 'redirect'])->name('onecard.redirect');
+Route::post('/admin/onecard/verify', [OneCardPaymentController::class, 'verifyPayment'])->name('onecard.verify');
+// OneCard END
+// OneCard END
 
 // success
 Route::get('/success/{ord_token}', [HomeController::class, 'success'])->name('success');
@@ -129,8 +146,8 @@ Auth::routes(['register' => false,'verify'=>true,]);
 
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','verified']], function () {
-    
-        Route::post('feedback', [FeedbackController::class,'store'])->name('feedback.store');
+
+    Route::post('feedback', [FeedbackController::class,'store'])->name('feedback.store');
 
 
     Route::get('/', [DashboardController::class, 'index'])->name('home');
@@ -274,22 +291,64 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
 
     Route::resource('data-banks', DataBanksController::class);
 
+    // Committee Types
+    Route::delete('committee-types/destroy', [CommitteeTypeController::class, 'massDestroy'])->name('committee-types.massDestroy');
+    Route::resource('committee-types', CommitteeTypeController::class);
+
+    // Committees
+    Route::delete('committees/destroy', [CommitteeController::class, 'massDestroy'])->name('committees.massDestroy');
+    Route::resource('committees', CommitteeController::class);
+
+    // Committee  Members
+    Route::delete('conference-members/destroy', [ConferenceMemberController::class, 'massDestroy'])->name('conference-members.massDestroy');
+    Route::resource('conference-members', ConferenceMemberController::class);
+
+    // Papers Admin Actions
+    Route::post('papers/{paper}/review', [PaperController::class, 'review'])->name('papers.review');
+    Route::post('papers/{paper}/approve', [PaperController::class, 'approve'])->name('papers.approve');
+    Route::post('papers/{paper}/reject', [PaperController::class, 'reject'])->name('papers.reject');
 });
+
+    // Paper Submission (Post-registration)
+   // Route::get('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'create'])->name('papers.submit');
+  //  Route::post('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'store'])->name('papers.store');
+Route::resource('papers', PaperController::class);
+
+
+
+
 //Route::get('book-ticket',[ProfileController::class,'create'])->name('book-ticket');
-Route::get('show/profile',[ProfileController::class,'index'])->name('show-profile');
+// Participant Routes (Authenticated & Verified)
+Route::group(['middleware' => ['auth', 'verified']], function () {
+    // Profile
+    Route::get('show/profile', [ProfileController::class, 'index'])->name('show-profile');
+    Route::post('save/profile', [ProfileController::class, 'store'])->name('save-profile');
+    Route::get('edit/profile/{id}', [ProfileController::class, 'edit'])->name('edit-profile');
+    Route::post('update/profile', [ProfileController::class, 'update'])->name('update-profile');
+    Route::post('validate-coupon', [ProfileController::class, 'validateCoupon'])->name('validateCoupon');
 
-Route::post('save/profile',[ProfileController::class,'store'])->name('save-profile');
-Route::get('edit/profile/{id}',[ProfileController::class,'edit'])->name('edit-profile');
-Route::post('update/profile/',[ProfileController::class,'update'])->name('update-profile');
-Route::post('/validate-coupon', [ProfileController::class,'validateCoupon'])->name('validateCoupon');
-Route::get('set/payment/{$data}',[PaymentController::class,'setPayment'])->name('setPayment');
-Route::get('my-payment/',[PaymentController::class,'myPayment'])->name('myPayment');
-Route::post('pay-now',[PaymentController::class,'payNow'])->name('payNow');
-Route::get('status/payment',[ProfileController::class,'statusPayment'])->name('statusPayment');
-Route::post('send-mail',[MailController::class, 'sendMail'])->name('send-message');
+    // Paper Management
+    Route::get('papers', [App\Http\Controllers\Admin\PaperController::class, 'index'])->name('papers.index');
+    Route::get('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'create'])->name('papers.submit');
+    Route::post('papers/submit', [App\Http\Controllers\Admin\PaperController::class, 'store'])->name('papers.store');
+    Route::get('papers/{paper}', [App\Http\Controllers\Admin\PaperController::class, 'show'])->name('papers.show');
+     Route::get('papers/{paper}/edit', [App\Http\Controllers\Admin\PaperController::class, 'edit'])->name('papers.edit');
+    Route::put('papers/{paper}', [App\Http\Controllers\Admin\PaperController::class, 'update'])->name('papers.update');
+   
+    Route::get('papers/{paper}/pricing', [App\Http\Controllers\Admin\PaperController::class, 'getPaperPricing'])->name('papers.pricing');
 
-Route::get('payment/complete',[ProfileController::class,'paymentComplete'])->name('payment-complete');
-Route::get('payment/not-complete',[ProfileController::class,'paymentNotComplete'])->name('payment-not-complete');
+
+    // Payments
+    Route::get('set/payment/{data}', [PaymentController::class, 'setPayment'])->name('setPayment');
+    Route::get('my-payment', [PaymentController::class, 'myPayment'])->name('myPayment');
+    Route::post('pay-now', [PaymentController::class, 'payNow'])->name('payNow');
+    Route::post('pay-now-papers', [PaymentController::class, 'payNowPapers'])->name('payNowPapers');
+    Route::get('status/payment', [ProfileController::class, 'statusPayment'])->name('statusPayment');
+    Route::get('payment/complete', [ProfileController::class, 'paymentComplete'])->name('payment-complete');
+    Route::get('payment/not-complete', [ProfileController::class, 'paymentNotComplete'])->name('payment-not-complete');
+});
+
+Route::post('send-mail', [MailController::class, 'sendMail'])->name('send-message');
 
 
 Route::get('test-payment',[PaymentController::class,'testPayment'])->name('testPayment');
@@ -303,7 +362,7 @@ Route::get('test-payment',[PaymentController::class,'testPayment'])->name('testP
 Auth::routes();
 
 
-//Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'redirectHome'])->name('home_redirect');
 
 
 
