@@ -165,6 +165,7 @@ return [
         /*
          * Package Service Providers...
          */
+        Milton\Vaultix\VaultixServiceProvider::class,
 
         /*
          * Application Service Providers...
