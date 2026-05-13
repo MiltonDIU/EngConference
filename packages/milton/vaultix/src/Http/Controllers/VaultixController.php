@@ -139,12 +139,12 @@ class VaultixController extends Controller
 
         if ($dest->provider === 'sftp') {
             return [
-                'driver' => 'sftp',
-                'host' => $creds['host'] ?? null,
+                'driver'   => 'sftp',
+                'host'     => $creds['host'] ?? null,
                 'username' => $creds['username'] ?? null,
                 'password' => $creds['password'] ?? null,
-                'port' => $creds['port'] ?? 22,
-                'root' => $creds['root'] ?? '/',
+                'port'     => (int) ($creds['port'] ?? 22),
+                'root'     => $creds['root'] ?? '/',
             ];
         }
 

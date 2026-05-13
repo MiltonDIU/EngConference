@@ -18,6 +18,11 @@ class VaultixServiceProvider extends ServiceProvider
         $this->commands([
             VaultixBackupCommand::class,
         ]);
+
+        // Automatically register the command in the scheduler
+        $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+            $schedule->command('vaultix:run')->everyMinute();
+        });
     }
 
     protected function registerGoogleDriver()

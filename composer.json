@@ -47,7 +47,7 @@
         "laravel/tinker": "^3.0",
         "laravel/ui": "^4.6",
         "league/flysystem-aws-s3-v3": "^3.0",
-        "league/flysystem-sftp-v3": "^3.33",
+        "league/flysystem-sftp-v3": "^3.0",
         "masbug/flysystem-google-drive-ext": "^2.5",
         "nuovo/spreadsheet-reader": "^0.5.11",
         "spatie/laravel-backup": "^10.2",

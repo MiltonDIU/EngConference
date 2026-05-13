@@ -165,6 +165,11 @@
                             <div><label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label><input type="text" name="credentials[username]" value="{{ old('credentials.username') }}" class="w-full px-4 py-2 rounded-lg border border-slate-200"></div>
                             <div><label class="block text-xs font-bold text-slate-400 uppercase mb-1">Password</label><input type="password" name="credentials[password]" class="w-full px-4 py-2 rounded-lg border border-slate-200"></div>
                         </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Root Directory (Optional)</label>
+                            <input type="text" name="credentials[root]" value="{{ old('credentials.root', '/') }}" placeholder="e.g. /home/user/backups" class="w-full px-4 py-2 rounded-lg border border-slate-200">
+                            <p class="mt-1 text-[10px] text-slate-400">Absolute path on the remote server where backups will be stored.</p>
+                        </div>
                     </div>
                 </div>
                 

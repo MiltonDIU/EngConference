@@ -163,7 +163,7 @@ class VaultixBackupCommand extends Command
                 'host'     => $creds['host'] ?? null,
                 'username' => $creds['username'] ?? null,
                 'password' => $creds['password'] ?? null,
-                'port'     => $creds['port'] ?? 22,
+                'port'     => (int) ($creds['port'] ?? 22),
                 'root'     => $creds['root'] ?? '/',
                 // Spatie uses backup.backup.name as the subfolder inside root
                 'timeout'  => 30,
