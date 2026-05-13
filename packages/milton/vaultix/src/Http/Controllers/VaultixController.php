@@ -148,15 +148,19 @@ class VaultixController extends Controller
             ];
         }
 
-        return [
-            'driver' => 's3',
-            'key' => $creds['key'] ?? ($creds['r2_key'] ?? null),
-            'secret' => $creds['secret'] ?? ($creds['r2_secret'] ?? null),
-            'region' => $creds['region'] ?? 'us-east-1',
-            'bucket' => $creds['bucket'] ?? ($creds['r2_bucket'] ?? null),
-            'endpoint' => $dest->provider === 'r2' ? ($creds['endpoint'] ?? null) : null,
-            'use_path_style_endpoint' => $dest->provider === 'r2' ? true : false,
-        ];
+        if ($dest->provider === 's3' || $dest->provider === 'r2') {
+            return [
+                'driver'                  => 's3',
+                'key'                     => $creds['key'] ?? ($creds['access_key'] ?? ($creds['r2_key'] ?? null)),
+                'secret'                  => $creds['secret'] ?? ($creds['secret_key'] ?? ($creds['r2_secret'] ?? null)),
+                'region'                  => $dest->provider === 'r2' ? 'auto' : ($creds['region'] ?? 'us-east-1'),
+                'bucket'                  => $creds['bucket'] ?? ($creds['r2_bucket'] ?? null),
+                'endpoint'                => $creds['endpoint'] ?? null,
+                'use_path_style_endpoint' => $dest->provider === 'r2' || ($creds['use_path_style'] ?? false),
+            ];
+        }
+
+        return [];
     }
 
     public function redirectToGoogle(Request $request)

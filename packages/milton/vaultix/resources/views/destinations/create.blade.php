@@ -241,7 +241,6 @@
                     <ul class="list-disc list-inside space-y-2">
                         <li>Go to <strong>APIs & Services > OAuth consent screen</strong>.</li>
                         <li>Choose <strong>External</strong> and fill in the app name and email.</li>
-                        <li>Add scopes: <code>.../auth/drive.file</code> if requested.</li>
                     </ul>
                 </div>
             </div>
@@ -257,9 +256,102 @@
                 <div class="space-y-4">
                     <p class="font-bold text-slate-900 underline">Step 4: URIs Configuration</p>
                     <ul class="list-disc list-inside space-y-2">
-                        <li><strong>Authorized JavaScript Origins</strong>: Paste only the domain (e.g., <code class="bg-slate-100 px-1 py-0.5 rounded">{{ url('/') }}</code>).</li>
-                        <li><strong>Authorized Redirect URIs</strong>: Paste the full callback URL: <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">{{ route('vaultix.auth.google.callback') }}</code></li>
-                        <li>Click <strong>Create</strong> and copy your Client ID & Secret!</li>
+                        <li>Add Redirect URI: <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">{{ route('vaultix.auth.google.callback') }}</code></li>
+                        <li>Copy <b>Client ID</b> and <b>Secret</b> and paste them above.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AWS S3 Guide -->
+    <div id="guide-s3" class="provider-fields mt-12 bg-white rounded-2xl border shadow-sm overflow-hidden hidden">
+        <div class="p-6 border-b bg-slate-50">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Full AWS S3 Setup Guide
+            </h3>
+        </div>
+        <div class="p-8 text-sm text-slate-600 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <p class="font-bold text-slate-900 underline">Step 1: Create IAM User</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>Log in to <a href="https://console.aws.amazon.com/iam/" target="_blank" class="text-amber-600 font-bold underline">AWS IAM Console</a>.</li>
+                        <li>Create a new user with <strong>Programmatic Access</strong>.</li>
+                        <li>Attach the <code>AmazonS3FullAccess</code> policy to this user.</li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <p class="font-bold text-slate-900 underline">Step 2: Access Keys</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>After creating the user, copy the <strong>Access Key ID</strong>.</li>
+                        <li>Click "Show" to see and copy the <strong>Secret Access Key</strong>.</li>
+                        <li>Store these safely as they won't be shown again!</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t">
+                <div class="space-y-4">
+                    <p class="font-bold text-slate-900 underline">Step 3: Create Bucket</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>Go to <strong>S3 Console</strong> and create a new bucket.</li>
+                        <li>Ensure the <strong>Bucket Name</strong> is unique.</li>
+                        <li>Disable "Block all public access" only if you need public URLs.</li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <p class="font-bold text-slate-900 underline">Step 4: Configuration</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>Note the <strong>Region</strong> code (e.g., <code>us-east-1</code>).</li>
+                        <li>Enter the Bucket Name and Region in the form above.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cloudflare R2 Guide -->
+    <div id="guide-r2" class="provider-fields mt-12 bg-white rounded-2xl border shadow-sm overflow-hidden hidden">
+        <div class="p-6 border-b bg-slate-50">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Full Cloudflare R2 Setup Guide
+            </h3>
+        </div>
+        <div class="p-8 text-sm text-slate-600 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <p class="font-bold text-slate-900 underline">Step 1: Create R2 Bucket</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>Go to Cloudflare Dashboard > <strong>R2 Storage</strong>.</li>
+                        <li>Create a new bucket and give it a name.</li>
+                        <li>Go to bucket <strong>Settings</strong> to find the S3 Endpoint.</li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <p class="font-bold text-slate-900 underline">Step 2: Generate API Token</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>Click <strong>Manage R2 API Tokens</strong> on the R2 landing page.</li>
+                        <li>Create a token with <strong>Object Read & Write</strong> permissions.</li>
+                        <li>Copy the <strong>Access Key ID</strong> and <strong>Secret Access Key</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t">
+                <div class="space-y-4">
+                    <p class="font-bold text-slate-900 underline">Step 3: Endpoint URL</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>Copy the <strong>S3 API Endpoint</strong> from Cloudflare.</li>
+                        <li>It looks like: <code>https://<id>.r2.cloudflarestorage.com</code></li>
+                        <li>Do not include the bucket name in the endpoint URL.</li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <p class="font-bold text-slate-900 underline">Step 4: Integration</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>Vaultix will automatically set the region to <code>auto</code> for R2.</li>
+                        <li>Enter your Keys, Bucket name, and Endpoint above.</li>
                     </ul>
                 </div>
             </div>

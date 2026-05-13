@@ -22,26 +22,31 @@ class VaultixServiceProvider extends ServiceProvider
 
     protected function registerGoogleDriver()
     {
+        // We only need to extend the storage with 'google' driver.
+        // For S3 and others, Laravel's built-in drivers work perfectly 
+        // as long as we define the 'vaultix_disk' configuration at runtime.
         try {
-            \Illuminate\Support\Facades\Storage::extend('google', function ($app, $config) {
-                $options = [];
-                if (!empty($config['teamDriveId'] ?? null)) {
-                    $options['teamDriveId'] = $config['teamDriveId'];
-                }
+            if (class_exists(\Masbug\Flysystem\GoogleDriveAdapter::class)) {
+                \Illuminate\Support\Facades\Storage::extend('google', function ($app, $config) {
+                    $options = [];
+                    if (!empty($config['teamDriveId'] ?? null)) {
+                        $options['teamDriveId'] = $config['teamDriveId'];
+                    }
 
-                $client = new \Google\Client();
-                $client->setClientId($config['clientId']);
-                $client->setClientSecret($config['clientSecret']);
-                $client->refreshToken($config['refreshToken']);
+                    $client = new \Google\Client();
+                    $client->setClientId($config['clientId'] ?? '');
+                    $client->setClientSecret($config['clientSecret'] ?? '');
+                    $client->refreshToken($config['refreshToken'] ?? '');
 
-                $service = new \Google\Service\Drive($client);
-                $adapter = new \Masbug\Flysystem\GoogleDriveAdapter($service, $config['folderId'] ?? '/', $options);
-                $driver = new \League\Flysystem\Filesystem($adapter);
+                    $service = new \Google\Service\Drive($client);
+                    $adapter = new \Masbug\Flysystem\GoogleDriveAdapter($service, $config['folderId'] ?? '/', $options);
+                    $driver = new \League\Flysystem\Filesystem($adapter);
 
-                return new \Illuminate\Filesystem\FilesystemAdapter($driver, $adapter);
-            });
+                    return new \Illuminate\Filesystem\FilesystemAdapter($driver, $adapter);
+                });
+            }
         } catch (\Exception $e) {
-            // Silently fail if dependencies are missing during initial load
+            // Silently fail to avoid crashing the app if dependencies are being installed
         }
     }
 
