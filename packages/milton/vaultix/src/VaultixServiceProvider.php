@@ -7,13 +7,29 @@ use Milton\Vaultix\Commands\VaultixBackupCommand;
 
 class VaultixServiceProvider extends ServiceProvider
 {
+    public function register()
+    {
+        $this->mergeConfigFrom(__DIR__.'/../config/vaultix.php', 'vaultix');
+    }
+
     public function boot()
     {
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/vaultix.php' => config_path('vaultix.php'),
+            ], 'vaultix-config');
+
+            $this->publishes([
+                __DIR__.'/../resources/views/emails' => resource_path('views/vendor/vaultix/emails'),
+            ], 'vaultix-emails');
+        }
+
         $this->loadMigrationsFrom(__DIR__.'/Database/Migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'vaultix');
 
         $this->registerGoogleDriver();
+        $this->registerMiddleware();
 
         $this->commands([
             VaultixBackupCommand::class,
@@ -25,11 +41,14 @@ class VaultixServiceProvider extends ServiceProvider
         });
     }
 
+    protected function registerMiddleware()
+    {
+        $router = $this->app['router'];
+        $router->aliasMiddleware('vaultix.auth', \Milton\Vaultix\Http\Middleware\VaultixAuthorization::class);
+    }
+
     protected function registerGoogleDriver()
     {
-        // We only need to extend the storage with 'google' driver.
-        // For S3 and others, Laravel's built-in drivers work perfectly 
-        // as long as we define the 'vaultix_disk' configuration at runtime.
         try {
             if (class_exists(\Masbug\Flysystem\GoogleDriveAdapter::class)) {
                 \Illuminate\Support\Facades\Storage::extend('google', function ($app, $config) {
@@ -51,12 +70,7 @@ class VaultixServiceProvider extends ServiceProvider
                 });
             }
         } catch (\Exception $e) {
-            // Silently fail to avoid crashing the app if dependencies are being installed
+            // Silently fail to avoid crashing the app
         }
-    }
-
-    public function register()
-    {
-        //
     }
 }

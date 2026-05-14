@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Artisan;
 use Milton\Vaultix\Models\BackupDestination;
 use Milton\Vaultix\Models\BackupJob;
+use Milton\Vaultix\Models\VaultixSetting;
 
 class VaultixController extends Controller
 {
@@ -25,7 +26,12 @@ class VaultixController extends Controller
             $isQueueHealthy = count($output) > 0;
         }
 
-        return view('vaultix::index', compact('destinations', 'jobs', 'isSchedulerHealthy', 'isQueueHealthy', 'schedulerLastRun'));
+        $backups = \Milton\Vaultix\Models\Backup::with(['job', 'destination'])->latest()->limit(50)->get();
+
+        $diskUsage = $this->getDiskUsage();
+        $projectSize = $this->getProjectSize();
+
+        return view('vaultix::index', compact('destinations', 'jobs', 'isSchedulerHealthy', 'isQueueHealthy', 'schedulerLastRun', 'backups', 'diskUsage', 'projectSize'));
     }
 
     public function createDestination()
@@ -40,15 +46,21 @@ class VaultixController extends Controller
             'provider' => 'required|in:gdrive,s3,r2,sftp',
             'credentials' => 'required|array',
             'backup_type' => 'required|in:db_only,files_only,full',
-            'frequency' => 'required|in:daily,weekly,monthly,hourly',
+            'frequency' => 'required|in:daily,weekly,monthly,hourly,6_hours,12_hours',
+            'backup_time' => 'required|string|regex:/^[0-9]{2}:[0-9]{2}$/',
+            'backup_day' => 'nullable|string',
             'custom_folder_name' => 'nullable|string|max:255',
             'notification_email' => 'nullable|email|max:255',
+            'keep_all_backups_for_days' => 'required|integer|min:0',
+            'keep_daily_backups_for_days' => 'required|integer|min:0',
+            'keep_weekly_backups_for_weeks' => 'required|integer|min:0',
+            'keep_monthly_backups_for_months' => 'required|integer|min:0',
         ]);
 
         $destination = BackupDestination::create($request->only(['name', 'provider', 'credentials']));
 
         // Create the backup job with user selections
-        BackupJob::create([
+        $job = new BackupJob([
             'destination_id' => $destination->id,
             'name' => $destination->name . " (" . ucfirst($request->frequency) . ")",
             'type' => $request->backup_type,
@@ -57,8 +69,18 @@ class VaultixController extends Controller
             'notify_on_success' => $request->has('notify_on_success') ? 1 : 0,
             'notify_on_failure' => $request->has('notify_on_failure') ? 1 : 0,
             'frequency' => $request->frequency,
-            'next_run_at' => now()->addMinutes(5), // Run soon for first time
+            'backup_time' => $request->backup_time,
+            'backup_day' => $request->backup_day,
+            'keep_all_backups_for_days' => $request->keep_all_backups_for_days,
+            'keep_daily_backups_for_days' => $request->keep_daily_backups_for_days,
+            'keep_weekly_backups_for_weeks' => $request->keep_weekly_backups_for_weeks,
+            'keep_monthly_backups_for_months' => $request->keep_monthly_backups_for_months,
         ]);
+
+        // Use the command to calculate next_run_at properly even on creation
+        $command = new \Milton\Vaultix\Commands\VaultixBackupCommand();
+        $job->next_run_at = now()->addSeconds(10); // Run first time almost immediately
+        $job->save();
 
         return redirect()->route('vaultix.index')->with('success', 'Storage destination added and default job created!');
     }
@@ -76,9 +98,15 @@ class VaultixController extends Controller
             'provider' => 'required|in:gdrive,s3,r2,sftp',
             'credentials' => 'required|array',
             'backup_type' => 'required|in:db_only,files_only,full',
-            'frequency' => 'required|in:daily,weekly,monthly,hourly',
+            'frequency' => 'required|in:daily,weekly,monthly,hourly,6_hours,12_hours',
+            'backup_time' => 'required|string|regex:/^[0-9]{2}:[0-9]{2}$/',
+            'backup_day' => 'nullable|string',
             'custom_folder_name' => 'nullable|string|max:255',
             'notification_email' => 'nullable|email|max:255',
+            'keep_all_backups_for_days' => 'required|integer|min:0',
+            'keep_daily_backups_for_days' => 'required|integer|min:0',
+            'keep_weekly_backups_for_weeks' => 'required|integer|min:0',
+            'keep_monthly_backups_for_months' => 'required|integer|min:0',
         ]);
 
         $destination->update($request->only(['name', 'provider', 'credentials']));
@@ -94,6 +122,12 @@ class VaultixController extends Controller
                 'notify_on_success' => $request->has('notify_on_success') ? 1 : 0,
                 'notify_on_failure' => $request->has('notify_on_failure') ? 1 : 0,
                 'frequency' => $request->frequency,
+                'backup_time' => $request->backup_time,
+                'backup_day' => $request->backup_day,
+                'keep_all_backups_for_days' => $request->keep_all_backups_for_days,
+                'keep_daily_backups_for_days' => $request->keep_daily_backups_for_days,
+                'keep_weekly_backups_for_weeks' => $request->keep_weekly_backups_for_weeks,
+                'keep_monthly_backups_for_months' => $request->keep_monthly_backups_for_months,
             ]);
         }
 
@@ -223,7 +257,320 @@ class VaultixController extends Controller
 
     public function runNow(BackupJob $job)
     {
+        // 1. Safety Check: Is there enough space to even zip the project?
+        $projectSize = $this->getProjectSize();
+        $diskUsage = $this->getDiskUsage();
+        
+        // We need at least 1.5x the project size free to safely create a zip
+        $requiredSpace = $projectSize['total'] * 1.5;
+        $freeSpaceBytes = disk_free_space(config('vaultix.monitor_path', storage_path()));
+
+        if ($freeSpaceBytes < $requiredSpace) {
+            $needed = $this->formatBytes($requiredSpace - $freeSpaceBytes);
+            $msg = "Insufficient storage! You need at least {$needed} more free space to safely generate this backup.";
+            
+            // Send Email Notification if enabled for this job
+            $jobRecord = \Milton\Vaultix\Models\BackupJob::find($job->id);
+            if ($jobRecord && $jobRecord->notify_on_failure && !empty($jobRecord->notification_email)) {
+                try {
+                    $dashboardUrl = route('vaultix.index');
+                    \Illuminate\Support\Facades\Mail::send('vaultix::emails.notification', [
+                        'status' => 'failed',
+                        'job' => $jobRecord,
+                        'size' => null,
+                        'error' => "Manual trigger aborted: " . $msg,
+                        'dashboardUrl' => $dashboardUrl
+                    ], function($m) use ($jobRecord) {
+                        $m->to($jobRecord->notification_email)->subject("🚨 Vaultix Safety Alert: Manual Backup Aborted");
+                    });
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Vaultix Manual Backup Email Failed: " . $e->getMessage());
+                }
+            }
+
+            return response()->json(['error' => $msg], 422);
+        }
+
         \Milton\Vaultix\Jobs\ProcessVaultixBackup::dispatch($job->id);
-        return back()->with('success', 'Backup job has been dispatched to the background queue!');
+        
+        return response()->json([
+            'success' => 'Backup job has been dispatched to the background queue!'
+        ]);
+    }
+
+    public function getLatestBackupId()
+    {
+        return response()->json([
+            'id' => \Milton\Vaultix\Models\Backup::latest()->first()?->id ?? 0
+        ]);
+    }
+
+    public function exportConfigs()
+    {
+        $data = [
+            'version' => '1.0',
+            'exported_at' => now()->toDateTimeString(),
+            'destinations' => BackupDestination::all()->makeVisible(['credentials'])->toArray(),
+            'jobs' => BackupJob::all()->toArray(),
+        ];
+
+        return response()->json($data, 200, [
+            'Content-Disposition' => 'attachment; filename="vaultix_configs_' . now()->format('Ymd_His') . '.json"',
+        ]);
+    }
+
+    public function importConfigs(Request $request)
+    {
+        $request->validate(['config_file' => 'required|file|mimes:json']);
+
+        try {
+            $content = json_decode(file_get_contents($request->file('config_file')->getRealPath()), true);
+            
+            if (!$content || !isset($content['destinations'])) {
+                return back()->with('error', 'Invalid configuration file.');
+            }
+
+            $destinationMap = [];
+
+            // 1. Import Destinations
+            foreach ($content['destinations'] as $destData) {
+                $dest = BackupDestination::updateOrCreate(
+                    ['name' => $destData['name'], 'provider' => $destData['provider']],
+                    ['credentials' => $destData['credentials'], 'is_active' => $destData['is_active']]
+                );
+                $destinationMap[$destData['id']] = $dest->id;
+            }
+
+            // 2. Import Jobs
+            foreach ($content['jobs'] as $jobData) {
+                if (isset($destinationMap[$jobData['destination_id']])) {
+                    $jobData['destination_id'] = $destinationMap[$jobData['destination_id']];
+                    unset($jobData['id']); // Let DB generate new ID
+                    
+                    // Don't duplicate exact jobs (check by name and destination)
+                    BackupJob::updateOrCreate(
+                        ['name' => $jobData['name'], 'destination_id' => $jobData['destination_id']],
+                        $jobData
+                    );
+                }
+            }
+
+            return back()->with('success', 'Configurations imported successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadBackup(\Milton\Vaultix\Models\Backup $backup)
+    {
+        if ($backup->status !== 'success' || $backup->file_path === 'failed') {
+            return back()->with('error', 'This backup file is not available.');
+        }
+
+        try {
+            $command = new \Milton\Vaultix\Commands\VaultixBackupCommand();
+            $diskConfig = $command->getDiskConfig($backup->destination);
+            \Illuminate\Support\Facades\Config::set('filesystems.disks.vaultix_download', $diskConfig);
+            
+            $disk = \Illuminate\Support\Facades\Storage::disk('vaultix_download');
+
+            // Set cookie for JS to detect download start
+            cookie()->queue('vaultix_download_started', 'true', 1, null, null, false, false);
+
+            if (in_array($backup->destination->provider, ['s3', 'r2'])) {
+                try {
+                    $url = $disk->temporaryUrl($backup->file_path, now()->addMinutes(30));
+                    return redirect()->away($url);
+                } catch (\Exception $e) {
+                    // Fallback
+                }
+            }
+
+            // For GDrive and SFTP, use streamDownload with immediate flushing
+            return response()->streamDownload(function () use ($disk, $backup) {
+                if (ob_get_level()) ob_end_clean();
+                
+                $stream = $disk->readStream($backup->file_path);
+                if ($stream) {
+                    fpassthru($stream);
+                    fclose($stream);
+                }
+            }, $backup->file_name, [
+                'Content-Type' => 'application/octet-stream',
+                'Content-Disposition' => 'attachment; filename="' . $backup->file_name . '"',
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not download file: ' . $e->getMessage());
+        }
+    }
+
+    public function destroyBackup(\Milton\Vaultix\Models\Backup $backup)
+    {
+        try {
+            // Optional: Delete from cloud storage too
+            $command = new \Milton\Vaultix\Commands\VaultixBackupCommand();
+            $diskConfig = $command->getDiskConfig($backup->destination);
+            \Illuminate\Support\Facades\Config::set('filesystems.disks.vaultix_delete', $diskConfig);
+            
+            if (\Illuminate\Support\Facades\Storage::disk('vaultix_delete')->exists($backup->file_path)) {
+                \Illuminate\Support\Facades\Storage::disk('vaultix_delete')->delete($backup->file_path);
+            }
+            
+            $backup->delete();
+            return back()->with('success', 'Backup record and file deleted successfully.');
+        } catch (\Exception $e) {
+            $backup->delete(); // Delete record anyway if file is missing
+            return back()->with('success', 'Backup record removed (Cloud file might still exist).');
+        }
+    }
+
+    public function removeAuthorizedEmail(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+        $emails = VaultixSetting::get('authorized_emails', []);
+        $emails = array_values(array_filter($emails, fn($e) => $e !== $request->email));
+        VaultixSetting::set('authorized_emails', $emails);
+
+        return back()->with('success', 'User removed from authorized list.');
+    }
+
+    public function settings()
+    {
+        $authorizedEmails = VaultixSetting::get('authorized_emails', []);
+        $threshold = VaultixSetting::get('storage_threshold_mb', 500);
+
+        $diskUsage = $this->getDiskUsage();
+
+        return view('vaultix::settings', compact('authorizedEmails', 'threshold', 'diskUsage'));
+    }
+
+    public function updateAuthorizedEmails(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+        
+        $emails = VaultixSetting::get('authorized_emails', []);
+        
+        if (!in_array($request->email, $emails)) {
+            $emails[] = $request->email;
+            VaultixSetting::set('authorized_emails', $emails);
+        }
+
+        return back()->with('success', 'User added to authorized list.');
+    }
+
+    public function updateThreshold(Request $request)
+    {
+        $request->validate(['threshold' => 'required|integer|min:100']);
+        VaultixSetting::set('storage_threshold_mb', $request->threshold);
+
+        return back()->with('success', 'Storage alert threshold updated.');
+    }
+
+    private function getDiskUsage()
+    {
+        // Use configurable path from vaultix.php (defaults to storage_path)
+        $path = config('vaultix.monitor_path', storage_path());
+        
+        // Ensure path exists to avoid errors
+        if (!is_dir($path)) $path = '/';
+        
+        $total = @disk_total_space($path) ?: 0;
+        $free = @disk_free_space($path) ?: 0;
+        $used = $total - $free;
+        $percentage = ($total > 0) ? ($used / $total) * 100 : 0;
+
+        $thresholdMb = VaultixSetting::get('storage_threshold_mb', 500);
+        $freeMb = $free / 1024 / 1024;
+
+        return [
+            'total' => $this->formatBytes($total),
+            'free' => $this->formatBytes($free),
+            'used' => $this->formatBytes($used),
+            'percentage' => round($percentage, 1),
+            'is_low' => $freeMb < $thresholdMb,
+            'threshold_mb' => $thresholdMb,
+            'free_mb' => round($freeMb, 0)
+        ];
+    }
+
+    private function getProjectSize()
+    {
+        // 1. Database Size (Accurate DB size from schema)
+        $dbName = config('database.connections.' . config('database.default') . '.database');
+        $dbSize = 0;
+        try {
+            $result = \DB::select("SELECT SUM(data_length + index_length) AS size FROM information_schema.TABLES WHERE table_schema = ?", [$dbName]);
+            $dbSize = (int) ($result[0]->size ?? 0);
+        } catch (\Exception $e) {}
+
+        // 2. File Size Calculation
+        $basePath = base_path();
+        $fileSize = 0;
+
+        // On Linux/WSL, use 'du' command for speed and accuracy
+        if (function_exists('exec') && PHP_OS_FAMILY !== 'Windows') {
+            try {
+                // Exclude heavy folders using du syntax
+                $excludeFolders = ['vendor', 'node_modules', '.git', 'storage/app/backup-temp', 'storage/framework/cache'];
+                $excludeCmd = "";
+                foreach($excludeFolders as $ex) {
+                    $excludeCmd .= " --exclude='" . $ex . "'";
+                }
+                
+                $output = exec("du -sb " . escapeshellarg($basePath) . $excludeCmd);
+                if ($output) {
+                    $fileSize = (int) explode("\t", $output)[0];
+                }
+            } catch (\Exception $e) {
+                $fileSize = 0; // Fallback to PHP manual scan
+            }
+        }
+
+        // Fallback or Windows: Manual Recursive Scan
+        if ($fileSize <= 0) {
+            $fileSize = $this->getDirSize($basePath, [
+                base_path('vendor'),
+                base_path('node_modules'),
+                base_path('.git'),
+                storage_path('app/backup-temp'),
+                storage_path('framework/cache'),
+            ]);
+        }
+
+        return [
+            'db' => $dbSize,
+            'files' => $fileSize,
+            'total' => $dbSize + $fileSize,
+            'formatted' => $this->formatBytes($dbSize + $fileSize)
+        ];
+    }
+
+    private function getDirSize($path, $exclude = [])
+    {
+        $size = 0;
+        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
+            $filePath = $file->getRealPath();
+            $shouldExclude = false;
+            foreach ($exclude as $exPath) {
+                if (strpos($filePath, $exPath) === 0) {
+                    $shouldExclude = true;
+                    break;
+                }
+            }
+            if (!$shouldExclude) {
+                $size += $file->getSize();
+            }
+        }
+        return $size;
+    }
+
+    private function formatBytes($bytes, $precision = 2)
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= (1 << (10 * $pow));
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 }

@@ -47,14 +47,46 @@
                 <!-- Frequency -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-3">3. Backup Frequency</label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'hourly' => 'Hourly'] as $val => $label)
-                        <label class="freq-label flex items-center p-3 border-2 rounded-xl cursor-pointer hover:border-indigo-100 transition">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                        @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'hourly' => 'Hourly', '6_hours' => 'Every 6h', '12_hours' => 'Every 12h'] as $val => $label)
+                        <label class="freq-label flex items-center p-3 border-2 rounded-xl cursor-pointer hover:border-indigo-100 transition {{ old('frequency', 'daily') == $val ? 'border-indigo-500 bg-indigo-50' : '' }}">
                             <input type="radio" name="frequency" value="{{ $val }}" class="mr-3" {{ old('frequency', 'daily') == $val ? 'checked' : '' }} onclick="updateSelection(this, 'freq-label')">
-                            <span class="text-sm font-medium">{{ $label }}</span>
+                            <span class="text-[10px] font-bold uppercase">{{ $label }}</span>
                         </label>
                         @endforeach
                     </div>
+                </div>
+
+                <!-- Backup Time & Day -->
+                <div id="scheduling-details" class="space-y-4 {{ in_array(old('frequency', 'daily'), ['hourly']) ? 'hidden' : '' }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Preferred Backup Time (24h format)</label>
+                            <input type="text" name="backup_time" value="{{ old('backup_time', '02:00') }}" placeholder="e.g. 02:00" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                        </div>
+
+                        <!-- Weekly Day Selector -->
+                        <div id="weekly-day-selector" class="{{ old('frequency') == 'weekly' ? '' : 'hidden' }}">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Backup Day of Week</label>
+                            <select name="backup_day" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                                @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day)
+                                <option value="{{ $day }}" {{ old('backup_day') == $day ? 'selected' : '' }}>{{ $day }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Monthly Date Selector -->
+                        <div id="monthly-day-selector" class="{{ old('frequency') == 'monthly' ? '' : 'hidden' }}">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Backup Day of Month</label>
+                            <select name="backup_day" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                                @for($i=1; $i<=28; $i++)
+                                <option value="{{ $i }}" {{ old('backup_day') == $i ? 'selected' : '' }}>{{ $i }}{{ in_array($i, [1,21,31]) ? 'st' : (in_array($i, [2,22]) ? 'nd' : (in_array($i, [3,23]) ? 'rd' : 'th')) }} of Month</option>
+                                @endfor
+                                <option value="last" {{ old('backup_day') == 'last' ? 'selected' : '' }}>Last Day of Month</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400">For Hourly and 6h/12h intervals, this time acts as the <b>Starting Point</b>.</p>
                 </div>
 
                 <!-- Dynamic Credentials -->
@@ -177,7 +209,42 @@
                 <div class="pt-8 border-t border-slate-100">
                     <label class="block text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
                         <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        4. Advanced Backup Settings
+                        4. Retention Policy (Auto-Cleanup)
+                    </label>
+                    
+                    <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl mb-6 flex items-center gap-3">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p class="text-xs text-indigo-700 font-medium" id="retention-summary-text">
+                            Total Backup Coverage: <b>1 Year (365 days)</b>
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Keep All For (Days)</label>
+                            <input type="number" name="keep_all_backups_for_days" oninput="calculateRetention()" value="{{ old('keep_all_backups_for_days', 7) }}" class="retention-input w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            <p class="mt-1 text-[9px] text-slate-400">Every single backup file.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Daily (Days)</label>
+                            <input type="number" name="keep_daily_backups_for_days" oninput="calculateRetention()" value="{{ old('keep_daily_backups_for_days', 30) }}" class="retention-input w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            <p class="mt-1 text-[9px] text-slate-400">One backup per day.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Weekly (Weeks)</label>
+                            <input type="number" name="keep_weekly_backups_for_weeks" oninput="calculateRetention()" value="{{ old('keep_weekly_backups_for_weeks', 8) }}" class="retention-input w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            <p class="mt-1 text-[9px] text-slate-400">One backup per week.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Monthly (Months)</label>
+                            <input type="number" name="keep_monthly_backups_for_months" oninput="calculateRetention()" value="{{ old('keep_monthly_backups_for_months', 12) }}" class="retention-input w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            <p class="mt-1 text-[9px] text-slate-400">One backup per month.</p>
+                        </div>
+                    </div>
+
+                    <label class="block text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        5. Advanced Backup Settings
                     </label>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
@@ -370,27 +437,106 @@
 </style>
 
 <script>
+    function calculateRetention() {
+        const freq = document.querySelector('input[name="frequency"]:checked').value;
+        const allDays = parseInt(document.querySelector('input[name="keep_all_backups_for_days"]').value) || 0;
+        const dailyDays = parseInt(document.querySelector('input[name="keep_daily_backups_for_days"]').value) || 0;
+        const weeklyWeeks = parseInt(document.querySelector('input[name="keep_weekly_backups_for_weeks"]').value) || 0;
+        const monthlyMonths = parseInt(document.querySelector('input[name="keep_monthly_backups_for_months"]').value) || 0;
+
+        // 1. Calculate Total Coverage Time
+        const totalDays = Math.max(allDays, dailyDays, weeklyWeeks * 7, monthlyMonths * 30);
+        let coverageText = "";
+        if (totalDays >= 365) coverageText = `<b>${(totalDays/365).toFixed(1)} Year(s)</b>`;
+        else if (totalDays >= 30) coverageText = `<b>${(totalDays/30).toFixed(1)} Month(s)</b>`;
+        else coverageText = `<b>${totalDays} Day(s)</b>`;
+
+        // 2. Estimate Total Backup Files (The Intelligent Part)
+        let backupsPerDay = 1;
+        if (freq === 'hourly') backupsPerDay = 24;
+        else if (freq === '6_hours') backupsPerDay = 4;
+        else if (freq === '12_hours') backupsPerDay = 2;
+        else if (freq === 'weekly') backupsPerDay = 1/7;
+        else if (freq === 'monthly') backupsPerDay = 1/30;
+
+        let estimatedFiles = 0;
+
+        if (freq === 'monthly') {
+            // If frequency is monthly, we only have 1 file per month
+            estimatedFiles = monthlyMonths || (allDays / 30) || 1;
+        } else if (freq === 'weekly') {
+            // If frequency is weekly, we have 1 file per week
+            estimatedFiles = Math.max(weeklyWeeks, monthlyMonths);
+        } else {
+            // High frequency (Daily or more)
+            // Files = (Backups in "Keep All" period) + (1 per day for rest of Daily period) + (1 per week) + (1 per month)
+            estimatedFiles += allDays * backupsPerDay;
+            if (dailyDays > allDays) estimatedFiles += (dailyDays - allDays);
+            
+            // Add weekly/monthly if they extend beyond daily
+            if (weeklyWeeks * 7 > dailyDays) estimatedFiles += (weeklyWeeks - (dailyDays / 7));
+            if (monthlyMonths * 30 > weeklyWeeks * 7) estimatedFiles += (monthlyMonths - (weeklyWeeks * 7 / 30));
+        }
+
+        const totalFiles = Math.ceil(estimatedFiles);
+        
+        document.getElementById('retention-summary-text').innerHTML = 
+            `Total Coverage: ${coverageText} | Estimated Storage: <b>~${totalFiles} files</b> in total.`;
+    }
+
+    // Smart Defaults Mapping
+    const smartDefaults = {
+        'hourly': { all: 1, daily: 7, weekly: 4, monthly: 3 },
+        '6_hours': { all: 3, daily: 14, weekly: 8, monthly: 6 },
+        '12_hours': { all: 5, daily: 21, weekly: 8, monthly: 6 },
+        'daily': { all: 7, daily: 30, weekly: 8, monthly: 12 },
+        'weekly': { all: 30, daily: 60, weekly: 26, monthly: 24 },
+        'monthly': { all: 60, daily: 90, weekly: 52, monthly: 48 }
+    };
+
     function updateSelection(input, className) {
         // Remove active class from all in group
         document.querySelectorAll('.' + className).forEach(el => {
             el.classList.remove('selected-provider', 'border-indigo-500', 'bg-indigo-50');
+            if (el.querySelector('span')) {
+                el.querySelector('span').classList.remove('text-indigo-600');
+                el.querySelector('span').classList.add('text-slate-600');
+            }
         });
         
         // Add active class to parent
         const parent = input.closest('.' + className);
         parent.classList.add('selected-provider', 'border-indigo-500', 'bg-indigo-50');
+        if (parent.querySelector('span')) parent.querySelector('span').classList.add('text-indigo-600');
 
         // Toggle fields if provider changed
         if (className === 'provider-label') {
             document.querySelectorAll('.provider-fields').forEach(el => el.classList.add('hidden'));
-            
-            // Show fields div
             const fieldsEl = document.getElementById('fields-' + input.value);
             if (fieldsEl) fieldsEl.classList.remove('hidden');
+        }
 
-            // Show long guide div if it exists
-            const guideEl = document.getElementById('guide-' + input.value);
-            if (guideEl) guideEl.classList.remove('hidden');
+        if (className === 'freq-label') {
+            const defaults = smartDefaults[input.value];
+            if (defaults) {
+                document.querySelector('input[name="keep_all_backups_for_days"]').value = defaults.all;
+                document.querySelector('input[name="keep_daily_backups_for_days"]').value = defaults.daily;
+                document.querySelector('input[name="keep_weekly_backups_for_weeks"]').value = defaults.weekly;
+                document.querySelector('input[name="keep_monthly_backups_for_months"]').value = defaults.monthly;
+            }
+
+            const schedDetails = document.getElementById('scheduling-details');
+            const weeklyDay = document.getElementById('weekly-day-selector');
+            const monthlyDay = document.getElementById('monthly-day-selector');
+            
+            if (input.value === 'hourly') {
+                schedDetails.classList.add('hidden');
+            } else {
+                schedDetails.classList.remove('hidden');
+                weeklyDay.classList.toggle('hidden', input.value !== 'weekly');
+                monthlyDay.classList.toggle('hidden', input.value !== 'monthly');
+            }
+            calculateRetention();
         }
     }
 
@@ -412,6 +558,7 @@
             const labelClass = input.parentElement.classList[0];
             updateSelection(input, labelClass);
         });
+        calculateRetention(); // Call this to show initial summary
     };
 </script>
 @endsection
