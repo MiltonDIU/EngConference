@@ -7,10 +7,6 @@
             <h1 class="text-2xl font-bold text-slate-900">Edit Backup Configuration</h1>
             <p class="text-slate-500">Update your storage credentials and schedule for <strong>{{ $destination->name }}</strong>.</p>
         </div>
-        <form action="{{ route('vaultix.destinations.destroy', $destination) }}" method="POST" onsubmit="return confirm('Are you sure? This will delete all backup history for this destination.')">
-            @csrf @method('DELETE')
-            <button type="submit" class="text-rose-500 text-sm font-semibold hover:underline">Delete Configuration</button>
-        </form>
     </div>
 
     <form action="{{ route('vaultix.destinations.update', $destination) }}" method="POST" class="space-y-6">
@@ -282,11 +278,20 @@
                 </div>
             </div>
             
-            <div class="p-8 bg-slate-50 border-t flex justify-end gap-3">
-                <a href="{{ route('vaultix.index') }}" class="px-6 py-3 text-slate-600 font-semibold text-sm">Cancel</a>
-                <button type="submit" class="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 shadow-lg transition">Update Configuration</button>
+            <div class="p-8 bg-slate-50 border-t flex justify-between items-center">
+                <button type="button" onclick="if(confirm('Are you sure you want to delete this configuration and all its backup history?')) document.getElementById('delete-config-form').submit()" class="px-6 py-3 bg-rose-50 text-rose-600 rounded-xl font-bold text-sm hover:bg-rose-600 hover:text-white transition shadow-sm">
+                    Delete Configuration
+                </button>
+                <div class="flex gap-3">
+                    <a href="{{ route('vaultix.index') }}" class="px-6 py-3 text-slate-600 font-semibold text-sm">Cancel</a>
+                    <button type="submit" class="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 shadow-lg transition">Update Configuration</button>
+                </div>
             </div>
         </div>
+    </form>
+
+    <form id="delete-config-form" action="{{ route('vaultix.destinations.destroy', $destination) }}" method="POST" onsubmit="return confirm('Are you sure? This will delete all backup history for this destination.')" class="hidden">
+        @csrf @method('DELETE')
     </form>
 
     <!-- Full Provider Guides (Visible only when selected) -->

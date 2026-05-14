@@ -1,86 +1,77 @@
-# Vaultix
+# 🛡️ Vaultix: Enterprise Backup Engine for Laravel
 
-Vaultix is a dynamic, admin-managed backup system for Laravel. It provides a robust interface and command-line tools to back up your application files and database to multiple cloud storage providers such as Google Drive, Amazon S3, and Cloudflare R2.
+Vaultix is a high-performance, admin-managed backup orchestration package for Laravel. It provides a stunning dashboard to manage dynamic backup jobs across multiple cloud providers like **AWS S3, Cloudflare R2, Google Drive, and SFTP**, all without touching a single line of code after installation.
 
-## Dependencies
+---
 
-This package relies on the following major dependencies:
-- **php**: `^8.2`
-- **laravel/framework**: `^10.0 | ^11.0`
-- **spatie/laravel-backup**: `^9.0` (Handles the core backup archiving and database dumping)
-- **masbug/flysystem-google-drive-ext**: `^1.0` (Google Drive Flysystem adapter for V3)
+## 🌟 Key Features
 
-> **Note:** You **do not** need to install these dependencies manually. When you install Vaultix via Composer, it will automatically pull in these required packages into your project if they are not already installed.
+- **🚀 Dynamic Job Management:** Create, edit, and trigger backup jobs directly from the dashboard.
+- **📊 Smart Storage Projection:** Predicts future storage needs based on your retention policy and current project size.
+- **🛡️ Pre-backup Safety Validator:** Automatically aborts backups if server disk space is low (calculates 1.5x project size safety buffer).
+- **☁️ Multi-Provider Support:** First-class support for Google Drive, S3-Compatible (AWS/R2), and SFTP.
+- **📧 Premium HTML Notifications:** Beautiful, color-coded email alerts for success and failures with direct dashboard links.
+- **📂 Selective Backups:** Choose between Database Only, Files Only, or Full Backups per job.
+- **🔄 Export/Import Configs:** Quickly replicate your entire backup infrastructure across multiple projects via JSON.
+- **📈 Real-time Monitoring:** Track Server Disk Space, Project Size (DB + Files), and Scheduler Health.
+- **🔐 Role-Based Access:** Secure dashboard access via Super Admin email or dynamic authorized user list.
 
-## Installation
+---
 
-1. Require the package via Composer:
+## 🛠️ Installation
+
+### 1. Install via Composer
 ```bash
 composer require milton/vaultix
 ```
 
-*(If you are developing locally and the package is in a local directory, ensure your project's `composer.json` is configured to load the local repository).*
-
-2. Publish the configuration, migrations, and assets:
+### 2. Publish Assets & Migrations
 ```bash
-php artisan vendor:publish --provider="Milton\Vaultix\VaultixServiceProvider"
-```
-
-3. Run the migrations to create the necessary database tables (`vaultix_settings`, `vaultix_backups`):
-```bash
+php artisan vendor:publish --tag=vaultix-config
+php artisan vendor:publish --tag=vaultix-emails
 php artisan migrate
 ```
 
-## Configuration
+### 3. Configure .env
+Add your super admin email to gain initial access to the dashboard:
+```env
+VAULTIX_SUPER_ADMIN=admin@example.com
+VAULTIX_DISK_PATH=/ # Optional: path to monitor disk space (e.g. /mnt/c on WSL)
+```
 
-Vaultix provides a dynamic configuration interface. Once installed, navigate to the Vaultix admin dashboard in your application to configure your backup destinations.
+---
+
+## ⚙️ Configuration
+
+### Scheduler Setup
+Vaultix automates your backups using the Laravel Scheduler. Ensure the following cron job is running on your server:
+```bash
+* * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
+```
 
 ### Google Drive Setup
+To use Google Drive, ensure you have a Refresh Token and Folder ID. Vaultix handles the runtime driver injection for you.
 
-To use Google Drive, you will need a Google Service Account:
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new Service Account and download the JSON credentials file.
-3. Share your target Google Drive folder with the Service Account email address.
-4. Input the Folder ID and upload the JSON credentials through the Vaultix interface.
+---
 
-## Usage
+## 📤 Export & Import
+Managing multiple projects? Configure one project's storage and jobs perfectly, then:
+1. Click **Export** on the dashboard to download `vaultix_configs.json`.
+2. Go to your other project and click **Import**.
+3. All your S3/GDrive credentials and jobs are instantly recreated!
 
-Vaultix primarily runs via a background job queue to prevent timeouts during large backups.
+---
 
-### Triggering a Backup
+## 🛡️ Security & Authorization
+By default, only the user defined in `VAULTIX_SUPER_ADMIN` can access the dashboard at `/vaultix`.
+You can add more authorized users (by email) through the **Settings** page within the dashboard. All authorized users must be logged into your application.
 
-You can trigger backups from the Vaultix UI, which dispatches a queued job (`ProcessVaultixBackup`). Make sure your Laravel queue worker is running:
+---
 
-```bash
-php artisan queue:work
-```
+## 📝 License
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
 
-### Supported Backup Types
+---
 
-- **Database Only:** Dumps your database (MySQL, PostgreSQL, etc.) and uploads the SQL file.
-- **Files Only:** Zips your application files (excluding `vendor` and `node_modules`) and uploads the archive.
-- **Full Backup:** Archives both the database and the application files.
-
-## Scheduling Backups
-
-While you can trigger backups manually from the UI, you can also schedule them using Laravel's task scheduler.
-
-Add the following to your `app/Console/Kernel.php` (or `routes/console.php` in Laravel 11):
-
-```php
-protected function schedule(Schedule $schedule)
-{
-    // Example: Run the default Spatie backup command daily
-    $schedule->command('backup:run')->daily();
-    $schedule->command('backup:clean')->daily();
-}
-```
-*(Note: For specific Vaultix job execution via schedule, refer to your dynamic settings configuration).*
-
-## Notifications
-
-Vaultix uses Spatie's notification system. You can configure the notification email directly from the Vaultix settings dashboard. When a backup succeeds or fails, an email will be dispatched to the provided address.
-
-## License
-
-This package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 🤝 Contribution
+Developed with ❤️ by **Milton**. Contributions are welcome!

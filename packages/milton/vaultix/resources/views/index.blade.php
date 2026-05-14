@@ -138,22 +138,30 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-500">{{ $job->next_run_at ? \Carbon\Carbon::parse($job->next_run_at)->diffForHumans() : 'Pending' }}</td>
-                        <td class="px-6 py-4 text-right flex justify-end gap-3">
-                            <form action="{{ route('vaultix.destinations.test', $job->destination) }}" method="POST" class="inline">
-                                @csrf
-                                <button class="text-slate-400 hover:text-indigo-600 font-semibold text-xs flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
-                                    Test
-                                </button>
-                            </form>
-                            <a href="{{ route('vaultix.destinations.edit', $job->destination) }}" class="text-slate-400 hover:text-amber-600 font-semibold text-xs flex items-center gap-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                Edit
-                            </a>
-                            <form onsubmit="handleRunNow(event, this, '{{ route('vaultix.run', $job) }}')" class="inline">
-                                @csrf
-                                <button type="submit" class="run-now-btn text-indigo-600 hover:text-indigo-900 font-semibold text-sm">Run Now</button>
-                            </form>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <form action="{{ route('vaultix.destinations.test', $job->destination) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" title="Test Connection" class="p-2 bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-all border border-transparent hover:border-indigo-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+                                    </button>
+                                </form>
+                                <a href="{{ route('vaultix.destinations.edit', $job->destination) }}" title="Edit Job" class="p-2 bg-slate-50 text-slate-400 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition-all border border-transparent hover:border-amber-100">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                </a>
+                                <form onsubmit="handleRunNow(event, this, '{{ route('vaultix.run', $job) }}')" class="inline">
+                                    @csrf
+                                    <button type="submit" title="Run Backup Now" class="run-now-btn px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all text-xs font-bold shadow-sm">
+                                        Run Now
+                                    </button>
+                                </form>
+                                <form action="{{ route('vaultix.destinations.destroy', $job->destination) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this job and destination?')" class="inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" title="Delete Job" class="p-2 bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition-all border border-transparent hover:border-rose-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @endforeach
@@ -200,14 +208,20 @@
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 uppercase">Failed</span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 text-right flex justify-end gap-4">
-                            @if($backup->status === 'success')
-                                <a href="{{ route('vaultix.backups.download', $backup) }}" onclick="handleDownloadClick(this)" class="download-btn text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase tracking-wider">Download</a>
-                            @endif
-                            <form action="{{ route('vaultix.backups.destroy', $backup) }}" method="POST" onsubmit="return handleSafeDelete(this)" class="inline">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="delete-btn text-slate-400 hover:text-rose-600 font-bold text-xs uppercase tracking-wider">Delete</button>
-                            </form>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                @if($backup->status === 'success')
+                                    <a href="{{ route('vaultix.backups.download', $backup) }}" onclick="handleDownloadClick(this)" title="Download Backup" class="download-btn p-2 bg-slate-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-lg transition-all border border-transparent hover:border-indigo-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    </a>
+                                @endif
+                                <form action="{{ route('vaultix.backups.destroy', $backup) }}" method="POST" onsubmit="return handleSafeDelete(this)" class="inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" title="Delete Permanent" class="delete-btn p-2 bg-slate-50 text-slate-400 hover:bg-rose-600 hover:text-white rounded-lg transition-all border border-transparent hover:border-rose-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @endforeach
