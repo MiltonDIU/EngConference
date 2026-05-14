@@ -33,11 +33,13 @@ class VaultixServiceProvider extends ServiceProvider
 
         $this->commands([
             VaultixBackupCommand::class,
+            \Milton\Vaultix\Commands\VaultixPruneLogsCommand::class,
         ]);
 
         // Automatically register the command in the scheduler
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function (\Illuminate\Console\Scheduling\Schedule $schedule) {
             $schedule->command('vaultix:run')->everyMinute();
+            $schedule->command('vaultix:prune-logs')->daily();
         });
     }
 

@@ -464,7 +464,7 @@
     // Initialize selection colors on load
     window.onload = () => {
         document.querySelectorAll('input:checked').forEach(input => {
-            const labelClass = input.parentElement.classList[0];
+            const labelClass = [...input.parentElement.classList].find(c => c.includes('-label'));
             if (labelClass) updateSelection(input, labelClass);
         });
         calculateRetention();

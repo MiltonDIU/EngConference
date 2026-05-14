@@ -118,6 +118,8 @@ class VaultixBackupCommand extends Command
 
         // 3. Execution
         try {
+            \Milton\Vaultix\Models\VaultixActivity::log(!$this->isManualTrigger ? 'auto_run' : 'manual_run', 'Job', $job->name, "Backup process started.");
+            
             $params = ['--only-to-disk' => 'vaultix_disk', '--destination-path' => $folderName, '--no-interaction' => true];
             if ($job->type === 'db_only') $params['--only-db'] = true;
             if ($job->type === 'files_only') $params['--only-files'] = true;
@@ -128,6 +130,7 @@ class VaultixBackupCommand extends Command
             Log::info("Vaultix: backup:run finished with code {$exitCode}. Output: " . substr($output, 0, 500));
 
             if ($exitCode === 0) {
+                \Milton\Vaultix\Models\VaultixActivity::log(!$this->isManualTrigger ? 'auto_finish' : 'manual_finish', 'Job', $job->name, "Backup completed successfully.");
                 $files = \Illuminate\Support\Facades\Storage::disk('vaultix_disk')->files($folderName);
                 Log::info("Vaultix: Files found in storage: " . count($files));
                 

@@ -219,7 +219,7 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm lg:hidden" x-cloak @click="showFilters = false"></div>
+             class="fixed inset-0 z-50 bg-slate-900/60 lg:hidden" x-cloak @click="showFilters = false"></div>
 
         <!-- Filter Drawer Content (Right Side) -->
         <div x-show="showFilters"

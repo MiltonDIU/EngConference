@@ -109,6 +109,19 @@
                     <p class="text-[10px] text-slate-400 mt-2">Current Time: {{ now()->format('Y-m-d H:i:s') }}</p>
                 </div>
             </form>
+
+            <form action="{{ route('vaultix.settings.log_retention') }}" method="POST" class="space-y-4 pt-4 border-t">
+                @csrf
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Activity Log Retention (Days)</label>
+                    <div class="flex gap-2">
+                        <input type="number" name="days" value="{{ $logRetentionDays }}" min="1" required
+                               class="flex-1 px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition">Save</button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-2 italic">Logs older than {{ $logRetentionDays }} days will be auto-deleted.</p>
+                </div>
+            </form>
         </div>
     </div>
 </div>

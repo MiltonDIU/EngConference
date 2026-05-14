@@ -35,4 +35,7 @@ Route::middleware(['web', 'vaultix.auth'])->prefix('vaultix')->group(function ()
     Route::delete('/settings/authorized-emails', [VaultixController::class, 'removeAuthorizedEmail'])->name('vaultix.settings.emails.remove');
     Route::post('/settings/threshold', [VaultixController::class, 'updateThreshold'])->name('vaultix.settings.threshold');
     Route::post('/settings/timezone', [VaultixController::class, 'updateTimezone'])->name('vaultix.settings.timezone');
+    Route::post('/settings/log-retention', [VaultixController::class, 'updateLogRetention'])->name('vaultix.settings.log_retention');
+    Route::get('/activities', [VaultixController::class, 'activities'])->name('vaultix.activities');
+    Route::get('/activities/export', [VaultixController::class, 'exportActivities'])->name('vaultix.activities.export');
 });

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 use Milton\Vaultix\Models\BackupDestination;
 use Milton\Vaultix\Models\BackupJob;
 use Milton\Vaultix\Models\VaultixSetting;
+use Milton\Vaultix\Models\VaultixActivity;
 
 class VaultixController extends Controller
 {
@@ -110,6 +111,8 @@ class VaultixController extends Controller
         $job->next_run_at = $nextRun;
         $job->save();
 
+        VaultixActivity::log('create', 'Destination', $destination->name, "Created new storage destination and default job.");
+
         return redirect()->route('vaultix.index')->with('success', 'Storage destination added and default job created!');
     }
 
@@ -139,6 +142,12 @@ class VaultixController extends Controller
             'keep_monthly_backups_for_months' => 'required|integer|min:0',
         ]);
 
+        // Capture OLD state
+        $oldData = [
+            'credentials' => $destination->credentials,
+            'settings' => $destination->jobs()->first() ? $destination->jobs()->first()->toArray() : null
+        ];
+
         $destination->update($request->only(['name', 'provider', 'credentials']));
 
         // Update the associated job
@@ -164,12 +173,21 @@ class VaultixController extends Controller
             ]);
         }
 
+        // Capture NEW state
+        $newData = [
+            'credentials' => $destination->credentials,
+            'settings' => $job ? $job->toArray() : null
+        ];
+
+        VaultixActivity::log('update', 'Destination', $destination->name, "Updated backup configuration.", $oldData, $newData);
         return redirect()->route('vaultix.index')->with('success', 'Backup configuration updated successfully!');
     }
 
     public function destroyDestination(BackupDestination $destination)
     {
+        $name = $destination->name;
         $destination->delete();
+        VaultixActivity::log('delete', 'Destination', $name, "Deleted destination and associated jobs.");
         return redirect()->route('vaultix.index')->with('success', 'Destination and associated jobs deleted.');
     }
 
@@ -325,6 +343,7 @@ class VaultixController extends Controller
         }
 
         \Milton\Vaultix\Jobs\ProcessVaultixBackup::dispatch($job->id);
+        VaultixActivity::log('manual_run', 'Job', $job->name, "Triggered a manual backup run.");
         
         return response()->json([
             'success' => 'Backup job has been dispatched to the background queue!'
@@ -410,6 +429,8 @@ class VaultixController extends Controller
             // Set cookie for JS to detect download start
             cookie()->queue('vaultix_download_started', 'true', 1, null, null, false, false);
 
+            VaultixActivity::log('download', 'Backup', $backup->file_name, "Downloaded backup file.");
+
             // For GDrive and SFTP, use streamDownload with immediate flushing
             return response()->streamDownload(function () use ($disk, $backup) {
                 if (ob_get_level()) ob_end_clean();
@@ -440,7 +461,9 @@ class VaultixController extends Controller
                 \Illuminate\Support\Facades\Storage::disk('vaultix_delete')->delete($backup->file_path);
             }
             
+            $fileName = $backup->file_name;
             $backup->delete();
+            VaultixActivity::log('delete', 'Backup', $fileName, "Deleted backup record and file.");
             return back()->with('success', 'Backup record and file deleted successfully.');
         } catch (\Exception $e) {
             $backup->delete(); // Delete record anyway if file is missing
@@ -454,7 +477,7 @@ class VaultixController extends Controller
         $emails = VaultixSetting::get('authorized_emails', []);
         $emails = array_values(array_filter($emails, fn($e) => $e !== $request->email));
         VaultixSetting::set('authorized_emails', $emails);
-
+        VaultixActivity::log('settings', 'AccessControl', $request->email, "Removed user from authorized emails.");
         return back()->with('success', 'User removed from authorized list.');
     }
 
@@ -463,16 +486,119 @@ class VaultixController extends Controller
         $authorizedEmails = VaultixSetting::get('authorized_emails', []);
         $threshold = VaultixSetting::get('storage_threshold_mb', 500);
         $timezone = VaultixSetting::get('timezone', config('app.timezone'));
+        $logRetentionDays = VaultixSetting::get('log_retention_days', 30);
 
         $diskUsage = $this->getDiskUsage();
 
-        return view('vaultix::settings', compact('authorizedEmails', 'threshold', 'diskUsage', 'timezone'));
+        return view('vaultix::settings', compact('authorizedEmails', 'threshold', 'diskUsage', 'timezone', 'logRetentionDays'));
     }
 
     public function updateTimezone(Request $request)
     {
         VaultixSetting::set('timezone', $request->timezone);
+        VaultixActivity::log('settings', 'Timezone', $request->timezone, "Updated system timezone.");
         return back()->with('success', 'Timezone updated successfully!');
+    }
+
+    public function updateLogRetention(Request $request)
+    {
+        $request->validate(['days' => 'required|integer|min:1']);
+        VaultixSetting::set('log_retention_days', $request->days);
+        VaultixActivity::log('settings', 'Retention', $request->days . ' Days', "Updated activity log retention period.");
+        return back()->with('success', 'Log retention period updated!');
+    }
+
+    public function activities(Request $request)
+    {
+        // Only super admin can see activity logs
+        $superAdmin = config('vaultix.super_admin');
+        if (!$superAdmin || auth()->user()->email !== $superAdmin) {
+            abort(403, 'Only the Super Admin can view activity logs.');
+        }
+
+        $query = VaultixActivity::orderBy('created_at', 'desc');
+
+        // Apply Filters
+        if ($request->filled('user')) {
+            $query->where('user_email', $request->user);
+        }
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+        if ($request->filled('type')) {
+            $query->where('entity_type', $request->type);
+        }
+
+        $activities = $query->paginate(20)->withQueryString();
+        
+        // Get unique users and actions for filter dropdowns
+        $users = VaultixActivity::select('user_email', 'user_name')->distinct()->get();
+        $actions = VaultixActivity::select('action')->distinct()->get();
+        $types = VaultixActivity::select('entity_type')->distinct()->get();
+
+        return view('vaultix::activities', compact('activities', 'users', 'actions', 'types'));
+    }
+
+    public function exportActivities(Request $request)
+    {
+        // Only super admin
+        $superAdmin = config('vaultix.super_admin');
+        if (!$superAdmin || auth()->user()->email !== $superAdmin) {
+            abort(403);
+        }
+
+        $query = VaultixActivity::orderBy('created_at', 'desc');
+
+        // Apply Filters (same as activities method)
+        if ($request->filled('user')) $query->where('user_email', $request->user);
+        if ($request->filled('action')) $query->where('action', $request->action);
+        if ($request->filled('type')) $query->where('entity_type', $request->type);
+
+        $activities = $query->get();
+        $format = $request->get('format', 'csv');
+        $filename = "vaultix_activities_" . now()->format('Y-m-d_His') . "." . $format;
+
+        if ($format === 'json') {
+            return response($activities->toJson(JSON_PRETTY_PRINT), 200, [
+                "Content-type"        => "application/json",
+                "Content-Disposition" => "attachment; filename=$filename",
+            ]);
+        }
+
+        // Default to CSV
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['Date', 'User', 'Email', 'Action', 'Entity', 'Entity Name', 'IP Address', 'Description', 'Old Data', 'New Data'];
+
+        $callback = function() use($activities, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($activities as $activity) {
+                fputcsv($file, [
+                    $activity->created_at->toDateTimeString(),
+                    $activity->user_name,
+                    $activity->user_email,
+                    strtoupper($activity->action),
+                    $activity->entity_type,
+                    $activity->entity_name,
+                    $activity->ip_address,
+                    $activity->description,
+                    $activity->old_data ? json_encode($activity->old_data, JSON_UNESCAPED_SLASHES) : '',
+                    $activity->new_data ? json_encode($activity->new_data, JSON_UNESCAPED_SLASHES) : '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function updateAuthorizedEmails(Request $request)
@@ -484,6 +610,7 @@ class VaultixController extends Controller
         if (!in_array($request->email, $emails)) {
             $emails[] = $request->email;
             VaultixSetting::set('authorized_emails', $emails);
+            VaultixActivity::log('settings', 'AccessControl', $request->email, "Added new authorized user.");
         }
 
         return back()->with('success', 'User added to authorized list.');
@@ -493,6 +620,7 @@ class VaultixController extends Controller
     {
         $request->validate(['threshold' => 'required|integer|min:100']);
         VaultixSetting::set('storage_threshold_mb', $request->threshold);
+        VaultixActivity::log('settings', 'Threshold', $request->threshold . ' MB', "Updated storage alert threshold.");
 
         return back()->with('success', 'Storage alert threshold updated.');
     }

@@ -272,18 +272,18 @@
                         <div class="md:col-span-2 flex items-center gap-8 pt-2">
                             <label class="flex items-center cursor-pointer group">
                                 <div class="relative">
-                                    <input type="checkbox" name="notify_on_success" value="1" class="sr-only" {{ old('notify_on_success', '1') ? 'checked' : '' }}>
-                                    <div class="block bg-slate-200 w-10 h-6 rounded-full group-hover:bg-slate-300 transition shadow-inner"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform {{ old('notify_on_success', '1') ? 'translate-x-4' : '' }}"></div>
+                                    <input type="checkbox" name="notify_on_success" value="1" class="peer sr-only" {{ old('notify_on_success', '1') ? 'checked' : '' }}>
+                                    <div class="block bg-slate-200 w-10 h-6 rounded-full peer-checked:bg-indigo-600 transition shadow-inner"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform peer-checked:translate-x-4"></div>
                                 </div>
                                 <div class="ml-3 text-sm font-medium text-slate-600">Notify on Success</div>
                             </label>
 
                             <label class="flex items-center cursor-pointer group">
                                 <div class="relative">
-                                    <input type="checkbox" name="notify_on_failure" value="1" class="sr-only" {{ old('notify_on_failure', '1') ? 'checked' : '' }}>
-                                    <div class="block bg-slate-200 w-10 h-6 rounded-full group-hover:bg-slate-300 transition shadow-inner"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform {{ old('notify_on_failure', '1') ? 'translate-x-4' : '' }}"></div>
+                                    <input type="checkbox" name="notify_on_failure" value="1" class="peer sr-only" {{ old('notify_on_failure', '1') ? 'checked' : '' }}>
+                                    <div class="block bg-slate-200 w-10 h-6 rounded-full peer-checked:bg-indigo-600 transition shadow-inner"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform peer-checked:translate-x-4"></div>
                                 </div>
                                 <div class="ml-3 text-sm font-medium text-slate-600">Notify on Failure</div>
                             </label>

@@ -1,77 +1,84 @@
-# 🛡️ Vaultix: Enterprise Backup Engine for Laravel
+# Vaultix - Enterprise-Grade Backup & Audit System for Laravel
 
-Vaultix is a high-performance, admin-managed backup orchestration package for Laravel. It provides a stunning dashboard to manage dynamic backup jobs across multiple cloud providers like **AWS S3, Cloudflare R2, Google Drive, and SFTP**, all without touching a single line of code after installation.
+Vaultix is a sophisticated, secure, and professional backup management package for Laravel (v10 - v13). It provides a full-featured administrative dashboard to manage multiple storage providers, track backup health, and maintain a detailed audit trail of all administrative activities.
 
----
+## 🚀 Key Features
 
-## 🌟 Key Features
+- **Multi-Provider Support:** Seamlessly integrate with Google Drive, AWS S3, Cloudflare R2, and SFTP.
+- **Smart Activity Logging:** Full audit trail with "Line-by-Line" diff highlighting (Git-style) for all configuration changes.
+- **Enterprise Security:** 
+  - Access restricted to Super Admin and authorized emails.
+  - Signed URL protection for secure streamed downloads.
+  - No direct storage links exposed.
+- **Smart Projection:** Automatically calculates estimated storage usage and file counts based on your retention policies.
+- **Automated Maintenance:** 
+  - Integrated scheduler for automatic backups.
+  - Self-pruning logs (automatically deletes old activity logs based on your retention settings).
+- **Data Mobility:** Export/Import entire configurations and download activity logs in CSV/JSON formats.
+- **Real-time Monitoring:** Disk usage alerts, scheduler health checks, and queue worker status.
 
-- **🚀 Dynamic Job Management:** Create, edit, and trigger backup jobs directly from the dashboard.
-- **📊 Smart Storage Projection:** Predicts future storage needs based on your retention policy and current project size.
-- **🛡️ Pre-backup Safety Validator:** Automatically aborts backups if server disk space is low (calculates 1.5x project size safety buffer).
-- **☁️ Multi-Provider Support:** First-class support for Google Drive, S3-Compatible (AWS/R2), and SFTP.
-- **📧 Premium HTML Notifications:** Beautiful, color-coded email alerts for success and failures with direct dashboard links.
-- **📂 Selective Backups:** Choose between Database Only, Files Only, or Full Backups per job.
-- **🔄 Export/Import Configs:** Quickly replicate your entire backup infrastructure across multiple projects via JSON.
-- **📈 Real-time Monitoring:** Track Server Disk Space, Project Size (DB + Files), and Scheduler Health.
-- **🔐 Role-Based Access:** Secure dashboard access via Super Admin email or dynamic authorized user list.
+## 📋 Requirements & Dependencies
 
----
+Vaultix leverages several industry-standard packages to ensure reliability and performance:
 
-## 🛠️ Installation
+- **PHP:** `^8.2 | ^8.3 | ^8.4`
+- **Laravel:** `^10.0 | ^11.0 | ^12.0 | ^13.0`
 
-### 1. Install via Composer
-```bash
-composer require milton/vaultix
-```
+### Core Dependencies
+These packages are automatically installed with Vaultix:
+- `spatie/laravel-backup`: For the robust core backup engine.
+- `masbug/flysystem-google-drive-ext`: For Google Drive integration.
+- `league/flysystem-aws-s3-v3`: For AWS S3 and Cloudflare R2 support.
+- `league/flysystem-sftp-v3`: For secure SFTP storage.
 
-### 2. Publish Assets & Migrations
-```bash
-php artisan vendor:publish --tag=vaultix-config
-php artisan vendor:publish --tag=vaultix-emails
-php artisan migrate
-```
+## 🛠 Installation
 
-### 3. Configure .env
-Add your super admin email to gain initial access to the dashboard:
-```env
-VAULTIX_SUPER_ADMIN=admin@example.com
-VAULTIX_DISK_PATH=/ # Optional: path to monitor disk space (e.g. /mnt/c on WSL)
-```
+1. **Install via Composer:**
+   ```bash
+   composer require milton/vaultix
+   ```
 
----
+2. **Publish Configuration:**
+   ```bash
+   php artisan vendor:publish --tag="vaultix-config"
+   ```
+
+3. **Run Migrations:**
+   ```bash
+   php artisan migrate
+   ```
+
+4. **Environment Setup:**
+   Add the following to your `.env` file to define the Super Admin:
+   ```env
+   VAULTIX_SUPER_ADMIN=your-email@example.com
+   ```
 
 ## ⚙️ Configuration
 
-### Scheduler Setup
-Vaultix automates your backups using the Laravel Scheduler. Ensure the following cron job is running on your server:
+Vaultix allows you to manage most settings directly from the dashboard, but you should ensure your Laravel Scheduler and Queue Worker are running:
+
 ```bash
+# Add this to your server's crontab
 * * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
+
+# Ensure queue worker is active for background backups
+php artisan queue:work
 ```
 
-### Google Drive Setup
-To use Google Drive, ensure you have a Refresh Token and Folder ID. Vaultix handles the runtime driver injection for you.
+## 🔐 Security & Auditing
 
----
+Vaultix is designed with security as the top priority:
+- **Activity Logs:** Every action (Add storage, Update Job, Download file) is recorded with User IP, User Agent, and a detailed "Before/After" snapshot of data.
+- **Signed Downloads:** All backup downloads are generated as temporary signed URLs and streamed through the server to prevent storage link leakage.
+- **Access Control:** Only the user defined in `VAULTIX_SUPER_ADMIN` can manage authorized users and view sensitive activity logs.
 
-## 📤 Export & Import
-Managing multiple projects? Configure one project's storage and jobs perfectly, then:
-1. Click **Export** on the dashboard to download `vaultix_configs.json`.
-2. Go to your other project and click **Import**.
-3. All your S3/GDrive credentials and jobs are instantly recreated!
+## 📊 Exporting Logs
 
----
+You can export your audit logs directly from the dashboard:
+- **CSV:** Perfect for Excel/Spreadsheet auditing.
+- **JSON:** Ideal for developers and third-party integrations.
 
-## 🛡️ Security & Authorization
-By default, only the user defined in `VAULTIX_SUPER_ADMIN` can access the dashboard at `/vaultix`.
-You can add more authorized users (by email) through the **Settings** page within the dashboard. All authorized users must be logged into your application.
+## 📄 License
 
----
-
-## 📝 License
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
-
----
-
-## 🤝 Contribution
-Developed with ❤️ by **Milton**. Contributions are welcome!
