@@ -18,15 +18,25 @@ class VaultixBackupCommand extends Command
 
     public function handle()
     {
+        // Apply user-defined timezone
+        $tz = \Milton\Vaultix\Models\VaultixSetting::get('timezone', config('app.timezone'));
+        date_default_timezone_set($tz);
+
         $specificJobId = $this->option('job');
+        $currentTime = \Carbon\Carbon::now()->toDateTimeString();
+        
         if ($specificJobId) {
             $this->isManualTrigger = true;
             $jobs = BackupJob::where('id', $specificJobId)->get();
+            Log::info("Vaultix: Manual trigger for Job ID {$specificJobId} at {$currentTime}");
         } else {
+            $allEnabled = BackupJob::where('is_enabled', true)->count();
             $jobs = BackupJob::where('is_enabled', true)
                 ->where(function ($query) {
-                    $query->whereNull('next_run_at')->orWhere('next_run_at', '<=', now());
+                    $query->whereNull('next_run_at')->orWhere('next_run_at', '<=', \Carbon\Carbon::now());
                 })->get();
+            
+            Log::info("Vaultix Scheduler Check: Time is {$currentTime}. Found {$allEnabled} enabled jobs, {$jobs->count()} are due for run.");
         }
 
         if ($jobs->isEmpty()) return;
@@ -84,10 +94,7 @@ class VaultixBackupCommand extends Command
         $dest = $job->destination;
         $diskConfig = $this->getDiskConfig($dest);
         
-        // Debug: Log the generated config (hiding secrets)
-        $debugConfig = $diskConfig;
-        if (isset($debugConfig['secret'])) $debugConfig['secret'] = '********';
-        Log::info("Vaultix Runtime Disk Config for {$job->name}: " . json_encode($debugConfig));
+        Log::info("Vaultix: Starting backup job '{$job->name}' for destination '{$dest->name}'");
 
         \Illuminate\Support\Facades\Config::set('filesystems.disks.vaultix_disk', $diskConfig);
         
@@ -95,9 +102,19 @@ class VaultixBackupCommand extends Command
         \Illuminate\Support\Facades\Config::set('backup.backup.name', $folderName);
         \Illuminate\Support\Facades\Config::set('backup.backup.destination.disks', ['vaultix_disk']);
         
-        // Use job email or system from address to satisfy Spatie's validator
         $validatorEmail = $job->notification_email ?? config('mail.from.address', 'backup@domain.com');
         \Illuminate\Support\Facades\Config::set('backup.notifications.mail.to', $validatorEmail);
+
+        // Disable Spatie's default notifications to prevent duplicates
+        \Illuminate\Support\Facades\Config::set('backup.notifications.notifications', [
+            \Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification::class => [],
+            \Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification::class => [],
+            \Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification::class => [],
+            \Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification::class => [],
+            \Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification::class => [],
+        ]);
+
+        Log::info("Vaultix: Config set for '{$folderName}'. Calling backup:run...");
 
         // 3. Execution
         try {
@@ -106,9 +123,14 @@ class VaultixBackupCommand extends Command
             if ($job->type === 'files_only') $params['--only-files'] = true;
 
             $exitCode = Artisan::call('backup:run', $params);
+            $output = Artisan::output();
             
+            Log::info("Vaultix: backup:run finished with code {$exitCode}. Output: " . substr($output, 0, 500));
+
             if ($exitCode === 0) {
                 $files = \Illuminate\Support\Facades\Storage::disk('vaultix_disk')->files($folderName);
+                Log::info("Vaultix: Files found in storage: " . count($files));
+                
                 $latestFile = collect($files)->sortByDesc(fn($f) => \Illuminate\Support\Facades\Storage::disk('vaultix_disk')->lastModified($f))->first();
                 $size = $latestFile ? \Illuminate\Support\Facades\Storage::disk('vaultix_disk')->size($latestFile) : 0;
 
@@ -118,6 +140,7 @@ class VaultixBackupCommand extends Command
                 ]);
 
                 if ($job->notify_on_success && $job->notification_email) {
+                    Log::info("Vaultix: Sending success email to {$job->notification_email}");
                     $formattedSize = round($size/1024/1024, 2) . " MB";
                     Mail::send('vaultix::emails.notification', [
                         'status' => 'success',
@@ -131,7 +154,7 @@ class VaultixBackupCommand extends Command
                     });
                 }
             } else {
-                throw new \Exception("Backup failed with exit code: {$exitCode}");
+                throw new \Exception("Backup failed with exit code: {$exitCode}. Output: {$output}");
             }
 
         } catch (\Exception $e) {
@@ -185,14 +208,33 @@ class VaultixBackupCommand extends Command
 
     protected function calculateNextRun($frequency, $job = null)
     {
-        $now = now(); $time = $job->backup_time ?? '00:00'; $day = $job->backup_day ?? 'Monday';
+        $now = now(); 
+        $time = $job->backup_time ?? '00:00'; 
+        $day = $job->backup_day ?? 'Monday';
         [$hour, $minute] = explode(':', $time);
+
         switch ($frequency) {
-            case 'hourly': return $now->addHour()->startOfHour();
-            case 'daily': $next = $now->copy()->setTime($hour, $minute); return $next->isPast() ? $next->addDay() : $next;
-            case 'weekly': return $now->copy()->next($day)->setTime($hour, $minute);
-            case 'monthly': return $now->copy()->addMonth()->startOfMonth()->setTime($hour, $minute);
-            default: return $now->addDay();
+            case 'hourly': 
+                return $now->copy()->addHour()->startOfHour();
+            case '6_hours': 
+                return $now->copy()->addHours(6);
+            case '12_hours': 
+                return $now->copy()->addHours(12);
+            case 'daily': 
+                $next = $now->copy()->setTime($hour, $minute); 
+                return $next->isPast() ? $next->addDay() : $next;
+            case 'weekly': 
+                return $now->copy()->next($day)->setTime($hour, $minute);
+            case 'monthly': 
+                // Check if day is 'last' or a number
+                if ($day === 'last') {
+                    $next = $now->copy()->endOfMonth()->setTime($hour, $minute);
+                } else {
+                    $next = $now->copy()->day((int)$day)->setTime($hour, $minute);
+                }
+                return $next->isPast() ? $next->addMonth() : $next;
+            default: 
+                return $now->copy()->addDay();
         }
     }
 }

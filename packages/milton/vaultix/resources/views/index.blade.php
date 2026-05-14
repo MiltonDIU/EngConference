@@ -111,12 +111,23 @@
                         if($job->frequency === 'monthly') $backupsPerDay = 1/30;
 
                         $estFiles = 0;
-                        if($job->frequency === 'monthly') { $estFiles = $job->keep_monthly_backups_for_months ?: 1; }
-                        else if($job->frequency === 'weekly') { $estFiles = max($job->keep_weekly_backups_for_weeks, $job->keep_monthly_backups_for_months); }
+                        if($job->frequency === 'monthly') { 
+                            $estFiles = $job->keep_monthly_backups_for_months ?: 1; 
+                        }
+                        else if($job->frequency === 'weekly') { 
+                            $estFiles = max($job->keep_weekly_backups_for_weeks, $job->keep_monthly_backups_for_months); 
+                        }
                         else {
-                            $estFiles = ($job->keep_all_backups_for_days * $backupsPerDay) + 
-                                       max(0, $job->keep_daily_backups_for_days - $job->keep_all_backups_for_days) + 
-                                       $job->keep_weekly_backups_for_weeks + $job->keep_monthly_backups_for_months;
+                            $estFiles = ($job->keep_all_backups_for_days * $backupsPerDay);
+                            if ($job->keep_daily_backups_for_days > $job->keep_all_backups_for_days) {
+                                $estFiles += ($job->keep_daily_backups_for_days - $job->keep_all_backups_for_days);
+                            }
+                            if ($job->keep_weekly_backups_for_weeks * 7 > $job->keep_daily_backups_for_days) {
+                                $estFiles += ($job->keep_weekly_backups_for_weeks - ($job->keep_daily_backups_for_days / 7));
+                            }
+                            if ($job->keep_monthly_backups_for_months * 30 > $job->keep_weekly_backups_for_weeks * 7) {
+                                $estFiles += ($job->keep_monthly_backups_for_months - ($job->keep_weekly_backups_for_weeks * 7 / 30));
+                            }
                         }
                         
                         $estTotalStorage = $estFiles * ($projectSize['total'] * 0.4);
@@ -171,10 +182,121 @@
     </div>
 
     <!-- Backup History Table -->
-    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-        <div class="p-6 border-b">
-            <h2 class="font-bold text-lg">Recent Backup History</h2>
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden" x-data="{ showFilters: false }">
+        <div class="p-6 border-b flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <h2 class="font-bold text-lg text-slate-900">Recent Backup History</h2>
+                @if(request()->anyFilled(['provider', 'start_date', 'end_date', 'status']))
+                    <span class="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                @endif
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button @click="showFilters = true" class="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-100 transition flex items-center gap-2 shadow-sm group">
+                    <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Filters
+                    @php $activeFilters = count(array_filter(request()->only(['provider', 'start_date', 'end_date', 'status']))); @endphp
+                    @if($activeFilters > 0)
+                        <span class="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">{{ $activeFilters }}</span>
+                    @endif
+                </button>
+
+                <div class="h-6 w-px bg-slate-100 mx-1"></div>
+
+                @if(request()->has('all'))
+                    <a href="{{ route('vaultix.index') }}" class="text-xs font-bold text-indigo-600 hover:underline">Paginated</a>
+                @else
+                    <a href="{{ route('vaultix.index', ['all' => 1]) }}" class="text-xs font-bold text-slate-400 hover:text-indigo-600 transition">Show All</a>
+                @endif
+            </div>
         </div>
+
+        <!-- Filter Drawer Overlay -->
+        <div x-show="showFilters" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm lg:hidden" x-cloak @click="showFilters = false"></div>
+
+        <!-- Filter Drawer Content (Right Side) -->
+        <div x-show="showFilters"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transition ease-in duration-200 transform"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="translate-x-full"
+             class="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-2xl flex flex-col border-l" x-cloak>
+            
+            <div class="p-6 border-b bg-slate-50 flex items-center justify-between">
+                <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    Filter Backups
+                </h3>
+                <button @click="showFilters = false" class="p-2 rounded-lg hover:bg-slate-200 transition text-slate-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form action="{{ route('vaultix.index') }}" method="GET" class="flex-1 overflow-y-auto p-6 space-y-8">
+                <div class="space-y-6">
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Storage Provider</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            @foreach(['gdrive' => 'Google Drive', 's3' => 'AWS S3', 'r2' => 'Cloudflare R2', 'sftp' => 'SFTP'] as $val => $label)
+                            <label class="cursor-pointer group">
+                                <input type="radio" name="provider" value="{{ $val }}" class="sr-only peer" {{ request('provider') == $val ? 'checked' : '' }}>
+                                <div class="p-3 border rounded-xl text-center text-xs font-semibold peer-checked:bg-indigo-50 peer-checked:border-indigo-500 peer-checked:text-indigo-600 hover:border-indigo-200 transition">
+                                    {{ $label }}
+                                </div>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Backup Status</label>
+                        <div class="flex gap-2">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="status" value="success" class="sr-only peer" {{ request('status') == 'success' ? 'checked' : '' }}>
+                                <div class="py-2 border rounded-xl text-center text-xs font-semibold peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-600 transition">Success</div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="status" value="failed" class="sr-only peer" {{ request('status') == 'failed' ? 'checked' : '' }}>
+                                <div class="py-2 border rounded-xl text-center text-xs font-semibold peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-600 transition">Failed</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Date Range</label>
+                        <div class="space-y-2">
+                            <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t flex flex-col gap-3">
+                    <button type="submit" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition">Apply Filters</button>
+                    <a href="{{ route('vaultix.index') }}" class="w-full py-3 text-center text-slate-400 font-bold text-xs hover:text-rose-500 transition">Reset All Filters</a>
+                </div>
+            </form>
+        </div>
+
+        @if(request()->anyFilled(['provider', 'start_date', 'end_date', 'status']))
+            <div class="px-6 py-3 bg-indigo-50 border-b flex items-center justify-between animate-fade-in">
+                <div class="flex items-center gap-2 text-indigo-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <p class="text-xs font-semibold">Found <b>{{ $backups->total() }}</b> records matching your criteria.</p>
+                </div>
+                <a href="{{ route('vaultix.index') }}" class="text-[10px] font-bold uppercase tracking-widest text-indigo-400 hover:text-indigo-600 transition">Clear Filters</a>
+            </div>
+        @endif
+
         <div class="overflow-x-auto">
             <table class="w-full text-left min-w-[900px]">
                 <thead class="bg-slate-50 border-b">
@@ -228,6 +350,11 @@
                 </tbody>
             </table>
         </div>
+        @if($backups->hasPages())
+            <div class="p-6 bg-slate-50 border-t">
+                {{ $backups->links() }}
+            </div>
+        @endif
     </div>
 </div>
 

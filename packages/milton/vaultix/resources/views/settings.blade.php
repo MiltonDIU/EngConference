@@ -93,6 +93,22 @@
                     <p class="text-[10px] text-slate-400 mt-2 italic">Current free space: {{ round($diskUsage['free_mb'], 0) }} MB</p>
                 </div>
             </form>
+
+            <form action="{{ route('vaultix.settings.timezone') }}" method="POST" class="space-y-4 pt-4 border-t">
+                @csrf
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">System Timezone</label>
+                    <div class="flex gap-2">
+                        <select name="timezone" class="flex-1 px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm">
+                            @foreach(timezone_identifiers_list() as $tz)
+                                <option value="{{ $tz }}" {{ $timezone == $tz ? 'selected' : '' }}>{{ $tz }}</option>
+                            @endforeach
+                        </select>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">Save</button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-2">Current Time: {{ now()->format('Y-m-d H:i:s') }}</p>
+                </div>
+            </form>
         </div>
     </div>
 </div>

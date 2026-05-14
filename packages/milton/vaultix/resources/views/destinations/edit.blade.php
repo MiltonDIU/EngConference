@@ -63,8 +63,17 @@
                 <div id="scheduling-details" class="space-y-4 {{ in_array(old('frequency', $job->frequency), ['hourly']) ? 'hidden' : '' }}">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Preferred Backup Time (24h format)</label>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-sm font-semibold text-slate-700">Preferred Backup Time (24h format)</label>
+                                <span class="text-[10px] font-bold px-2 py-1 bg-amber-100 text-amber-700 rounded-lg">Server Time: {{ now()->format('H:i') }}</span>
+                            </div>
                             <input type="text" name="backup_time" value="{{ old('backup_time', $job->backup_time ?? '02:00') }}" placeholder="e.g. 02:00" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Next Run Override (Optional)</label>
+                            <input type="datetime-local" name="next_run_override" value="{{ old('next_run_override', $job->next_run_at ? \Carbon\Carbon::parse($job->next_run_at)->format('Y-m-d\TH:i') : '') }}" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            <p class="text-[10px] text-slate-400 mt-1">Leave empty to use automatic scheduling based on frequency.</p>
                         </div>
 
                         <!-- Weekly Day Selector -->
@@ -258,18 +267,18 @@
                         <div class="md:col-span-2 flex items-center gap-8 pt-2">
                             <label class="flex items-center cursor-pointer group">
                                 <div class="relative">
-                                    <input type="checkbox" name="notify_on_success" value="1" class="sr-only" {{ old('notify_on_success', $job->notify_on_success) ? 'checked' : '' }}>
-                                    <div class="block bg-slate-200 w-10 h-6 rounded-full group-hover:bg-slate-300 transition shadow-inner"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform {{ old('notify_on_success', $job->notify_on_success) ? 'translate-x-4' : '' }}"></div>
+                                    <input type="checkbox" name="notify_on_success" value="1" class="sr-only peer" {{ old('notify_on_success', $job->notify_on_success) ? 'checked' : '' }}>
+                                    <div class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:bg-indigo-600 transition-all shadow-inner"></div>
+                                    <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-all transform peer-checked:translate-x-4 shadow-sm"></div>
                                 </div>
                                 <div class="ml-3 text-sm font-medium text-slate-600">Notify on Success</div>
                             </label>
 
                             <label class="flex items-center cursor-pointer group">
                                 <div class="relative">
-                                    <input type="checkbox" name="notify_on_failure" value="1" class="sr-only" {{ old('notify_on_failure', $job->notify_on_failure) ? 'checked' : '' }}>
-                                    <div class="block bg-slate-200 w-10 h-6 rounded-full group-hover:bg-slate-300 transition shadow-inner"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform {{ old('notify_on_failure', $job->notify_on_failure) ? 'translate-x-4' : '' }}"></div>
+                                    <input type="checkbox" name="notify_on_failure" value="1" class="sr-only peer" {{ old('notify_on_failure', $job->notify_on_failure) ? 'checked' : '' }}>
+                                    <div class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:bg-rose-600 transition-all shadow-inner"></div>
+                                    <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-all transform peer-checked:translate-x-4 shadow-sm"></div>
                                 </div>
                                 <div class="ml-3 text-sm font-medium text-slate-600">Notify on Failure</div>
                             </label>

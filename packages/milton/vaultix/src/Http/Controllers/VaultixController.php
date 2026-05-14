@@ -12,8 +12,9 @@ use Milton\Vaultix\Models\VaultixSetting;
 
 class VaultixController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        date_default_timezone_set(VaultixSetting::get('timezone', config('app.timezone')));
         $destinations = BackupDestination::all();
         $jobs = BackupJob::with('destination')->get();
         
@@ -26,10 +27,32 @@ class VaultixController extends Controller
             $isQueueHealthy = count($output) > 0;
         }
 
-        $backups = \Milton\Vaultix\Models\Backup::with(['job', 'destination'])->latest()->limit(50)->get();
-
-        $diskUsage = $this->getDiskUsage();
         $projectSize = $this->getProjectSize();
+        $diskUsage = $this->getDiskUsage();
+
+        // Filtering & Pagination Logic
+        $query = \Milton\Vaultix\Models\Backup::with(['job', 'destination'])->latest();
+
+        if ($request->filled('provider')) {
+            $query->whereHas('destination', function($q) use ($request) {
+                $q->where('provider', $request->provider);
+            });
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('completed_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('completed_at', '<=', $request->end_date);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $perPage = $request->has('all') ? 1000 : 20;
+        $backups = $query->paginate($perPage)->withQueryString();
 
         return view('vaultix::index', compact('destinations', 'jobs', 'isSchedulerHealthy', 'isQueueHealthy', 'schedulerLastRun', 'backups', 'diskUsage', 'projectSize'));
     }
@@ -41,6 +64,7 @@ class VaultixController extends Controller
 
     public function storeDestination(Request $request)
     {
+        date_default_timezone_set(VaultixSetting::get('timezone', config('app.timezone')));
         $request->validate([
             'name' => 'required|string|max:255',
             'provider' => 'required|in:gdrive,s3,r2,sftp',
@@ -49,6 +73,7 @@ class VaultixController extends Controller
             'frequency' => 'required|in:daily,weekly,monthly,hourly,6_hours,12_hours',
             'backup_time' => 'required|string|regex:/^[0-9]{2}:[0-9]{2}$/',
             'backup_day' => 'nullable|string',
+            'next_run_override' => 'nullable|date',
             'custom_folder_name' => 'nullable|string|max:255',
             'notification_email' => 'nullable|email|max:255',
             'keep_all_backups_for_days' => 'required|integer|min:0',
@@ -77,9 +102,12 @@ class VaultixController extends Controller
             'keep_monthly_backups_for_months' => $request->keep_monthly_backups_for_months,
         ]);
 
-        // Use the command to calculate next_run_at properly even on creation
-        $command = new \Milton\Vaultix\Commands\VaultixBackupCommand();
-        $job->next_run_at = now()->addSeconds(10); // Run first time almost immediately
+        // Calculate next run
+        $nextRun = $request->filled('next_run_override') 
+            ? \Carbon\Carbon::parse($request->next_run_override)
+            : $this->calculateNextRunAt($request->frequency, $request->backup_time, $request->backup_day);
+
+        $job->next_run_at = $nextRun;
         $job->save();
 
         return redirect()->route('vaultix.index')->with('success', 'Storage destination added and default job created!');
@@ -93,6 +121,7 @@ class VaultixController extends Controller
 
     public function updateDestination(Request $request, BackupDestination $destination)
     {
+        date_default_timezone_set(VaultixSetting::get('timezone', config('app.timezone')));
         $request->validate([
             'name' => 'required|string|max:255',
             'provider' => 'required|in:gdrive,s3,r2,sftp',
@@ -101,6 +130,7 @@ class VaultixController extends Controller
             'frequency' => 'required|in:daily,weekly,monthly,hourly,6_hours,12_hours',
             'backup_time' => 'required|string|regex:/^[0-9]{2}:[0-9]{2}$/',
             'backup_day' => 'nullable|string',
+            'next_run_override' => 'nullable|date',
             'custom_folder_name' => 'nullable|string|max:255',
             'notification_email' => 'nullable|email|max:255',
             'keep_all_backups_for_days' => 'required|integer|min:0',
@@ -128,6 +158,9 @@ class VaultixController extends Controller
                 'keep_daily_backups_for_days' => $request->keep_daily_backups_for_days,
                 'keep_weekly_backups_for_weeks' => $request->keep_weekly_backups_for_weeks,
                 'keep_monthly_backups_for_months' => $request->keep_monthly_backups_for_months,
+                'next_run_at' => $request->filled('next_run_override') 
+                    ? \Carbon\Carbon::parse($request->next_run_override)
+                    : $this->calculateNextRunAt($request->frequency, $request->backup_time, $request->backup_day),
             ]);
         }
 
@@ -438,10 +471,17 @@ class VaultixController extends Controller
     {
         $authorizedEmails = VaultixSetting::get('authorized_emails', []);
         $threshold = VaultixSetting::get('storage_threshold_mb', 500);
+        $timezone = VaultixSetting::get('timezone', config('app.timezone'));
 
         $diskUsage = $this->getDiskUsage();
 
-        return view('vaultix::settings', compact('authorizedEmails', 'threshold', 'diskUsage'));
+        return view('vaultix::settings', compact('authorizedEmails', 'threshold', 'diskUsage', 'timezone'));
+    }
+
+    public function updateTimezone(Request $request)
+    {
+        VaultixSetting::set('timezone', $request->timezone);
+        return back()->with('success', 'Timezone updated successfully!');
     }
 
     public function updateAuthorizedEmails(Request $request)
@@ -572,5 +612,45 @@ class VaultixController extends Controller
         $pow = min($pow, count($units) - 1);
         $bytes /= (1 << (10 * $pow));
         return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+    protected function calculateNextRunAt($frequency, $time, $day = null)
+    {
+        $next = \Carbon\Carbon::createFromFormat('H:i', $time);
+        
+        if ($next->isPast() && !in_array($frequency, ['hourly', '6_hours', '12_hours'])) {
+            $next->addDay();
+        }
+
+        if ($frequency === 'hourly') {
+            return now()->addHour()->startOfHour();
+        }
+        
+        if ($frequency === '6_hours') {
+            return now()->addHours(6);
+        }
+
+        if ($frequency === '12_hours') {
+            return now()->addHours(12);
+        }
+
+        if ($frequency === 'weekly' && $day) {
+            $next = \Carbon\Carbon::parse("next $day $time");
+        }
+
+        if ($frequency === 'monthly' && $day) {
+            if ($day === 'last') {
+                $next = \Carbon\Carbon::parse("last day of this month $time");
+                if ($next->isPast()) {
+                    $next = \Carbon\Carbon::parse("last day of next month $time");
+                }
+            } else {
+                $next = \Carbon\Carbon::parse("this month $day $time");
+                if ($next->isPast()) {
+                    $next = \Carbon\Carbon::parse("next month $day $time");
+                }
+            }
+        }
+
+        return $next;
     }
 }
