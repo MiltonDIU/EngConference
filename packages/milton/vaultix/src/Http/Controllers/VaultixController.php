@@ -410,15 +410,6 @@ class VaultixController extends Controller
             // Set cookie for JS to detect download start
             cookie()->queue('vaultix_download_started', 'true', 1, null, null, false, false);
 
-            if (in_array($backup->destination->provider, ['s3', 'r2'])) {
-                try {
-                    $url = $disk->temporaryUrl($backup->file_path, now()->addMinutes(30));
-                    return redirect()->away($url);
-                } catch (\Exception $e) {
-                    // Fallback
-                }
-            }
-
             // For GDrive and SFTP, use streamDownload with immediate flushing
             return response()->streamDownload(function () use ($disk, $backup) {
                 if (ob_get_level()) ob_end_clean();

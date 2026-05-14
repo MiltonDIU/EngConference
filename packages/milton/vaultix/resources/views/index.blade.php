@@ -333,7 +333,7 @@
                         <td class="px-6 py-4 text-right">
                             <div class="flex justify-end gap-2">
                                 @if($backup->status === 'success')
-                                    <a href="{{ route('vaultix.backups.download', $backup) }}" onclick="handleDownloadClick(this)" title="Download Backup" class="download-btn p-2 bg-slate-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-lg transition-all border border-transparent hover:border-indigo-100">
+                                    <a href="{{ URL::temporarySignedRoute('vaultix.backups.download', now()->addMinutes(5), ['backup' => $backup]) }}" onclick="handleDownloadClick(this)" title="Download Backup" class="download-btn p-2 bg-slate-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-lg transition-all border border-transparent hover:border-indigo-100">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                     </a>
                                 @endif

@@ -26,7 +26,7 @@ Route::middleware(['web', 'vaultix.auth'])->prefix('vaultix')->group(function ()
 
     // Backup History Management
     Route::get('/backups/latest-id', [VaultixController::class, 'getLatestBackupId'])->name('vaultix.backups.latest-id');
-    Route::get('/backups/{backup}/download', [VaultixController::class, 'downloadBackup'])->name('vaultix.backups.download');
+    Route::get('/backups/{backup}/download', [VaultixController::class, 'downloadBackup'])->name('vaultix.backups.download')->middleware('signed');
     Route::delete('/backups/{backup}', [VaultixController::class, 'destroyBackup'])->name('vaultix.backups.destroy');
 
     // Settings & Access Control
