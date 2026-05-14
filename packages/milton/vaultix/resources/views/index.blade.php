@@ -417,16 +417,15 @@
     }
 
     function handleDownloadClick(btn) {
-        const originalText = btn.innerText;
-        btn.innerText = 'Preparing...';
-        btn.classList.add('opacity-50', 'pointer-events-none');
-        const checkCookie = setInterval(() => {
-            if (document.cookie.split(';').some((item) => item.trim().startsWith('vaultix_download_started='))) {
-                btn.innerText = originalText;
-                btn.classList.remove('opacity-50', 'pointer-events-none');
-                clearInterval(checkCookie);
-            }
-        }, 500);
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+        btn.classList.add('opacity-75', 'pointer-events-none');
+        
+        // Revert after 5 seconds (assuming download started)
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('opacity-75', 'pointer-events-none');
+        }, 5000);
     }
 
     function handleSafeDelete(form) {
