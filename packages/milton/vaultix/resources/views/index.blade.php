@@ -93,7 +93,7 @@
             </div>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-left">
+            <table class="w-full text-left min-w-[800px]">
                 <thead class="bg-slate-50 border-b">
                     <tr>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Job Name</th>
@@ -176,7 +176,7 @@
             <h2 class="font-bold text-lg">Recent Backup History</h2>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-left">
+            <table class="w-full text-left min-w-[900px]">
                 <thead class="bg-slate-50 border-b">
                     <tr>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Date & Time</th>
