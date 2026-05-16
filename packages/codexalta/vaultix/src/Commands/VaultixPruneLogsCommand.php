@@ -1,10 +1,10 @@
 <?php
 
-namespace Milton\Vaultix\Commands;
+namespace Codexalta\Vaultix\Commands;
 
 use Illuminate\Console\Command;
-use Milton\Vaultix\Models\VaultixActivity;
-use Milton\Vaultix\Models\VaultixSetting;
+use Codexalta\Vaultix\Models\VaultixActivity;
+use Codexalta\Vaultix\Models\VaultixSetting;
 use Carbon\Carbon;
 
 class VaultixPruneLogsCommand extends Command

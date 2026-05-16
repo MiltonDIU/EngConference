@@ -1,13 +1,13 @@
 <?php
 
-namespace Milton\Vaultix\Commands;
+namespace Codexalta\Vaultix\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Milton\Vaultix\Models\BackupJob;
+use Codexalta\Vaultix\Models\BackupJob;
 
 class VaultixBackupCommand extends Command
 {
@@ -19,7 +19,7 @@ class VaultixBackupCommand extends Command
     public function handle()
     {
         // Apply user-defined timezone
-        $tz = \Milton\Vaultix\Models\VaultixSetting::get('timezone', config('app.timezone'));
+        $tz = \Codexalta\Vaultix\Models\VaultixSetting::get('timezone', config('app.timezone'));
         date_default_timezone_set($tz);
 
         $specificJobId = $this->option('job');
@@ -118,7 +118,7 @@ class VaultixBackupCommand extends Command
 
         // 3. Execution
         try {
-            \Milton\Vaultix\Models\VaultixActivity::log(!$this->isManualTrigger ? 'auto_run' : 'manual_run', 'Job', $job->name, "Backup process started.");
+            \Codexalta\Vaultix\Models\VaultixActivity::log(!$this->isManualTrigger ? 'auto_run' : 'manual_run', 'Job', $job->name, "Backup process started.");
             
             $params = ['--only-to-disk' => 'vaultix_disk', '--destination-path' => $folderName, '--no-interaction' => true];
             if ($job->type === 'db_only') $params['--only-db'] = true;
@@ -130,14 +130,14 @@ class VaultixBackupCommand extends Command
             Log::info("Vaultix: backup:run finished with code {$exitCode}. Output: " . substr($output, 0, 500));
 
             if ($exitCode === 0) {
-                \Milton\Vaultix\Models\VaultixActivity::log(!$this->isManualTrigger ? 'auto_finish' : 'manual_finish', 'Job', $job->name, "Backup completed successfully.");
+                \Codexalta\Vaultix\Models\VaultixActivity::log(!$this->isManualTrigger ? 'auto_finish' : 'manual_finish', 'Job', $job->name, "Backup completed successfully.");
                 $files = \Illuminate\Support\Facades\Storage::disk('vaultix_disk')->files($folderName);
                 Log::info("Vaultix: Files found in storage: " . count($files));
                 
                 $latestFile = collect($files)->sortByDesc(fn($f) => \Illuminate\Support\Facades\Storage::disk('vaultix_disk')->lastModified($f))->first();
                 $size = $latestFile ? \Illuminate\Support\Facades\Storage::disk('vaultix_disk')->size($latestFile) : 0;
 
-                \Milton\Vaultix\Models\Backup::create([
+                \Codexalta\Vaultix\Models\Backup::create([
                     'job_id' => $job->id, 'destination_id' => $dest->id, 'file_path' => $latestFile,
                     'file_name' => basename($latestFile), 'file_size' => $size, 'status' => 'success', 'completed_at' => now(),
                 ]);
@@ -162,7 +162,7 @@ class VaultixBackupCommand extends Command
 
         } catch (\Exception $e) {
             Log::error("Vaultix Engine Failure for {$job->name}: " . $e->getMessage());
-            \Milton\Vaultix\Models\Backup::create([
+            \Codexalta\Vaultix\Models\Backup::create([
                 'job_id' => $job->id, 'destination_id' => $dest->id, 'file_path' => 'failed',
                 'file_name' => 'failed', 'status' => 'failed', 'completed_at' => now(),
             ]);

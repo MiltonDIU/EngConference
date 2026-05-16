@@ -1,15 +1,15 @@
 <?php
 
-namespace Milton\Vaultix\Http\Controllers;
+namespace Codexalta\Vaultix\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Artisan;
-use Milton\Vaultix\Models\BackupDestination;
-use Milton\Vaultix\Models\BackupJob;
-use Milton\Vaultix\Models\VaultixSetting;
-use Milton\Vaultix\Models\VaultixActivity;
+use Codexalta\Vaultix\Models\BackupDestination;
+use Codexalta\Vaultix\Models\BackupJob;
+use Codexalta\Vaultix\Models\VaultixSetting;
+use Codexalta\Vaultix\Models\VaultixActivity;
 
 class VaultixController extends Controller
 {
@@ -32,7 +32,7 @@ class VaultixController extends Controller
         $diskUsage = $this->getDiskUsage();
 
         // Filtering & Pagination Logic
-        $query = \Milton\Vaultix\Models\Backup::with(['job', 'destination'])->latest();
+        $query = \Codexalta\Vaultix\Models\Backup::with(['job', 'destination'])->latest();
 
         if ($request->filled('provider')) {
             $query->whereHas('destination', function($q) use ($request) {
@@ -195,7 +195,7 @@ class VaultixController extends Controller
     {
         try {
             // 1. Setup a temporary disk configuration
-            $command = new \Milton\Vaultix\Commands\VaultixBackupCommand();
+            $command = new \Codexalta\Vaultix\Commands\VaultixBackupCommand();
             $diskConfig = $this->getDiskConfigForTesting($destination);
             
             config(['filesystems.disks.vaultix_test' => $diskConfig]);
@@ -321,7 +321,7 @@ class VaultixController extends Controller
             $msg = "Insufficient storage! You need at least {$needed} more free space to safely generate this backup.";
             
             // Send Email Notification if enabled for this job
-            $jobRecord = \Milton\Vaultix\Models\BackupJob::find($job->id);
+            $jobRecord = \Codexalta\Vaultix\Models\BackupJob::find($job->id);
             if ($jobRecord && $jobRecord->notify_on_failure && !empty($jobRecord->notification_email)) {
                 try {
                     $dashboardUrl = route('vaultix.index');
@@ -342,7 +342,7 @@ class VaultixController extends Controller
             return response()->json(['error' => $msg], 422);
         }
 
-        \Milton\Vaultix\Jobs\ProcessVaultixBackup::dispatch($job->id);
+        \Codexalta\Vaultix\Jobs\ProcessVaultixBackup::dispatch($job->id);
         VaultixActivity::log('manual_run', 'Job', $job->name, "Triggered a manual backup run.");
         
         return response()->json([
@@ -353,7 +353,7 @@ class VaultixController extends Controller
     public function getLatestBackupId()
     {
         return response()->json([
-            'id' => \Milton\Vaultix\Models\Backup::latest()->first()?->id ?? 0
+            'id' => \Codexalta\Vaultix\Models\Backup::latest()->first()?->id ?? 0
         ]);
     }
 
@@ -413,14 +413,14 @@ class VaultixController extends Controller
         }
     }
 
-    public function downloadBackup(\Milton\Vaultix\Models\Backup $backup)
+    public function downloadBackup(\Codexalta\Vaultix\Models\Backup $backup)
     {
         if ($backup->status !== 'success' || $backup->file_path === 'failed') {
             return back()->with('error', 'This backup file is not available.');
         }
 
         try {
-            $command = new \Milton\Vaultix\Commands\VaultixBackupCommand();
+            $command = new \Codexalta\Vaultix\Commands\VaultixBackupCommand();
             $diskConfig = $command->getDiskConfig($backup->destination);
             \Illuminate\Support\Facades\Config::set('filesystems.disks.vaultix_download', $diskConfig);
             
@@ -449,11 +449,11 @@ class VaultixController extends Controller
         }
     }
 
-    public function destroyBackup(\Milton\Vaultix\Models\Backup $backup)
+    public function destroyBackup(\Codexalta\Vaultix\Models\Backup $backup)
     {
         try {
             // Optional: Delete from cloud storage too
-            $command = new \Milton\Vaultix\Commands\VaultixBackupCommand();
+            $command = new \Codexalta\Vaultix\Commands\VaultixBackupCommand();
             $diskConfig = $command->getDiskConfig($backup->destination);
             \Illuminate\Support\Facades\Config::set('filesystems.disks.vaultix_delete', $diskConfig);
             

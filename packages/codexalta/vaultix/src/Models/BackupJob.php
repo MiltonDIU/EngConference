@@ -1,6 +1,6 @@
 <?php
 
-namespace Milton\Vaultix\Models;
+namespace Codexalta\Vaultix\Models;
 
 use Illuminate\Database\Eloquent\Model;
 

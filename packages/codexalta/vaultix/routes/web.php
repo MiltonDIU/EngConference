@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Milton\Vaultix\Http\Controllers\VaultixController;
+use Codexalta\Vaultix\Http\Controllers\VaultixController;
 
 Route::middleware(['web', 'vaultix.auth'])->prefix('vaultix')->group(function () {
     Route::get('/', [VaultixController::class, 'index'])->name('vaultix.index');

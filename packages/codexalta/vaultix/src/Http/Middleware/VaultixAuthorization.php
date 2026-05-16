@@ -1,10 +1,10 @@
 <?php
 
-namespace Milton\Vaultix\Http\Middleware;
+namespace Codexalta\Vaultix\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Milton\Vaultix\Models\VaultixSetting;
+use Codexalta\Vaultix\Models\VaultixSetting;
 
 class VaultixAuthorization
 {

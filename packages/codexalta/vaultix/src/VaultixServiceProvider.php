@@ -1,9 +1,9 @@
 <?php
 
-namespace Milton\Vaultix;
+namespace Codexalta\Vaultix;
 
 use Illuminate\Support\ServiceProvider;
-use Milton\Vaultix\Commands\VaultixBackupCommand;
+use Codexalta\Vaultix\Commands\VaultixBackupCommand;
 
 class VaultixServiceProvider extends ServiceProvider
 {
@@ -33,7 +33,7 @@ class VaultixServiceProvider extends ServiceProvider
 
         $this->commands([
             VaultixBackupCommand::class,
-            \Milton\Vaultix\Commands\VaultixPruneLogsCommand::class,
+            \Codexalta\Vaultix\Commands\VaultixPruneLogsCommand::class,
         ]);
 
         // Automatically register the command in the scheduler
@@ -46,7 +46,7 @@ class VaultixServiceProvider extends ServiceProvider
     protected function registerMiddleware()
     {
         $router = $this->app['router'];
-        $router->aliasMiddleware('vaultix.auth', \Milton\Vaultix\Http\Middleware\VaultixAuthorization::class);
+        $router->aliasMiddleware('vaultix.auth', \Codexalta\Vaultix\Http\Middleware\VaultixAuthorization::class);
     }
 
     protected function registerGoogleDriver()

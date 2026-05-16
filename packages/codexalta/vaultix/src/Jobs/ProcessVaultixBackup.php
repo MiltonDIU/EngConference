@@ -1,6 +1,6 @@
 <?php
 
-namespace Milton\Vaultix\Jobs;
+namespace Codexalta\Vaultix\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -8,7 +8,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
-use Milton\Vaultix\Models\BackupJob;
+use Codexalta\Vaultix\Models\BackupJob;
 
 class ProcessVaultixBackup implements ShouldQueue
 {

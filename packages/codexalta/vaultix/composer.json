@@ -1,12 +1,12 @@
 {
-    "name": "milton/vaultix",
+    "name": "codexalta/vaultix",
     "description": "Enterprise-grade Dynamic Backup System for Laravel with Admin Dashboard, Smart Storage Projection, and Multi-provider Support.",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Milton",
-            "email": "milton@example.com"
+            "name": "Codexalta",
+            "email": "info@codexalta.com"
         }
     ],
     "require": {
@@ -19,13 +19,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Milton\\Vaultix\\": "src/"
+            "Codexalta\\Vaultix\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Milton\\Vaultix\\VaultixServiceProvider"
+                "Codexalta\\Vaultix\\VaultixServiceProvider"
             ]
         }
     },

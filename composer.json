@@ -4,7 +4,7 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Milton\\Vaultix\\": "packages/milton/vaultix/src/"
+            "Codexalta\\Vaultix\\": "packages/codexalta/vaultix/src/"
         }
     },
     "autoload-dev": {
