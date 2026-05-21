@@ -216,20 +216,21 @@ $(function () {
         columns: [
             { data: 'submission_id', name: 'submission_id' },
             { data: 'title', name: 'title' },
-            { data: 'submitted_by', name: 'submitted_by' },
+            { data: 'submitted_by', name: 'user.name' },
             { data: 'authors', name: 'authors' },
             { data: 'department', name: 'department' },
             { data: 'institution', name: 'institution' },
             { data: 'country', name: 'country' },
-            { data: 'track', name: 'track' },
+            { data: 'track', name: 'track.name' },
             { data: 'status', name: 'status', class: 'text-center' },
             { data: 'created_at', name: 'created_at', class: 'text-center' },
             { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false, class: 'text-right' }
         ],
         orderCellsTop: true,
         order: [[8, 'desc']],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         pageLength: 25,
-        dom: 'Bfrtip',
+        dom: 'lBfrtip',
         buttons: dtButtons
     });
 

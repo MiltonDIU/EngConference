@@ -9,8 +9,8 @@ Dashboard
 <div class="content">
 @can('admin_report')
 <div class="row mb-4">
-    <div class="col-md-4">
-        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #6f42c1 !important;">
+    <div class="col-xl col-lg-4 col-md-6 col-sm-6 mb-3 mb-xl-0">
+        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #6f42c1 !important; height: 100%;">
             <span class="info-box-icon text-purple"><i class="fas fa-users"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text font-weight-bold text-muted small uppercase">Total Registration</span>
@@ -18,21 +18,39 @@ Dashboard
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #007bff !important;">
-            <span class="info-box-icon text-primary"><i class="fas fa-user-edit"></i></span>
+    <div class="col-xl col-lg-4 col-md-6 col-sm-6 mb-3 mb-xl-0">
+        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #17a2b8 !important; height: 100%;">
+            <span class="info-box-icon text-info"><i class="fas fa-user-edit"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text font-weight-bold text-muted small uppercase">Total Authors</span>
-                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $totalAuthors }}</span>
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Total Submitters</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $totalSubmitters }}</span>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #28a745 !important;">
-            <span class="info-box-icon text-success"><i class="fas fa-walking"></i></span>
+    <div class="col-xl col-lg-4 col-md-6 col-sm-6 mb-3 mb-xl-0">
+        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #007bff !important; height: 100%;">
+            <span class="info-box-icon text-primary"><i class="fas fa-feather-alt"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Total Authors</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $totalActualAuthors }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-lg-6 col-md-6 col-sm-6 mb-3 mb-xl-0">
+        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #6c757d !important; height: 100%;">
+            <span class="info-box-icon text-secondary"><i class="fas fa-walking"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text font-weight-bold text-muted small uppercase">Participants Only</span>
                 <span class="info-box-number h4 mb-0 font-weight-bold">{{ $totalParticipants }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl col-lg-6 col-md-12 col-sm-12 mb-3 mb-xl-0">
+        <div class="info-box shadow-none border bg-white" style="border-radius: 12px; border-left: 5px solid #28a745 !important; height: 100%;">
+            <span class="info-box-icon text-success"><i class="fas fa-user-check"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text font-weight-bold text-muted small uppercase">Participant Paid</span>
+                <span class="info-box-number h4 mb-0 font-weight-bold">{{ $paidParticipants }}</span>
             </div>
         </div>
     </div>

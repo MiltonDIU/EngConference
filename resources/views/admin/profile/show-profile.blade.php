@@ -247,6 +247,16 @@
         </div>
 
         <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label for="filter_registration_type" class="small font-weight-bold text-muted mb-1">Filter by Registration Type</label>
+                    <select id="filter_registration_type" class="form-control form-control-sm">
+                        <option value="">All Types</option>
+                        <option value="author">Author</option>
+                        <option value="participant">Participant Only</option>
+                    </select>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class=" table table-bordered table-striped table-hover datatable datatable-Speaker">
                     <thead>
@@ -262,13 +272,14 @@
                         <th>Amount</th>
                         <th>Payment</th>
                         <th>Authors</th>
+                        <th>Total Member</th>
                         <th>Action</th>
                     </tr>
                     </thead>
                     <tbody>
                     @foreach($profiles as $key => $profile)
                         @if($profile->user)
-                        <tr data-entry-id="{{ $profile->id }}">
+                        <tr data-entry-id="{{ $profile->id }}" data-registration-type="{{ $profile->is_author ? 'author' : 'participant' }}">
                             <td></td>
                             <td class="font-weight-bold text-dark">
                                 @if($profile->payment_status == 1 && $profile->registration_id == null)
@@ -361,6 +372,19 @@
                                     <span class="text-muted">N/A</span>
                                 @endif
                             </td>
+                            <td class="text-center font-weight-bold">
+                                @php
+                                    $totalMembers = 0;
+                                    if ($profile->user && $profile->user->papers->count() > 0) {
+                                        foreach ($profile->user->papers as $paper) {
+                                            $totalMembers += max(1, $paper->authors->count());
+                                        }
+                                    } else {
+                                        $totalMembers = 1;
+                                    }
+                                @endphp
+                                {{ $totalMembers }}
+                            </td>
                             <td>
                                 <div class="btn-group">
                                     @can('profile_edit')
@@ -391,11 +415,60 @@
     <script>
         $(function () {
             let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
-            $.extend(true, $.fn.dataTable.defaults, {
+            
+            // Clean up raw text, collapse extra whitespace/newlines, exclude button/form text
+            let exportFormat = {
+                body: function (data, row, column, node) {
+                    let $cell = $(node).clone();
+                    // Remove forms, buttons, or hidden/action elements if they exist
+                    $cell.find('form, button, .btn, script, style').remove();
+                    
+                    let rawText = $cell.text() || "";
+                    let lines = rawText.split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line.length > 0);
+                    return lines.join(', ');
+                }
+            };
+
+            // Apply custom export format to all export buttons
+            dtButtons.forEach(function(btn) {
+                if (btn.extend === 'copy' || btn.extend === 'csv' || btn.extend === 'excel' || btn.extend === 'pdf' || btn.extend === 'print') {
+                    if (!btn.exportOptions) {
+                        btn.exportOptions = {};
+                    }
+                    btn.exportOptions.format = exportFormat;
+                }
+            });
+
+            let table = $('.datatable-Speaker:not(.ajaxTable)').DataTable({
+                buttons: dtButtons,
                 order: [[ 1, 'desc' ]],
                 pageLength: 100,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
             });
-            $('.datatable-Speaker:not(.ajaxTable)').DataTable({ buttons: dtButtons })
+
+            // Register a custom search filter for Registration Type
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    if (!$(settings.nTable).hasClass('datatable-Speaker')) {
+                        return true;
+                    }
+                    let selectedType = $('#filter_registration_type').val();
+                    if (!selectedType) {
+                        return true; // No filter selected
+                    }
+                    let row = table.row(dataIndex).node();
+                    let rowType = $(row).attr('data-registration-type');
+                    return rowType === selectedType;
+                }
+            );
+
+            // Redraw table when filter changes
+            $('#filter_registration_type').on('change', function() {
+                table.draw();
+            });
+
             $('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
                 $($.fn.dataTable.tables(true)).DataTable()
                     .columns.adjust();

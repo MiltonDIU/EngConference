@@ -33,6 +33,9 @@ class DashboardController extends Controller
         $total = Profile::count();
         $totalParticipants = Profile::where('is_author', false)->count();
         $totalAuthors = Profile::where('is_author', true)->count();
+        $totalSubmitters = $totalAuthors;
+        $totalActualAuthors = \App\Models\PaperAuthor::whereHas('paper')->count();
+        $paidParticipants = Profile::where('is_author', false)->where('payment_status', '1')->count();
         $paid = Profile::where('payment_status', '1')->count();
         $unpaid = $total - $paid;
 
@@ -135,7 +138,7 @@ class DashboardController extends Controller
         }
 
         return view('admin.home', compact(
-            'settings', 'profiles', 'total', 'totalParticipants', 'totalAuthors', 'schedules', 'allSchedules', 'blogs',
+            'settings', 'profiles', 'total', 'totalParticipants', 'totalAuthors', 'totalSubmitters', 'totalActualAuthors', 'paidParticipants', 'schedules', 'allSchedules', 'blogs',
             'eventActivities', 'aminities', 'topTracks', 'totalTaka',
             'totalPayAmount', 'allowedDomain', 'currencyStats',
             'totalPapers', 'pendingPapers', 'approvedPapers', 'rejectedPapers',

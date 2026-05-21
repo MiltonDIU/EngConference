@@ -31,10 +31,10 @@ class PaperController extends Controller
             $user = Auth::user();
 
             if ($user->roles->contains('id', 3)) {
-                $query = Paper::where('user_id', $user->id)->with('user', 'track', 'subTrack', 'authors.country');
+                $query = Paper::where('user_id', $user->id)->with('user.papers', 'track', 'subTrack', 'authors.country');
             } else {
                 abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-                $query = Paper::with('user', 'track', 'subTrack', 'authors.country');
+                $query = Paper::with('user.papers', 'track', 'subTrack', 'authors.country');
             }
 
             // Apply Filters
@@ -88,7 +88,28 @@ class PaperController extends Controller
                     return '<span class="font-weight-bold text-primary">'.$row->submission_id.'</span>';
                 })
                 ->addColumn('submitted_by', function ($row) {
-                    return $row->user->name ?? 'N/A';
+                    $name = $row->user->name ?? 'N/A';
+                    if ($row->user && $row->user->papers->count() >= 2) {
+                        $otherPapers = $row->user->papers->reject(function ($p) use ($row) {
+                            return $p->id === $row->id;
+                        });
+
+                        $otherLinks = [];
+                        foreach ($otherPapers as $p) {
+                            $viewUrl = route('papers.show', $p->id);
+                            $otherLinks[] = '<a href="' . $viewUrl . '" class="badge badge-light border text-primary mr-1" title="' . e($p->title) . '">' . e($p->submission_id) . '</a>';
+                        }
+
+                        $otherLinksHtml = implode('', $otherLinks);
+
+                        return '<div class="d-flex flex-column">' .
+                                    '<span class="font-weight-bold text-dark">' . $name . '</span>' .
+                                    '<div class="mt-1" style="font-size: 0.75rem; line-height: 1.4;">' .
+                                        '<span class="text-muted mr-1" style="font-size: 0.7rem;">Others:</span>' . $otherLinksHtml .
+                                    '</div>' .
+                               '</div>';
+                    }
+                    return $name;
                 })
                 ->addColumn('authors', function ($row) {
                     $authors = $row->authors->pluck('name')->toArray();
@@ -138,7 +159,7 @@ class PaperController extends Controller
                 ->editColumn('created_at', function ($row) {
                     return $row->created_at ? $row->created_at->format('M d, Y') : '';
                 })
-                ->rawColumns(['actions', 'submission_id', 'title', 'authors', 'track', 'status'])
+                ->rawColumns(['actions', 'submission_id', 'submitted_by', 'title', 'authors', 'track', 'status'])
                 ->make(true);
         }
 
