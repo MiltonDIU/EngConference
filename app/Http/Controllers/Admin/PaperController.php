@@ -31,10 +31,10 @@ class PaperController extends Controller
             $user = Auth::user();
 
             if ($user->roles->contains('id', 3)) {
-                $query = Paper::where('user_id', $user->id)->with('user.papers', 'track', 'subTrack', 'authors.country');
+                $query = Paper::where('user_id', $user->id)->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
             } else {
                 abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-                $query = Paper::with('user.papers', 'track', 'subTrack', 'authors.country');
+                $query = Paper::with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
             }
 
             // Apply Filters
@@ -119,17 +119,36 @@ class PaperController extends Controller
                     $authorText = implode(', ', $authors);
                     return '<div class="text-muted small" title="'.$authorText.'">'.$authorText.'</div>';
                 })
+                ->addColumn('total_member', function ($row) {
+                    $count = $row->authors->count();
+                    if ($count === 0 && $row->user) {
+                        $count = 1;
+                    }
+                    return '<span class="badge badge-light border font-weight-bold px-2 py-1 rounded-pill">' . $count . '</span>';
+                })
                 ->addColumn('department', function ($row) {
                     $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
-                    return $author->department ?? 'N/A';
+                    $dept = $author->department ?? null;
+                    if (empty($dept) || trim($dept) === '' || strtolower(trim($dept)) === 'n/a' || strtolower(trim($dept)) === 'null') {
+                        $dept = $row->user->profile->department ?? null;
+                    }
+                    return $dept ?: 'N/A';
                 })
                 ->addColumn('institution', function ($row) {
                     $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
-                    return $author->institution ?? 'N/A';
+                    $inst = $author->institution ?? null;
+                    if (empty($inst) || trim($inst) === '' || strtolower(trim($inst)) === 'n/a' || strtolower(trim($inst)) === 'null') {
+                        $inst = $row->user->profile->institution ?? null;
+                    }
+                    return $inst ?: 'N/A';
                 })
                 ->addColumn('country', function ($row) {
                     $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
-                    return $author->country->name ?? 'N/A';
+                    $country = $author->country->name ?? null;
+                    if (empty($country) || trim($country) === '' || strtolower(trim($country)) === 'n/a' || strtolower(trim($country)) === 'null') {
+                        $country = $row->user->profile->country->name ?? null;
+                    }
+                    return $country ?: 'N/A';
                 })
                 ->editColumn('title', function ($row) {
                     return '<div class="text-dark font-weight-600 text-truncate" style="max-width: 300px;" title="'.$row->title.'">'.$row->title.'</div>';
@@ -159,7 +178,7 @@ class PaperController extends Controller
                 ->editColumn('created_at', function ($row) {
                     return $row->created_at ? $row->created_at->format('M d, Y') : '';
                 })
-                ->rawColumns(['actions', 'submission_id', 'submitted_by', 'title', 'authors', 'track', 'status'])
+                ->rawColumns(['actions', 'submission_id', 'submitted_by', 'title', 'authors', 'total_member', 'track', 'status'])
                 ->make(true);
         }
 

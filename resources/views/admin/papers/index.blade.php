@@ -67,6 +67,7 @@
                             <th>Full Title</th>
                             <th>Submitted By</th>
                             <th>Authors</th>
+                            <th>Total Member</th>
                             <th>Department</th>
                             <th>University</th>
                             <th>Country</th>
@@ -218,6 +219,7 @@ $(function () {
             { data: 'title', name: 'title' },
             { data: 'submitted_by', name: 'user.name' },
             { data: 'authors', name: 'authors' },
+            { data: 'total_member', name: 'total_member', class: 'text-center', searchable: false },
             { data: 'department', name: 'department' },
             { data: 'institution', name: 'institution' },
             { data: 'country', name: 'country' },
