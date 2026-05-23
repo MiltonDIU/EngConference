@@ -198,6 +198,27 @@
         }
     }
 
+    function countWords() {
+        const text = document.getElementById('abstract_text').value.trim();
+        const display = document.getElementById('word_count_display');
+        const counter = document.getElementById('word_count');
+
+        let count = 0;
+        if (text.length > 0) {
+            count = text.split(/\s+/).length;
+        }
+
+        counter.innerText = count;
+
+        if (count > 300) {
+            display.classList.remove('text-muted');
+            display.classList.add('text-danger', 'font-weight-bold');
+        } else {
+            display.classList.remove('text-danger', 'font-weight-bold');
+            display.classList.add('text-muted');
+        }
+    }
+
     function countKeywords(inputId, countId) {
         const input = document.getElementById(inputId);
         const counter = document.getElementById(countId);
@@ -225,12 +246,12 @@
 
         // Automatically add the submitter as the primary author
         const currentUserData = {
-            name: @json(trim((Auth::user()->profile->first_name ?? '') . ' ' . (Auth::user()->profile->last_name ?? '')) ?: (Auth::user()->name ?? '')),
+            name: @json(trim((Auth::user()->profile?->first_name ?? '') . ' ' . (Auth::user()->profile?->last_name ?? '')) ?: (Auth::user()->name ?? '')),
             email: @json(Auth::user()->email ?? ''),
-            designation: @json(Auth::user()->profile->designation ?? ''),
-            department: @json(Auth::user()->profile->department ?? ''),
-            institution: @json(Auth::user()->profile->institution ?? ''),
-            country_id: @json(Auth::user()->profile->country_id ?? '')
+            designation: @json(Auth::user()->profile?->designation ?? ''),
+            department: @json(Auth::user()->profile?->department ?? ''),
+            institution: @json(Auth::user()->profile?->institution ?? ''),
+            country_id: @json(Auth::user()->profile?->country_id ?? '')
         };
         addCoAuthor(currentUserData, true);
     });

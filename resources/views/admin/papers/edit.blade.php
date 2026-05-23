@@ -162,25 +162,25 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-2">
-                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][name]" class="form-control form-control-sm" placeholder="Full Name*" value="{{ trim(($paper->user->profile->first_name ?? '') . ' ' . ($paper->user->profile->last_name ?? '')) ?: ($paper->user->name ?? '') }}" required>
+                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][name]" class="form-control form-control-sm" placeholder="Full Name*" value="{{ trim(($paper->user->profile?->first_name ?? '') . ' ' . ($paper->user->profile?->last_name ?? '')) ?: ($paper->user->name ?? '') }}" required>
                             </div>
                             <div class="col-md-6 mb-2">
                                 <input type="email" name="co_authors[{{ $coAuthorIndex }}][email]" class="form-control form-control-sm" placeholder="Email*" value="{{ $submitterEmail }}" required>
                             </div>
                             <div class="col-md-3 mb-2">
-                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][designation]" class="form-control form-control-sm" placeholder="Designation*" value="{{ $paper->user->profile->designation ?? '' }}" required>
+                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][designation]" class="form-control form-control-sm" placeholder="Designation*" value="{{ $paper->user->profile?->designation ?? '' }}" required>
                             </div>
                             <div class="col-md-3 mb-2">
-                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][department]" class="form-control form-control-sm" placeholder="Department*" value="{{ $paper->user->profile->department ?? '' }}" required>
+                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][department]" class="form-control form-control-sm" placeholder="Department*" value="{{ $paper->user->profile?->department ?? '' }}" required>
                             </div>
                             <div class="col-md-3 mb-2">
-                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][institution]" class="form-control form-control-sm" placeholder="Institution*" value="{{ $paper->user->profile->institution ?? '' }}" required>
+                                <input type="text" name="co_authors[{{ $coAuthorIndex }}][institution]" class="form-control form-control-sm" placeholder="Institution*" value="{{ $paper->user->profile?->institution ?? '' }}" required>
                             </div>
                             <div class="col-md-3 mb-2">
                                 <select name="co_authors[{{ $coAuthorIndex }}][country_id]" class="form-control form-control-sm" required>
                                     <option value="">Country*</option>
                                     @foreach($countries as $country)
-                                        <option value="{{ $country->id }}" {{ ($paper->user->profile->country_id ?? '') == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
+                                        <option value="{{ $country->id }}" {{ ($paper->user->profile?->country_id ?? '') == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
                                     @endforeach
                                 </select>
                             </div>

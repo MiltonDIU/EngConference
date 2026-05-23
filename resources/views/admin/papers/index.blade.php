@@ -20,10 +20,12 @@
     </div>
 
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body p-3">
-            <div class="row align-items-center">
-                <div class="col-md-3 mb-2 mb-md-0">
-                    <label class="small font-weight-bold text-muted mb-1">Status Filter</label>
+        <div class="card-body p-4">
+            <div class="row mb-3">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <label class="small font-weight-bold text-muted mb-1">
+                        <i class="fas fa-info-circle mr-1 text-primary"></i> Status Filter
+                    </label>
                     <select id="filter_status" class="form-control form-control-sm select2">
                         <option value="">All Statuses</option>
                         <option value="pending">Pending</option>
@@ -31,8 +33,10 @@
                         <option value="rejected">Rejected</option>
                     </select>
                 </div>
-                <div class="col-md-3 mb-2 mb-md-0">
-                    <label class="small font-weight-bold text-muted mb-1">Track Filter</label>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <label class="small font-weight-bold text-muted mb-1">
+                        <i class="fas fa-road mr-1 text-primary"></i> Track Filter
+                    </label>
                     <select id="filter_track" class="form-control form-control-sm select2">
                         <option value="">All Tracks</option>
                         @foreach($tracks as $track)
@@ -40,15 +44,42 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3 mb-2 mb-md-0">
-                    <label class="small font-weight-bold text-muted mb-1">Payment Filter</label>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <label class="small font-weight-bold text-muted mb-1">
+                        <i class="fas fa-credit-card mr-1 text-primary"></i> Payment Filter
+                    </label>
                     <select id="filter_payment" class="form-control form-control-sm select2">
                         <option value="">All Payment Status</option>
                         <option value="paid">Paid</option>
                         <option value="unpaid">Unpaid</option>
                     </select>
                 </div>
-                <div class="col-md-3 mt-4">
+            </div>
+            <div class="row align-items-end">
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <label class="small font-weight-bold text-muted mb-1">
+                        <i class="fas fa-building mr-1 text-primary"></i> Department
+                    </label>
+                    <input type="text" id="filter_department" class="form-control form-control-sm" placeholder="Search department...">
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <label class="small font-weight-bold text-muted mb-1">
+                        <i class="fas fa-university mr-1 text-primary"></i> University / Institute
+                    </label>
+                    <input type="text" id="filter_institution" class="form-control form-control-sm" placeholder="Search university/institute...">
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <label class="small font-weight-bold text-muted mb-1">
+                        <i class="fas fa-globe mr-1 text-primary"></i> Country
+                    </label>
+                    <select id="filter_country" class="form-control form-control-sm select2">
+                        <option value="">All Countries</option>
+                        @foreach($countries as $country)
+                            <option value="{{ $country->id }}">{{ $country->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3 mt-3 mt-md-0">
                     <button type="button" id="reset_filters" class="btn btn-sm btn-outline-secondary btn-block">
                         <i class="fas fa-undo mr-1"></i> Reset Filters
                     </button>
@@ -212,17 +243,20 @@ $(function () {
                 d.status = $('#filter_status').val();
                 d.track_id = $('#filter_track').val();
                 d.payment_status = $('#filter_payment').val();
+                d.department = $('#filter_department').val();
+                d.institution = $('#filter_institution').val();
+                d.country_id = $('#filter_country').val();
             }
         },
         columns: [
             { data: 'submission_id', name: 'submission_id' },
             { data: 'title', name: 'title' },
             { data: 'submitted_by', name: 'user.name' },
-            { data: 'authors', name: 'authors' },
-            { data: 'total_member', name: 'total_member', class: 'text-center', searchable: false },
-            { data: 'department', name: 'department' },
-            { data: 'institution', name: 'institution' },
-            { data: 'country', name: 'country' },
+            { data: 'authors', name: 'authors', searchable: false, orderable: false },
+            { data: 'total_member', name: 'total_member', class: 'text-center', searchable: false, orderable: false },
+            { data: 'department', name: 'department', searchable: true, orderable: false },
+            { data: 'institution', name: 'institution', searchable: true, orderable: false },
+            { data: 'country', name: 'country', searchable: true, orderable: false },
             { data: 'track', name: 'track.name' },
             { data: 'status', name: 'status', class: 'text-center' },
             { data: 'created_at', name: 'created_at', class: 'text-center' },
@@ -237,13 +271,18 @@ $(function () {
     });
 
     // Filter Change Listeners
-    $('#filter_status, #filter_track, #filter_payment').on('change', function() {
+    $('#filter_status, #filter_track, #filter_payment, #filter_country').on('change', function() {
+        table.draw();
+    });
+    $('#filter_department, #filter_institution').on('keyup', function() {
         table.draw();
     });
 
     // Reset Filters
     $('#reset_filters').on('click', function() {
-        $('#filter_status, #filter_track, #filter_payment').val('').trigger('change');
+        $('#filter_status, #filter_track, #filter_payment, #filter_country').val('').trigger('change');
+        $('#filter_department, #filter_institution').val('');
+        table.draw();
     });
 
     // Dynamic Payment Modal Logic

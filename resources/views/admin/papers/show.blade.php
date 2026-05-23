@@ -58,7 +58,7 @@
                     <hr class="my-2 opacity-25">
                     <div class="d-flex justify-content-between align-items-center mt-2">
                         <small class="text-muted italic">Last updated: {{ $paper->reviewed_at->format('M d, Y h:i A') }}</small>
-                        <small class="font-weight-bold">By: {{ $paper->reviewer->name ?? 'Admin' }}</small>
+                        <small class="font-weight-bold">By: {{ $paper->reviewer?->name ?? 'Admin' }}</small>
                     </div>
                     @endif
                 </div>
@@ -131,7 +131,7 @@
                                 </td>
                                 <td class="py-3">
                                     <div class="text-dark small"><i class="far fa-envelope mr-1 text-muted"></i> {{ $author->email }}</div>
-                                    <div class="text-muted small"><i class="fas fa-university mr-1 text-muted"></i> {{ $author->institution }} ({{ $author->country->name ?? 'N/A' }})</div>
+                                    <div class="text-muted small"><i class="fas fa-university mr-1 text-muted"></i> {{ $author->institution }} ({{ $author->country?->name ?? 'N/A' }})</div>
                                 </td>
                                 <td class="py-3 text-center">
                                     @if($author->is_presenting_author)
@@ -180,7 +180,7 @@
                                     <div class="text-dark small">{{ $history->review_note ?: 'No note provided' }}</div>
                                 </td>
                                 <td class="py-3 text-center">
-                                    <div class="text-dark font-weight-bold small">{{ $history->reviewer->name ?? 'Admin' }}</div>
+                                    <div class="text-dark font-weight-bold small">{{ $history->reviewer?->name ?? 'Admin' }}</div>
                                 </td>
                             </tr>
                             @endforeach

@@ -31,10 +31,10 @@ class PaperController extends Controller
             $user = Auth::user();
 
             if ($user->roles->contains('id', 3)) {
-                $query = Paper::where('user_id', $user->id)->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
+                $query = Paper::select('papers.*')->where('user_id', $user->id)->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
             } else {
                 abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-                $query = Paper::with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
+                $query = Paper::select('papers.*')->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
             }
 
             // Apply Filters
@@ -50,8 +50,65 @@ class PaperController extends Controller
                     $query->where('payment_status', $paymentStatus);
                 }
             }
+            if ($request->filled('department')) {
+                $dept = $request->department;
+                $query->where(function($q) use ($dept) {
+                    $q->whereHas('authors', function($authQuery) use ($dept) {
+                        $authQuery->where('department', 'like', "%{$dept}%");
+                    })->orWhereHas('user.profile', function($profileQuery) use ($dept) {
+                        $profileQuery->where('department', 'like', "%{$dept}%");
+                    });
+                });
+            }
+            if ($request->filled('institution')) {
+                $inst = $request->institution;
+                $query->where(function($q) use ($inst) {
+                    $q->whereHas('authors', function($authQuery) use ($inst) {
+                        $authQuery->where('institution', 'like', "%{$inst}%");
+                    })->orWhereHas('user.profile', function($profileQuery) use ($inst) {
+                        $profileQuery->where('institution', 'like', "%{$inst}%");
+                    });
+                });
+            }
+            if ($request->filled('country_id')) {
+                $countryId = $request->country_id;
+                $query->where(function($q) use ($countryId) {
+                    $q->whereHas('authors', function($authQuery) use ($countryId) {
+                        $authQuery->where('country_id', $countryId);
+                    })->orWhereHas('user.profile', function($profileQuery) use ($countryId) {
+                        $profileQuery->where('country_id', $countryId);
+                    });
+                });
+            }
 
             return DataTables::of($query)
+                ->filterColumn('department', function($q, $keyword) {
+                    $q->where(function($sub) use ($keyword) {
+                        $sub->whereHas('authors', function($authQuery) use ($keyword) {
+                            $authQuery->where('department', 'like', "%{$keyword}%");
+                        })->orWhereHas('user.profile', function($profileQuery) use ($keyword) {
+                            $profileQuery->where('department', 'like', "%{$keyword}%");
+                        });
+                    });
+                })
+                ->filterColumn('institution', function($q, $keyword) {
+                    $q->where(function($sub) use ($keyword) {
+                        $sub->whereHas('authors', function($authQuery) use ($keyword) {
+                            $authQuery->where('institution', 'like', "%{$keyword}%");
+                        })->orWhereHas('user.profile', function($profileQuery) use ($keyword) {
+                            $profileQuery->where('institution', 'like', "%{$keyword}%");
+                        });
+                    });
+                })
+                ->filterColumn('country', function($q, $keyword) {
+                    $q->where(function($sub) use ($keyword) {
+                        $sub->whereHas('authors.country', function($countryQuery) use ($keyword) {
+                            $countryQuery->where('name', 'like', "%{$keyword}%");
+                        })->orWhereHas('user.profile.country', function($countryQuery) use ($keyword) {
+                            $countryQuery->where('name', 'like', "%{$keyword}%");
+                        });
+                    });
+                })
                 ->addColumn('actions', function ($row) {
                     $viewRoute = route('papers.show', $row->id);
                     $editRoute = route('papers.edit', $row->id);
@@ -128,25 +185,25 @@ class PaperController extends Controller
                 })
                 ->addColumn('department', function ($row) {
                     $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
-                    $dept = $author->department ?? null;
+                    $dept = $author?->department ?? null;
                     if (empty($dept) || trim($dept) === '' || strtolower(trim($dept)) === 'n/a' || strtolower(trim($dept)) === 'null') {
-                        $dept = $row->user->profile->department ?? null;
+                        $dept = $row->user?->profile?->department ?? null;
                     }
                     return $dept ?: 'N/A';
                 })
                 ->addColumn('institution', function ($row) {
                     $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
-                    $inst = $author->institution ?? null;
+                    $inst = $author?->institution ?? null;
                     if (empty($inst) || trim($inst) === '' || strtolower(trim($inst)) === 'n/a' || strtolower(trim($inst)) === 'null') {
-                        $inst = $row->user->profile->institution ?? null;
+                        $inst = $row->user?->profile?->institution ?? null;
                     }
                     return $inst ?: 'N/A';
                 })
                 ->addColumn('country', function ($row) {
                     $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
-                    $country = $author->country->name ?? null;
+                    $country = $author?->country?->name ?? null;
                     if (empty($country) || trim($country) === '' || strtolower(trim($country)) === 'n/a' || strtolower(trim($country)) === 'null') {
-                        $country = $row->user->profile->country->name ?? null;
+                        $country = $row->user?->profile?->country?->name ?? null;
                     }
                     return $country ?: 'N/A';
                 })
@@ -183,7 +240,8 @@ class PaperController extends Controller
         }
 
         $tracks = Track::all();
-        return view('admin.papers.index', compact('tracks'));
+        $countries = Country::orderBy('name', 'asc')->get();
+        return view('admin.papers.index', compact('tracks', 'countries'));
     }
 
     public function getPaperPricing(Paper $paper)
@@ -503,11 +561,11 @@ class PaperController extends Controller
             $primaryAuthorIndexInForm = $primaryAuthorFromForm ? array_search((object)$primaryAuthorFromForm, json_decode(json_encode($request->co_authors), true)) : 0;
 
             $primaryData = [
-                'name' => $primaryAuthorFromForm['name'] ?? trim(($profile->first_name ?? '') . ' ' . ($profile->last_name ?? '')) ?: $paper->user->name,
-                'designation' => $primaryAuthorFromForm['designation'] ?? ($profile->designation ?? 'N/A'),
-                'department' => $primaryAuthorFromForm['department'] ?? ($profile->department ?? 'N/A'),
-                'institution' => $primaryAuthorFromForm['institution'] ?? ($profile->institution ?? 'N/A'),
-                'country_id' => $primaryAuthorFromForm['country_id'] ?? ($profile->country_id ?? 1),
+                'name' => $primaryAuthorFromForm['name'] ?? trim(($profile?->first_name ?? '') . ' ' . ($profile?->last_name ?? '')) ?: $paper->user->name,
+                'designation' => $primaryAuthorFromForm['designation'] ?? ($profile?->designation ?? 'N/A'),
+                'department' => $primaryAuthorFromForm['department'] ?? ($profile?->department ?? 'N/A'),
+                'institution' => $primaryAuthorFromForm['institution'] ?? ($profile?->institution ?? 'N/A'),
+                'country_id' => $primaryAuthorFromForm['country_id'] ?? ($profile?->country_id ?? 1),
                 'email' => $primaryEmail,
                 'author_order' => $orderOffset++,
                 'is_presenting_author' => ($presentingAuthorIndex == $primaryAuthorIndexInForm) ? 1 : 0,

@@ -53,7 +53,7 @@ class Paper extends Model
 
     public function authors()
     {
-        return $this->hasMany(PaperAuthor::class);
+        return $this->hasMany(PaperAuthor::class)->orderBy('author_order');
     }
 
     public function reviewer()
