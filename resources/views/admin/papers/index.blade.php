@@ -10,8 +10,16 @@
                 $settings = \App\Models\Setting::pluck('value', 'key');
                 $maxSubmissions = (int) ($settings['maximum_abstract_submission'] ?? $settings['maximum_abastract_submission'] ?? 1);
                 $userPaperCount = auth()->user() ? \App\Models\Paper::where('user_id', auth()->id())->count() : 0;
+                
+                $eventStartDate = \Illuminate\Support\Carbon::parse($settings['registration_start_date'] ?? now());
+                $abstractDeadline = \Illuminate\Support\Carbon::parse($settings['abstract_submission_deadline'] ?? $settings['registration_close_date'] ?? now());
+                $currentDate = \Illuminate\Support\Carbon::now();
+                
+                $isSubmissionOpen = (($settings['is_abstract_submission_open'] ?? 'true') == 'true') 
+                    && ($currentDate >= $eventStartDate) 
+                    && ($currentDate <= $abstractDeadline);
             @endphp
-            @if(auth()->user()->roles->contains('id', 3) && $userPaperCount < $maxSubmissions)
+            @if(auth()->user()->roles->contains('id', 3) && $userPaperCount < $maxSubmissions && $isSubmissionOpen)
                 <a href="{{ route('papers.create') }}" class="btn btn-primary shadow-sm">
                     <i class="fas fa-plus mr-1"></i> Submit New Abstract
                 </a>
