@@ -83,6 +83,12 @@
                                 <h5 class="mb-0 text-dark">Amount Due: <strong>{{ $myProfile->currency ?? 'BDT' }} {{ number_format($myProfile->pay_amount, 2) }}</strong></h5>
                             </div>
                             <div class="col-md-4 text-md-right mt-3 mt-md-0">
+                                <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block mr-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-info btn-lg px-3" style="border-radius: 8px;" title="Refresh and update payment amount according to current timeline stage">
+                                        <i class="fas fa-sync-alt mr-1"></i> Refresh Price
+                                    </button>
+                                </form>
                                 <button class="btn btn-info btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#registrationPayModal" style="border-radius: 8px;">
                                     <i class="fas fa-credit-card mr-2"></i> Review & Pay Now
                                 </button>
@@ -157,9 +163,17 @@
                                 <h4 class="text-primary font-weight-bold mb-1"><i class="fas fa-shopping-cart mr-2"></i> Abstract Bulk Checkout</h4>
                                 <p class="text-muted mb-0">You have <strong>{{ $unpaidPapers->count() }}</strong> approved abstract(s) pending payment. You can pay for all of them securely through a single transaction.</p>
                             </div>
-                            <button class="btn btn-primary btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#bulkPaymentModal" style="border-radius: 8px;">
-                                <i class="fas fa-credit-card mr-2"></i> Review & Pay All
-                            </button>
+                            <div class="d-flex align-items-center">
+                                <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block mr-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-primary btn-lg px-3" style="border-radius: 8px;" title="Refresh and update payment amount according to current timeline stage">
+                                        <i class="fas fa-sync-alt mr-1"></i> Refresh Price
+                                    </button>
+                                </form>
+                                <button class="btn btn-primary btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#bulkPaymentModal" style="border-radius: 8px;">
+                                    <i class="fas fa-credit-card mr-2"></i> Review & Pay All
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -242,8 +256,16 @@
             @endif
         @endif
 
-        <div class="card-header">
-            Profile
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Profile</span>
+            @if(!auth()->user()->roles->contains(3))
+                <form action="{{ route('profile.recalculate-all-unpaid') }}" method="POST" onsubmit="return confirm('Recalculate fees for ALL unpaid users based on current settings timeline?')">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm">
+                        <i class="fas fa-sync-alt mr-1"></i> Recalculate All Unpaid Fees
+                    </button>
+                </form>
+            @endif
         </div>
 
         <div class="card-body">
@@ -390,6 +412,16 @@
                                     @can('profile_edit')
                                         <a href="{{ route('edit-profile',['id' => $profile->id ]) }}" class="btn btn-xs btn-primary">Edit</a>
                                     @endcan
+
+                                    @if($profile->payment_status != '1' && !auth()->user()->roles->contains(3))
+                                        <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block ml-1">
+                                            @csrf
+                                            <input type="hidden" name="profile_id" value="{{ $profile->id }}">
+                                            <button type="submit" class="btn btn-xs btn-outline-secondary" onclick="return confirm('Recalculate registration fee for this user?')">
+                                                <i class="fas fa-sync-alt"></i> Recalculate
+                                            </button>
+                                        </form>
+                                    @endif
 
                                     @php
                                         $maxSubmissions = (int) (($settings['maximum_abstract_submission'] ?? $settings['maximum_abastract_submission'] ?? 1));

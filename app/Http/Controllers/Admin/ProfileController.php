@@ -24,10 +24,19 @@ class ProfileController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-   public function index()
+    public function index()
     {
-        $user = auth()->user()->roles->contains(3);
         $loged = Auth::user();
+        
+        // Auto-recalculate unpaid participant/author registration totals when visiting the dashboard
+        if ($loged && $loged->roles->contains('id', 3)) {
+            $myProfile = Profile::where('user_id', $loged->id)->first();
+            if ($myProfile && $myProfile->payment_status != '1') {
+                \App\Services\PricingService::updateProfileTotalDue($myProfile);
+            }
+        }
+
+        $user = auth()->user()->roles->contains(3);
         if ($user === true){
             $emails = 'Null';
             $profiles = Profile::where('user_id',$loged->id)->with(['user.papers.authors', 'country'])->get();
@@ -263,5 +272,48 @@ class ProfileController extends Controller
 
     }
 
+    public function recalculateFee(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
 
+        // If a profile_id is provided and the logged-in user is not a participant (role 3)
+        if ($request->has('profile_id') && !$user->roles->contains('id', 3)) {
+            $profile = Profile::find($request->profile_id);
+        } else {
+            $profile = Profile::where('user_id', $user->id)->first();
+        }
+
+        if (!$profile) {
+            return redirect()->back()->with('error', 'Profile not found.');
+        }
+
+        if ($profile->payment_status == '1') {
+            return redirect()->back()->with('error', 'Recalculation not allowed for completed payments.');
+        }
+
+        \App\Services\PricingService::updateProfileTotalDue($profile);
+
+        return redirect()->back()->with('message', 'Registration fee recalculated successfully according to the current pricing timeline.');
+    }
+
+    public function recalculateAllUnpaid(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || $user->roles->contains('id', 3)) {
+            abort(Response::HTTP_FORBIDDEN, '403 Forbidden');
+        }
+
+        $unpaidProfiles = Profile::where('payment_status', '<>', '1')->get();
+        
+        $count = 0;
+        foreach ($unpaidProfiles as $profile) {
+            \App\Services\PricingService::updateProfileTotalDue($profile);
+            $count++;
+        }
+
+        return redirect()->back()->with('message', $count . ' unpaid profile fees recalculated successfully.');
+    }
 }

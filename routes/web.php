@@ -321,6 +321,8 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     Route::get('edit/profile/{id}', [ProfileController::class, 'edit'])->name('edit-profile');
     Route::post('update/profile', [ProfileController::class, 'update'])->name('update-profile');
     Route::post('validate-coupon', [ProfileController::class, 'validateCoupon'])->name('validateCoupon');
+    Route::post('profile/recalculate-fee', [ProfileController::class, 'recalculateFee'])->name('profile.recalculate-fee');
+    Route::post('profile/recalculate-all-unpaid', [ProfileController::class, 'recalculateAllUnpaid'])->name('profile.recalculate-all-unpaid');
 
     // Paper Management
     Route::get('papers', [App\Http\Controllers\Admin\PaperController::class, 'index'])->name('papers.index');

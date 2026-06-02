@@ -127,6 +127,10 @@ class PricingService
      */
     public static function updateProfileTotalDue(Profile $profile)
     {
+        if ($profile->payment_status == '1') {
+            return;
+        }
+
         $totalAmount = 0;
         $currency = 'USD'; // Default
 
