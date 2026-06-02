@@ -11,6 +11,7 @@
                         </p>
                     </div>
                 </div>
+                </div>
             </div>
             <div class="container">
                 @if(session()->has('message') || session()->has('success'))
@@ -52,13 +53,15 @@
                 @php
                     $eventStartDate = \Carbon\Carbon::parse($settings['registration_start_date'] ?? now());
                     $eventCloseDate = \Carbon\Carbon::parse($settings['registration_close_date'] ?? now()->addMonth());
+                    $eventAbstractDeadline = \Carbon\Carbon::parse($settings['abstract_submission_deadline'] ?? $settings['registration_close_date'] ?? now()->addMonth());
                     $eventEarlyRegDate = \Carbon\Carbon::parse($settings['early_registration_last_date'] ?? now()->addWeek());
+                    $eventPaymentLastDate = \Carbon\Carbon::parse($settings['payment_last_date'] ?? now()->addMonths(2));
                     $currentDate = \Carbon\Carbon::now();
                 @endphp
 
                 @if ($currentDate < $eventStartDate)
                     <div class="row">
-                        <h1 class="text-center">The event registration has not started yet. It will start on {{ $eventStartDate->format('Y-m-d H:i:s') }}</h1>
+                        <h1 class="text-center">The event registration has not started yet. It will start on {{ $eventStartDate->format('j F Y, g:i A') }}</h1>
                     </div>
                 @elseif ($currentDate >= $eventStartDate && $currentDate <= $eventCloseDate)
 
@@ -120,9 +123,10 @@
                                             </table>
                                         </div>
                                         <hr>
-                                        <div><strong>Reg. Starting: {{ $eventStartDate->isoFormat('D MMMM YYYY HH:mm:ss') }} </strong></div>
-                                        <div><strong>Early Deadline: {{ $eventEarlyRegDate->isoFormat('D MMMM YYYY HH:mm:ss') }} </strong></div>
-                                        <div><strong>Reg. Deadline: {{ $eventCloseDate->isoFormat('D MMMM YYYY HH:mm:ss') }} </strong></div>
+                                        <div><strong>Reg. Starting: {{ $eventStartDate->format('j F Y, g:i A') }} </strong></div>
+                                        <div><strong>Abstract Submission Deadline: {{ $eventAbstractDeadline->format('j F Y, g:i A') }} </strong></div>
+                                        <div><strong>Early Bird Payment Timeline: Till {{ $eventEarlyRegDate->format('j F Y, g:i A') }} </strong></div>
+                                        <div><strong>Regular Payment: {{ $eventEarlyRegDate->copy()->addSecond()->format('j F Y, g:i A') }} to {{ $eventPaymentLastDate->format('j F Y, g:i A') }} </strong></div>
                                     </div>
                                     <br/>
 
@@ -434,7 +438,7 @@
 
                 @else
                     <div class="row">
-                        <h1 class="text-center">The event registration has closed on {{ $eventCloseDate->format('Y-m-d H:i:s') }} </h1>
+                        <h1 class="text-center">The event registration has closed on {{ $eventCloseDate->format('j F Y, g:i A') }} </h1>
                     </div>
                 @endif
             </div>

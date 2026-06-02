@@ -165,7 +165,6 @@ return [
         /*
          * Package Service Providers...
          */
-        Codexalta\Vaultix\VaultixServiceProvider::class,
 
         /*
          * Application Service Providers...
