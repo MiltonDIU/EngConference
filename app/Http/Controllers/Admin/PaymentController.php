@@ -116,7 +116,13 @@ class PaymentController extends Controller
     }
 
     public function payNow(Request $request){
-      $user = User::findOrFail($request->input('user_id'));
+        $settings = \App\Models\Setting::pluck('value', 'key');
+        $paymentLastDate = isset($settings['payment_last_date']) ? \Carbon\Carbon::parse($settings['payment_last_date']) : null;
+        if ($paymentLastDate && \Carbon\Carbon::now()->gt($paymentLastDate)) {
+            return redirect()->back()->with('error', 'The payment deadline has passed. Payments are no longer accepted.');
+        }
+
+        $user = User::findOrFail($request->input('user_id'));
         //$this->setPayment($user);
         $randomNum= rand(100,999).'-'."BNC2026-".strtotime(now());  //substr(str_shuffle
         $this->paymentStore($user,$randomNum,'onecard');
@@ -129,6 +135,12 @@ class PaymentController extends Controller
     }
 
     public function payNowPapers(Request $request){
+        $settings = \App\Models\Setting::pluck('value', 'key');
+        $paymentLastDate = isset($settings['payment_last_date']) ? \Carbon\Carbon::parse($settings['payment_last_date']) : null;
+        if ($paymentLastDate && \Carbon\Carbon::now()->gt($paymentLastDate)) {
+            return redirect()->back()->with('error', 'The payment deadline has passed. Payments are no longer accepted.');
+        }
+
         $request->validate(['paper_ids' => 'required|array']);
         $user = User::findOrFail($request->input('user_id'));
         $paperIds = $request->input('paper_ids');

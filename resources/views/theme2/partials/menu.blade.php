@@ -120,6 +120,7 @@
                         </a>
                     </li>
                 @endcan
+                @if(!auth()->user()->roles->contains('id', 3) || (auth()->user()->profile && auth()->user()->profile->is_author))
                 <li class="nav-item">
                     <a href="{{ route("papers.index") }}" class="nav-link {{ request()->is('papers*') ? 'active' : '' }}">
                         <i class="fa-fw fas fa-file-alt">
@@ -130,6 +131,7 @@
                         </p>
                     </a>
                 </li>
+                @endif
                 @can('schedule_access')
                     <li class="nav-item">
                         <a href="{{ route("admin.schedules.index") }}" class="nav-link {{ request()->is('admin/schedules') || request()->is('admin/schedules/*') ? 'active' : '' }}">

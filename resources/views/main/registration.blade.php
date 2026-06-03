@@ -413,7 +413,7 @@
                                                 <div id="action_buttons_participant" style="display: {{ old('is_author') == '1' ? 'none' : 'block' }};">
                                                     @if(($settings['is_payment_enabled'] ?? 'true') == 'true')
                                                         <button type="submit" class="btn btn-primary" name="action" value="save-pay">
-                                                            <i class="fa fa-credit-card"></i> Save & Continue to Payment
+                                                            <i class="fa fa-credit-card"></i> Save & Continue
                                                         </button>
                                                     @else
                                                         <button type="submit" class="btn btn-primary" name="action" value="save-close">

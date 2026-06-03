@@ -30,10 +30,12 @@ class PaperController extends Controller
         $settings = Setting::pluck('value', 'key');
         $eventStartDate = Carbon::parse($settings['registration_start_date'] ?? now());
         $abstractDeadline = Carbon::parse($settings['abstract_submission_deadline'] ?? $settings['registration_close_date'] ?? now());
+        $paymentLastDate = isset($settings['payment_last_date']) ? Carbon::parse($settings['payment_last_date']) : null;
         $currentDate = Carbon::now();
         $isSubmissionOpen = (($settings['is_abstract_submission_open'] ?? 'true') == 'true')
             && ($currentDate >= $eventStartDate)
             && ($currentDate <= $abstractDeadline);
+        $isPaymentOpen = !$paymentLastDate || $currentDate->lte($paymentLastDate);
 
         if ($request->ajax()) {
             $user = Auth::user();
@@ -117,7 +119,7 @@ class PaperController extends Controller
                         });
                     });
                 })
-                ->addColumn('actions', function ($row) use ($isSubmissionOpen) {
+                ->addColumn('actions', function ($row) use ($isSubmissionOpen, $isPaymentOpen) {
                     $viewRoute = route('papers.show', $row->id);
                     $editRoute = route('papers.edit', $row->id);
 
@@ -135,7 +137,7 @@ class PaperController extends Controller
                     }
 
                     $payBtn = '';
-                    if ($row->status === 'approved' && $row->payment_status != '1' && Auth::user()->roles->contains('id', 3)) {
+                    if ($row->status === 'approved' && $row->payment_status != '1' && Auth::user()->roles->contains('id', 3) && $isPaymentOpen) {
                         $payBtn = ' <button class="btn btn-sm btn-primary ml-1" onclick="openPaymentModal('.$row->id.')" title="Payment Review">
                                         <i class="fas fa-credit-card mr-1"></i> Pay
                                     </button>';

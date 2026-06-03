@@ -64,9 +64,11 @@
         @if(auth()->user()->roles->contains('id', 3))
             @php
                 $myProfile = $profiles->where('user_id', auth()->id())->first();
+                $paymentLastDate = isset($settings['payment_last_date']) ? \Illuminate\Support\Carbon::parse($settings['payment_last_date']) : null;
+                $isPaymentOpen = !$paymentLastDate || \Illuminate\Support\Carbon::now()->lte($paymentLastDate);
             @endphp
 
-            @if($myProfile && $myProfile->payment_status == '0' && !$myProfile->is_author)
+            @if($myProfile && $myProfile->payment_status != '1' && !$myProfile->is_author)
                 <div class="card mb-4 border-info shadow-sm" style="border-width: 2px;">
                     <div class="card-body bg-light">
                         <div class="row align-items-center">
@@ -83,15 +85,21 @@
                                 <h5 class="mb-0 text-dark">Amount Due: <strong>{{ $myProfile->currency ?? 'BDT' }} {{ number_format($myProfile->pay_amount, 2) }}</strong></h5>
                             </div>
                             <div class="col-md-4 text-md-right mt-3 mt-md-0">
-                                <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block mr-2">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-info btn-lg px-3" style="border-radius: 8px;" title="Refresh and update payment amount according to current timeline stage">
-                                        <i class="fas fa-sync-alt mr-1"></i> Refresh Price
+                                @if($isPaymentOpen)
+                                    <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block mr-2">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-info btn-lg px-3" style="border-radius: 8px;" title="Refresh and update payment amount according to current timeline stage">
+                                            <i class="fas fa-sync-alt mr-1"></i> Refresh Price
+                                        </button>
+                                    </form>
+                                    <button class="btn btn-info btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#registrationPayModal" style="border-radius: 8px;">
+                                        <i class="fas fa-credit-card mr-2"></i> Review & Pay Now
                                     </button>
-                                </form>
-                                <button class="btn btn-info btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#registrationPayModal" style="border-radius: 8px;">
-                                    <i class="fas fa-credit-card mr-2"></i> Review & Pay Now
-                                </button>
+                                @else
+                                    <span class="badge badge-danger p-3 font-weight-bold" style="font-size: 1rem; border-radius: 8px;">
+                                        <i class="fas fa-exclamation-circle mr-1"></i> Payment Closed
+                                    </span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -164,15 +172,21 @@
                                 <p class="text-muted mb-0">You have <strong>{{ $unpaidPapers->count() }}</strong> approved abstract(s) pending payment. You can pay for all of them securely through a single transaction.</p>
                             </div>
                             <div class="d-flex align-items-center">
-                                <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block mr-2">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-primary btn-lg px-3" style="border-radius: 8px;" title="Refresh and update payment amount according to current timeline stage">
-                                        <i class="fas fa-sync-alt mr-1"></i> Refresh Price
+                                @if($isPaymentOpen)
+                                    <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block mr-2">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-primary btn-lg px-3" style="border-radius: 8px;" title="Refresh and update payment amount according to current timeline stage">
+                                            <i class="fas fa-sync-alt mr-1"></i> Refresh Price
+                                        </button>
+                                    </form>
+                                    <button class="btn btn-primary btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#bulkPaymentModal" style="border-radius: 8px;">
+                                        <i class="fas fa-credit-card mr-2"></i> Review & Pay All
                                     </button>
-                                </form>
-                                <button class="btn btn-primary btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#bulkPaymentModal" style="border-radius: 8px;">
-                                    <i class="fas fa-credit-card mr-2"></i> Review & Pay All
-                                </button>
+                                @else
+                                    <span class="badge badge-danger p-3 font-weight-bold" style="font-size: 1rem; border-radius: 8px;">
+                                        <i class="fas fa-exclamation-circle mr-1"></i> Payment Closed
+                                    </span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -422,14 +436,6 @@
                                             </button>
                                         </form>
                                     @endif
-
-                                    @php
-                                        $maxSubmissions = (int) (($settings['maximum_abstract_submission'] ?? $settings['maximum_abastract_submission'] ?? 1));
-                                        $submittedCount = $profile->user ? $profile->user->papers()->count() : 0;
-                                    @endphp
-                                    @if(auth()->id() == $profile->user_id && $profile->is_author && $submittedCount < $maxSubmissions && ($settings['is_abstract_submission_open'] ?? 'true') == 'true')
-                                        <a href="{{ route('papers.submit') }}" class="btn btn-xs btn-warning">Submit Abstract</a>
-                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -447,14 +453,14 @@
     <script>
         $(function () {
             let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
-            
+
             // Clean up raw text, collapse extra whitespace/newlines, exclude button/form text
             let exportFormat = {
                 body: function (data, row, column, node) {
                     let $cell = $(node).clone();
                     // Remove forms, buttons, or hidden/action elements if they exist
                     $cell.find('form, button, .btn, script, style').remove();
-                    
+
                     let rawText = $cell.text() || "";
                     let lines = rawText.split('\n')
                         .map(line => line.trim())

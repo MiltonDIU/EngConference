@@ -130,9 +130,9 @@
                                                      echo  "Your Registration ID is : ".substr($identity, 6, 4);
                                                 }
                                             @endphp
-                                            @if(auth()->user()->profile->payment_status=='1' && auth()->user()->profile->identity_no==null)
+                                            {{-- @if(auth()->user()->profile->payment_status=='1' && auth()->user()->profile->identity_no==null)
                                                 <a href="{{ route('generateIds') }}" class="btn btn-primary">Click Here</a> to get your Registration ID
-                                            @endif
+                                            @endif --}}
                                         </strong>
                                     </div>
                                 @else
