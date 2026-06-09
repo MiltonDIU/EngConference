@@ -6,7 +6,7 @@
         <span class="main-title">International Conference on</span>
         <img src="{{ asset('/') }}img/eng-con_logo.png">
         <span class="second-title"> Beyond Nature and Culture </span>
-        <span class="sub-title">Planetarity Precarity in Literary-Cultural-Linguistic Representations</span>
+        <span class="sub-title">Planetary Precarity in Literary-Cultural-Linguistic Representations</span>
 
 
         {{--        <p style="margin:10px" class="mb-4 pb-0">{!! $settings['subtitle'] ?? '' !!}</p>--}}
