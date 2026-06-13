@@ -281,9 +281,16 @@ class RegisterController extends Controller
 
     public function register(Request $request)
     {
-
         $this->validator($request->all())->validate();
-        event(new Registered($user = $this->create($request->all())));
+
+        try {
+            event(new Registered($user = $this->create($request->all())));
+        } catch (\Exception $e) {
+            Log::error('Registration Error: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Registration failed due to a server error. Please try again. If the problem persists, contact support.');
+        }
 
         $settings = Setting::pluck('value', 'key');
         $isPaymentEnabled = ($settings['is_payment_enabled'] ?? 'true') == 'true';

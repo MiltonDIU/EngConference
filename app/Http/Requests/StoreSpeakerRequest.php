@@ -19,9 +19,9 @@ class StoreSpeakerRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => [
-                'required',
-            ],
+            'name' => ['required',],
+            'slug' => ['required',],
+            'serial'=>['required']
         ];
     }
 }

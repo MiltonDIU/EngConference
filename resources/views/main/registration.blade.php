@@ -233,19 +233,18 @@
 {{--                                                <label class="form-check-label" for="online">Online</label>--}}
 {{--                                            </div>--}}
 {{--                                        </div>--}}
-
                                         <div class="mb-4">
                                             <label><strong>Mode of Participation*</strong></label>
                                             <div class="participation-pill-group">
                                                 <label class="participation-pill" for="onsite">
                                                     <input type="radio" name="participation_mode" id="onsite" value="onsite"
-                                                           {{ old('participation_mode') == 'onsite' ? 'checked' : '' }}
+                                                           {{ old('participation_mode', 'onsite') == 'onsite' ? 'checked' : '' }}
                                                            onchange="checkFormValidity();">
                                                     <span>Onsite</span>
                                                 </label>
                                                 <label class="participation-pill" for="online">
                                                     <input type="radio" name="participation_mode" id="online" value="online"
-                                                           {{ old('participation_mode') == 'online' ? 'checked' : '' }}
+                                                           {{ old('participation_mode', 'onsite') == 'online' ? 'checked' : '' }}
                                                            onchange="checkFormValidity();">
                                                     <span>Online</span>
                                                 </label>
@@ -255,36 +254,13 @@
                                             @enderror
                                         </div>
 
-{{--                                        <div class="mb-4 p-3 bg-light rounded border">--}}
-{{--                                            <label><strong>I want to:*</strong></label><br>--}}
-{{--                                            <div class="form-check">--}}
-{{--                                                <input class="form-check-input" type="radio" name="is_author" id="participant_only" value="0" {{ old('is_author', '0') == '0' ? 'checked' : '' }} onchange="toggleAbstractSection()">--}}
-{{--                                                <label class="form-check-label" for="participant_only">Register as Participant Only (Payment Required)</label>--}}
-{{--                                            </div>--}}
-{{--                                            <div class="form-check">--}}
-{{--                                                <input class="form-check-input" type="radio" name="is_author" id="submit_abstract" value="1" {{ old('is_author') == '1' ? 'checked' : '' }} onchange="toggleAbstractSection()">--}}
-{{--                                                <label class="form-check-label" for="submit_abstract">--}}
-{{--                                                    @if(($settings['is_abstract_submission_open'] ?? 'true') == 'true')--}}
-{{--                                                        Submit an Abstract (Payment Required after Abstract Confirmation)--}}
-{{--                                                    @else--}}
-{{--                                                        Register as Paper Author (Submit abstract later after email verification)--}}
-{{--                                                    @endif--}}
-{{--                                                </label>--}}
-{{--                                            </div>--}}
-{{--                                            @if(($settings['is_abstract_submission_open'] ?? 'true') == 'false')--}}
-{{--                                                <div class="mt-2 text-danger small font-weight-bold">--}}
-{{--                                                    <i class="fa fa-info-circle"></i> Abstract submission is currently closed.--}}
-{{--                                                </div>--}}
-{{--                                            @endif--}}
-{{--                                        </div>--}}
-
                                         <div class="mb-4">
                                             <label><strong>I want to:*</strong></label>
                                             <div class="intent-card-group">
 
                                                 <label class="intent-card participant" for="participant_only">
                                                     <input type="radio" name="is_author" id="participant_only" value="0"
-                                                           {{ old('is_author') == '0' ? 'checked' : '' }}
+                                                           {{ old('is_author', '0') == '0' ? 'checked' : '' }}
                                                            onchange="toggleAbstractSection(); checkFormValidity();">
                                                     <span class="radio-circle"></span>
                                                     <span class="intent-text">
@@ -295,7 +271,7 @@
 
                                                 <label class="intent-card author" for="submit_abstract">
                                                     <input type="radio" name="is_author" id="submit_abstract" value="1"
-                                                           {{ old('is_author') == '1' ? 'checked' : '' }}
+                                                           {{ old('is_author', '0') == '1' ? 'checked' : '' }}
                                                            onchange="toggleAbstractSection(); checkFormValidity();">
                                                     <span class="radio-circle"></span>
                                                     <span class="intent-text">
@@ -330,7 +306,7 @@
 
                                             <div class="mb-3">
                                                 <label for="abstract_text"><strong>Abstract (Max 300 words)*</strong></label>
-                                                <textarea id="abstract_text" name="abstract_text" class="form-control" rows="6" oninput="countWords()">{{ old('abstract_text') }}</textarea>
+                                                <textarea id="abstract_text" name="abstract_text" class="form-control" rows="6" oninput="countWords()" onkeydown="preventExtraWords(event)">{{ old('abstract_text') }}</textarea>
                                                 <div id="word_count_display" class="small mt-1 text-muted">Words: <span id="word_count">0</span> / 300</div>
                                                 @error('abstract_text') <span class="text-danger small"><strong>{{ $message }}</strong></span> @enderror
                                             </div>
@@ -338,7 +314,7 @@
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
                                                     <label for="keywords"><strong>Keywords (3-5 separated by commas)*</strong></label>
-                                                    <input type="text" id="keywords" name="keywords" class="form-control" placeholder="keyword1, keyword2, ..." value="{{ old('keywords') }}" oninput="countKeywords('keywords', 'keyword_count')">
+                                                    <input type="text" id="keywords" name="keywords" class="form-control" placeholder="keyword1, keyword2, ..." value="{{ old('keywords') }}" oninput="countKeywords('keywords', 'keyword_count')" onkeydown="preventExtraKeywords(event)">
                                                     <div id="keyword_count_display" class="small mt-1 text-muted">Keywords: <span id="keyword_count">0</span> / 5</div>
                                                     @error('keywords') <span class="text-danger small"><strong>{{ $message }}</strong></span> @enderror
                                                 </div>
@@ -362,44 +338,77 @@
                                             </div>
 
                                             <div class="mb-4">
-                                                <div class="form-check">
+                                                <label class="custom-check-card" for="is_corresponding_author">
                                                     <input type="hidden" name="is_corresponding_author" value="0">
-                                                    <input class="form-check-input" type="checkbox" name="is_corresponding_author" id="is_corresponding_author" value="1" {{ old('is_corresponding_author') ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="is_corresponding_author">I am the corresponding author</label>
-                                                </div>
+                                                    <input type="checkbox" name="is_corresponding_author" id="is_corresponding_author" value="1"
+                                                           {{ old('is_corresponding_author', '1') ? 'checked' : '' }}>
+                                                    <span class="custom-check-box"></span>
+                                                    <span class="custom-check-content">
+                                                        <span class="custom-check-title">I am the corresponding author</span>
+                                                        <span class="custom-check-sub">The conference will use this email for all communications</span>
+                                                    </span>
+                                                </label>
                                             </div>
 
-                                            <div class="mb-4 p-2 bg-light rounded border">
-                                                <div class="form-check">
-                                                    <input class="form-check-input presenting-author-radio" type="radio" name="presenting_author_index" id="presenter_submitter" value="submitter" {{ old('presenting_author_index', 'submitter') == 'submitter' ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="presenter_submitter"><strong>I will be the Presenting Author</strong></label>
-                                                </div>
-                                            </div>
+                                            <label class="presenting-author-card" for="presenter_submitter">
+                                                <input class="presenting-author-radio" type="radio" name="presenting_author_index" id="presenter_submitter" value="submitter"
+                                                    {{ old('presenting_author_index', 'submitter') == 'submitter' ? 'checked' : '' }}>
+                                                <span class="presenting-radio-dot"></span>
+                                                <span class="presenting-author-content">
+                                                    <span class="presenting-author-title">I will be the Presenting Author</span>
+                                                    <span class="presenting-author-sub">You will present this paper at the conference</span>
+                                                </span>
+                                            </label>
 
                                             <h5 class="mb-3"><strong>Co-Authors</strong></h5>
+                                            @if($errors->hasAny(['co_authors', 'co_authors.*']))
+                                                <div class="alert alert-danger py-2 small mb-3">
+                                                    <strong>Please fix the following co-author errors:</strong>
+                                                    <ul class="mb-0 mt-1">
+                                                        @foreach($errors->get('co_authors.*') as $errorGroup)
+                                                            @foreach($errorGroup as $error)
+                                                                <li>{{ $error }}</li>
+                                                            @endforeach
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
                                             <div id="co_authors_container">
                                                 <!-- Dynamic Co-authors will be added here -->
                                             </div>
                                             <button type="button" class="btn btn-outline-secondary btn-sm mb-4" onclick="addCoAuthor()">+ Add Co-Author</button>
 
                                             <h5 class="mb-3"><strong>Declarations</strong></h5>
-                                            <div class="bg-light p-3 border rounded mb-4">
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input @error('consent_original') is-invalid @enderror" type="checkbox" name="consent_original" id="consent_original" value="1" required>
-                                                    <label class="form-check-label small" for="consent_original">I confirm that this abstract is original and not plastered elsewhere.*</label>
-                                                </div>
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input @error('consent_review') is-invalid @enderror" type="checkbox" name="consent_review" id="consent_review" value="1" required>
-                                                    <label class="form-check-label small" for="consent_review">I agree to the peer-review process of the conference.*</label>
-                                                </div>
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input @error('consent_acceptance') is-invalid @enderror" type="checkbox" name="consent_acceptance" id="consent_acceptance" value="1" required>
-                                                    <label class="form-check-label small" for="consent_acceptance">If accepted, at least one author will register and present.*</label>
-                                                </div>
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input @error('consent_no_late_addition') is-invalid @enderror" type="checkbox" name="consent_no_late_addition" id="consent_no_late_addition" value="1" required>
-                                                    <label class="form-check-label small" for="consent_no_late_addition">No author can be added after the abstract is submitted.*</label>
-                                                </div>
+                                            <div class="declaration-group mb-4">
+
+                                                <label class="declaration-check-item @error('consent_original') is-invalid-item @enderror" for="consent_original">
+                                                    <input type="checkbox" name="consent_original" id="consent_original" value="1" {{ old('consent_original') ? 'checked' : '' }}>
+                                                    <span class="decl-check-box"></span>
+                                                    <span class="decl-check-label">I confirm that this abstract is original and not published elsewhere.*</span>
+                                                </label>
+                                                @error('consent_original') <div class="text-danger small px-2 mb-1"><strong>{{ $message }}</strong></div> @enderror
+
+                                                <label class="declaration-check-item @error('consent_review') is-invalid-item @enderror" for="consent_review">
+                                                    <input type="checkbox" name="consent_review" id="consent_review" value="1" {{ old('consent_review') ? 'checked' : '' }}>
+                                                    <span class="decl-check-box"></span>
+                                                    <span class="decl-check-label">I agree to the peer-review process of the conference.*</span>
+                                                </label>
+                                                @error('consent_review') <div class="text-danger small px-2 mb-1"><strong>{{ $message }}</strong></div> @enderror
+
+                                                <label class="declaration-check-item @error('consent_acceptance') is-invalid-item @enderror" for="consent_acceptance">
+                                                    <input type="checkbox" name="consent_acceptance" id="consent_acceptance" value="1" {{ old('consent_acceptance') ? 'checked' : '' }}>
+                                                    <span class="decl-check-box"></span>
+                                                    <span class="decl-check-label">If accepted, at least one author will register and present.*</span>
+                                                </label>
+                                                @error('consent_acceptance') <div class="text-danger small px-2 mb-1"><strong>{{ $message }}</strong></div> @enderror
+
+                                                <label class="declaration-check-item @error('consent_no_late_addition') is-invalid-item @enderror" for="consent_no_late_addition">
+                                                    <input type="checkbox" name="consent_no_late_addition" id="consent_no_late_addition" value="1" {{ old('consent_no_late_addition') ? 'checked' : '' }}>
+                                                    <span class="decl-check-box"></span>
+                                                    <span class="decl-check-label">No author can be added after the abstract is submitted.*</span>
+                                                </label>
+                                                @error('consent_no_late_addition') <div class="text-danger small px-2 mb-1"><strong>{{ $message }}</strong></div> @enderror
+
                                             </div>
                                         </div>
 
@@ -479,10 +488,14 @@
                     </select>
                 </div>
             </div>
-            <div class="form-check mt-2">
-                <input class="form-check-input presenting-author-radio" type="radio" name="presenting_author_index" value="{index}">
-                <label class="form-check-label small">Presenting Author</label>
-            </div>
+            <label class="presenting-author-card mt-2" for="presenter_{index}">
+                <input class="presenting-author-radio" type="radio" name="presenting_author_index" id="presenter_{index}" value="{index}">
+                <span class="presenting-radio-dot"></span>
+                <span class="presenting-author-content">
+                    <span class="presenting-author-title">This co-author will be the Presenting Author</span>
+                    <span class="presenting-author-sub">They will present this paper at the conference</span>
+                </span>
+            </label>
         </div>
     </template>
 
@@ -493,18 +506,124 @@
         let coAuthorIndex = {{ old('co_authors') ? count(old('co_authors')) : 0 }};
         const tracks = @json($tracks);
 
+        function preventExtraWords(event) {
+            const textarea = event.target;
+            const text = textarea.value;
+            const wordsArray = text.trim().split(/\s+/).filter(w => w !== '');
+            const wordCount = wordsArray.length;
+
+            const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Escape'];
+            
+            if (event.ctrlKey || event.metaKey) {
+                return;
+            }
+
+            // If key is a character/space/punctuation key
+            if (event.key.length === 1 && !allowedKeys.includes(event.key)) {
+                if (textarea.selectionStart !== textarea.selectionEnd) {
+                    return; // Allow replacing selection
+                }
+
+                // If strictly greater than 300 words, block all character typing
+                if (wordCount > 300) {
+                    event.preventDefault();
+                    return;
+                }
+
+                // If exactly 300 words
+                if (wordCount === 300) {
+                    // Block space (which would start the 301st word)
+                    if (event.key === ' ' || event.key === 'Spacebar') {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    // If the last character is whitespace and the cursor is at the end,
+                    // typing any character would start the 301st word. Block it!
+                    const lastChar = text.slice(-1);
+                    if (/\s/.test(lastChar) && textarea.selectionStart === text.length) {
+                        event.preventDefault();
+                    }
+                }
+            }
+        }
+
+        function preventExtraKeywords(event) {
+            const input = event.target;
+            const value = input.value;
+            
+            let commaCount = 0;
+            for (let i = 0; i < value.length; i++) {
+                if (value[i] === ',') {
+                    commaCount++;
+                }
+            }
+
+            const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Escape'];
+
+            if (event.ctrlKey || event.metaKey) {
+                return;
+            }
+
+            if (event.key.length === 1 && !allowedKeys.includes(event.key)) {
+                if (input.selectionStart !== input.selectionEnd) {
+                    return;
+                }
+
+                // Block the 5th comma
+                if (commaCount >= 4 && event.key === ',') {
+                    event.preventDefault();
+                    return;
+                }
+
+                // Lock character typing completely if there are already 5 keywords and they are typing after a trailing comma
+                const keywords = value.split(',');
+                const nonEmptyKeywords = keywords.map(k => k.trim()).filter(k => k !== '');
+
+                if (nonEmptyKeywords.length >= 5) {
+                    if (event.key === ',') {
+                        event.preventDefault();
+                        return;
+                    }
+                    const trimmedValue = value.trim();
+                    if (trimmedValue.endsWith(',') && input.selectionStart === value.length) {
+                        event.preventDefault();
+                    }
+                }
+            }
+        }
+
         function countWords() {
             const textarea = document.getElementById('abstract_text');
             if (!textarea) return;
             const counter = document.getElementById('word_count');
             const display = document.getElementById('word_count_display');
 
-            const text = textarea.value.trim();
-            const words = text ? text.split(/\s+/).length : 0;
+            let text = textarea.value;
+            const wordsArray = text.trim().split(/\s+/).filter(w => w !== '');
+            let wordCount = wordsArray.length;
 
-            counter.innerText = words;
+            if (wordCount > 300) {
+                let count = 0;
+                let lastIndex = 0;
+                const regex = /\S+/g;
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    count++;
+                    if (count === 300) {
+                        lastIndex = regex.lastIndex;
+                        break;
+                    }
+                }
+                if (lastIndex > 0) {
+                    textarea.value = text.substring(0, lastIndex);
+                }
+                wordCount = 300;
+            }
 
-            if (words > 300) {
+            counter.innerText = wordCount;
+
+            if (wordCount > 300) {
                 display.classList.remove('text-muted');
                 display.classList.add('text-danger', 'font-weight-bold');
             } else {
@@ -518,9 +637,49 @@
             const counter = document.getElementById(countId);
             const display = document.getElementById(inputId + '_count_display');
 
-            const keywords = input.value ? input.value.split(',').map(k => k.trim()).filter(k => k !== '') : [];
-            const count = keywords.length;
+            let value = input.value;
+            
+            let commaCount = 0;
+            let fifthCommaIndex = -1;
+            for (let i = 0; i < value.length; i++) {
+                if (value[i] === ',') {
+                    commaCount++;
+                    if (commaCount === 5) {
+                        fifthCommaIndex = i;
+                        break;
+                    }
+                }
+            }
 
+            let keywords = value.split(',');
+            let nonEmptyKeywords = keywords.map(k => k.trim()).filter(k => k !== '');
+
+            if (fifthCommaIndex !== -1 || nonEmptyKeywords.length > 5) {
+                let truncateIndex = fifthCommaIndex;
+                if (truncateIndex === -1) {
+                    let c = 0;
+                    for (let i = 0; i < value.length; i++) {
+                        if (value[i] === ',') {
+                            c++;
+                            if (c === 5) {
+                                truncateIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (truncateIndex !== -1) {
+                    input.value = value.substring(0, truncateIndex);
+                } else {
+                    input.value = nonEmptyKeywords.slice(0, 5).join(', ');
+                }
+                
+                value = input.value;
+                keywords = value.split(',');
+                nonEmptyKeywords = keywords.map(k => k.trim()).filter(k => k !== '');
+            }
+
+            const count = nonEmptyKeywords.length;
             counter.innerText = count;
 
             if (count < 3 || count > 5) {
@@ -570,11 +729,11 @@
             if (abstractSection) {
                 abstractSection.style.display = showForm ? 'block' : 'none';
 
-                // Toggle required attributes for ALL required fields within abstract section
-                const fields = abstractSection.querySelectorAll('[data-required="true"], input[required], textarea[required], select[required]');
+                // Toggle required attributes for ALL fields within abstract section
+                const fields = abstractSection.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), textarea, select');
                 fields.forEach(el => {
                     if (showForm) {
-                        el.setAttribute('required', 'required');
+                        el.setAttribute('required', '');
                     } else {
                         el.removeAttribute('required');
                     }
@@ -629,6 +788,12 @@
                 }
             }
 
+            // Restore presenting author radio selection if it matches the old index
+            const oldPresentingAuthorIndex = "{{ old('presenting_author_index', 'submitter') }}";
+            if (oldPresentingAuthorIndex !== 'submitter' && String(oldPresentingAuthorIndex) === String(coAuthorIndex)) {
+                entry.querySelector('.presenting-author-radio').checked = true;
+            }
+
             container.appendChild(entry);
 
             updateAuthorIndices();
@@ -636,8 +801,19 @@
         }
 
         function removeCoAuthor(btn) {
-            btn.closest('.co-author-entry').remove();
+            const entry = btn.closest('.co-author-entry');
+            const radio = entry.querySelector('.presenting-author-radio');
+            const wasChecked = radio ? radio.checked : false;
+
+            entry.remove();
             updateAuthorIndices();
+
+            if (wasChecked) {
+                const mainPresenter = document.getElementById('presenter_submitter');
+                if (mainPresenter) {
+                    mainPresenter.checked = true;
+                }
+            }
         }
 
         function updateAuthorIndices() {
@@ -660,6 +836,10 @@
             updateSubTracks();
         });
 
+        // Placeholder — reserved for future submit button state logic
+        function checkFormValidity() {
+            // intentionally empty — called by radio onchange handlers
+        }
 
     </script>
 @endpush
@@ -829,6 +1009,217 @@
         /* এগুলো input এর পরের sibling target করে — input label এর direct child হলে কাজ করবে */
         .intent-card.participant input:checked ~ .radio-circle { background: #3A7D2C; border-color: #3A7D2C; }
         .intent-card.author input:checked ~ .radio-circle { background: #E8650A; border-color: #E8650A; }
+
+
+        /* ========== Corresponding Author Card ========== */
+        .custom-check-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 16px;
+            border: 1.5px solid #dee2e6;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.18s;
+            margin-bottom: 0;
+            width: 100%;
+        }
+        .custom-check-card:hover {
+            border-color: #007bff;
+            background: #f0f7ff;
+        }
+        .custom-check-card input[type="checkbox"] {
+            display: none;
+        }
+        .custom-check-box {
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s;
+            background: #fff;
+        }
+        .custom-check-card input[type="checkbox"]:checked ~ .custom-check-box {
+            background: #007bff;
+            border-color: #007bff;
+        }
+        .custom-check-card input[type="checkbox"]:checked ~ .custom-check-box::after {
+            content: '';
+            display: block;
+            width: 5px;
+            height: 10px;
+            border: 2px solid #fff;
+            border-top: none;
+            border-left: none;
+            transform: rotate(45deg) translate(-1px, -1px);
+        }
+        .custom-check-card input[type="checkbox"]:checked ~ .custom-check-content .custom-check-title {
+            color: #0056cc;
+        }
+        .custom-check-card:has(input:checked) {
+            border-color: #007bff;
+            background: #f0f7ff;
+        }
+        .custom-check-content {
+            display: flex;
+            flex-direction: column;
+        }
+        .custom-check-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.3;
+        }
+        .custom-check-sub {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* ========== Declaration Checkboxes ========== */
+        .declaration-group {
+            border: 1.5px solid #dee2e6;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .declaration-check-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 13px 16px;
+            cursor: pointer;
+            margin: 0;
+            transition: background 0.15s;
+            border-bottom: 1px solid #f0f0f0;
+            width: 100%;
+        }
+        .declaration-check-item:last-of-type {
+            border-bottom: none;
+        }
+        .declaration-check-item:hover {
+            background: #f8f9fa;
+        }
+        .declaration-check-item input[type="checkbox"] {
+            display: none;
+        }
+        .decl-check-box {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s;
+            background: #fff;
+        }
+        .declaration-check-item input[type="checkbox"]:checked ~ .decl-check-box {
+            background: #28a745;
+            border-color: #28a745;
+        }
+        .declaration-check-item input[type="checkbox"]:checked ~ .decl-check-box::after {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 9px;
+            border: 2px solid #fff;
+            border-top: none;
+            border-left: none;
+            transform: rotate(45deg) translate(-1px, -1px);
+        }
+        .declaration-check-item input[type="checkbox"]:checked ~ .decl-check-label {
+            color: #1a6e30;
+            font-weight: 500;
+        }
+        .declaration-check-item:has(input:checked) {
+            background: #f0faf2;
+        }
+        .decl-check-label {
+            font-size: 13.5px;
+            color: #444;
+            line-height: 1.4;
+            transition: color 0.15s;
+        }
+        .declaration-check-item.is-invalid-item .decl-check-box {
+            border-color: #dc3545;
+        }
+
+        /* ========== Presenting Author Card ========== */
+        .presenting-author-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border: 1.5px solid #dee2e6;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.18s;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+        .presenting-author-card:hover {
+            border-color: #007bff;
+            background: #f0f7ff;
+        }
+        .presenting-author-card input[type="radio"] {
+            display: none;
+        }
+        .presenting-radio-dot {
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s;
+            background: #fff;
+        }
+        .presenting-author-card input[type="radio"]:checked ~ .presenting-radio-dot {
+            border-color: #007bff;
+            background: #007bff;
+        }
+        .presenting-author-card input[type="radio"]:checked ~ .presenting-radio-dot::after {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #fff;
+        }
+        .presenting-author-card:has(input:checked) {
+            border-color: #007bff;
+            background: #f0f7ff;
+        }
+        .presenting-author-content {
+            display: flex;
+            flex-direction: column;
+        }
+        .presenting-author-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.3;
+            transition: color 0.18s;
+        }
+        .presenting-author-card input[type="radio"]:checked ~ .presenting-author-content .presenting-author-title {
+            color: #0056cc;
+        }
+        .presenting-author-sub {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
 
     </style>
 
