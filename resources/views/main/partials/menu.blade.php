@@ -333,6 +333,18 @@
                 </li>
                 @endif
                 @endcan
+                @can('track_report')
+                <li class="nav-item">
+                    <a href="{{ route("admin.tracks-report") }}" class="nav-link {{ request()->is('admin/tracks-report*') ? 'active' : '' }}">
+                        <i class="fa-fw fas fa-chart-pie">
+
+                        </i>
+                        <p>
+                            <span>Tracks Report</span>
+                        </p>
+                    </a>
+                </li>
+                @endcan
                 @can('schedule_access')
                     <li class="nav-item">
                         <a href="{{ route("admin.schedules.index") }}" class="nav-link {{ request()->is('admin/schedules') || request()->is('admin/schedules/*') ? 'active' : '' }}">

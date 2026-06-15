@@ -204,4 +204,91 @@ class DashboardController extends Controller
             'unpaidPapers', 'countryStats', 'dailyTrends'
         ));
     }
+
+    public function tracksReport()
+    {
+        abort_if(Gate::denies('track_report'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        // Fetch tracks and sub-tracks submission statistics
+        $reportData = DB::table('tracks')
+            ->join('sub_tracks', 'sub_tracks.track_id', '=', 'tracks.id')
+            ->leftJoin('papers', function($join) {
+                $join->on('papers.track_id', '=', 'tracks.id')
+                     ->on('papers.sub_track_id', '=', 'sub_tracks.id')
+                     ->whereNull('papers.deleted_at'); // Filter out soft-deleted papers
+            })
+            ->selectRaw('
+                tracks.id as track_id,
+                tracks.name as track_name,
+                sub_tracks.id as sub_track_id,
+                sub_tracks.name as sub_track_name,
+                COUNT(papers.id) as total_submissions,
+                SUM(CASE WHEN papers.status = "approved" AND papers.payment_status = "1" THEN 1 ELSE 0 END) as paid_count,
+                SUM(CASE WHEN papers.status = "approved" AND (papers.payment_status = "0" OR papers.payment_status IS NULL) THEN 1 ELSE 0 END) as unpaid_count,
+                SUM(CASE WHEN papers.status = "pending" THEN 1 ELSE 0 END) as pending_count,
+                (SELECT COUNT(*) 
+                 FROM paper_authors 
+                 JOIN papers ON papers.id = paper_authors.paper_id 
+                 WHERE papers.track_id = tracks.id 
+                   AND papers.sub_track_id = sub_tracks.id 
+                   AND papers.deleted_at IS NULL) as total_authors,
+                (SELECT COUNT(DISTINCT papers.user_id) 
+                 FROM papers 
+                 WHERE papers.track_id = tracks.id 
+                   AND papers.sub_track_id = sub_tracks.id 
+                   AND papers.deleted_at IS NULL) as unique_submitters
+            ')
+            ->groupBy('tracks.id', 'tracks.name', 'sub_tracks.id', 'sub_tracks.name')
+            ->orderBy('tracks.name', 'asc')
+            ->orderBy('sub_tracks.name', 'asc')
+            ->get();
+
+        // Get all unique currencies dynamically from papers table
+        $currencies = DB::table('papers')
+            ->whereNotNull('currency')
+            ->where('currency', '!=', '')
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->pluck('currency')
+            ->toArray();
+
+        // Fallback default list of currencies if empty
+        if (empty($currencies)) {
+            $currencies = ['BDT', 'USD', 'EUR', 'INR'];
+        }
+        sort($currencies);
+
+        // Query payment amounts grouped by track, sub-track, and currency
+        $paymentSums = DB::table('papers')
+            ->selectRaw('track_id, sub_track_id, currency, SUM(pay_amount) as total_amount')
+            ->where('payment_status', '1')
+            ->whereNull('deleted_at')
+            ->groupBy('track_id', 'sub_track_id', 'currency')
+            ->get();
+
+        foreach ($reportData as $row) {
+            $amounts = $paymentSums->where('track_id', $row->track_id)
+                                   ->where('sub_track_id', $row->sub_track_id);
+            
+            $formattedAmounts = [];
+            foreach ($amounts as $amt) {
+                if ($amt->total_amount > 0 && !empty($amt->currency)) {
+                    $formattedAmounts[] = number_format($amt->total_amount, 0) . ' ' . $amt->currency;
+                }
+            }
+            $row->paid_amount = !empty($formattedAmounts) ? implode(', ', $formattedAmounts) : '0';
+
+            $rowCurrencies = [];
+            foreach ($currencies as $currency) {
+                $amt = $amounts->firstWhere('currency', $currency);
+                $rowCurrencies[$currency] = $amt ? $amt->total_amount : 0;
+            }
+            $row->currency_amounts = $rowCurrencies;
+        }
+
+        // Get track list for filters with paper counts
+        $tracks = \App\Models\Track::withCount('papers')->orderBy('name', 'asc')->get();
+
+        return view('admin.reports.tracks', compact('reportData', 'tracks', 'currencies'));
+    }
 }
