@@ -12,9 +12,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use SoftDeletes, Notifiable, HasApiTokens;
+    use SoftDeletes, Notifiable, HasApiTokens, HasFactory;
 
     public $table = 'users';
 

@@ -89,4 +89,14 @@ class UsersController extends Controller
         return response(null, Response::HTTP_NO_CONTENT);
     }
 
+    public function verifyEmail(User $user)
+    {
+        abort_if(Gate::denies('user_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $user->email_verified_at = now()->format('Y-m-d H:i:s');
+        $user->save();
+
+        return redirect()->route('admin.users.index')->with('success', 'User email verified successfully.');
+    }
+
 }

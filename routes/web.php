@@ -160,6 +160,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
 
     // Users
     Route::delete('users/destroy', [UsersController::class,'massDestroy'])->name('users.massDestroy');
+    Route::post('users/{user}/verify', [UsersController::class,'verifyEmail'])->name('users.verifyEmail');
     Route::resource('users', UsersController::class);
 
     // Settings

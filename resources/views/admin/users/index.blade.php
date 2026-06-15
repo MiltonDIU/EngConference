@@ -58,7 +58,20 @@
                                 {{ $user->email ?? '' }}
                             </td>
                             <td>
-                                {{ $user->email_verified_at ?? '' }}
+                                @if($user->email_verified_at)
+                                    {{ $user->email_verified_at }}
+                                @else
+                                    @can('user_edit')
+                                        <form action="{{ route('admin.users.verifyEmail', $user->id) }}" method="POST" onsubmit="return confirm('{{ trans('global.areYouSure') }}');" style="display: inline-block;">
+                                            @csrf
+                                            <button type="submit" class="btn btn-xs btn-warning">
+                                                Verify Email
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="badge badge-secondary">Unverified</span>
+                                    @endcan
+                                @endif
                             </td>
                             <td>
                                 @foreach($user->roles as $key => $item)
