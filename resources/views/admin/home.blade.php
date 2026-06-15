@@ -242,6 +242,87 @@ Total Registered Users
     </div>
 </div>
 </div>
+
+<div class="row">
+    <!-- Daily Trend Chart -->
+    <div class="col-lg-12">
+        <div class="card shadow-sm border-0 mt-4" style="border-radius: 12px;">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title font-weight-bold mb-0 text-dark">
+                    <i class="fas fa-chart-line mr-2 text-primary"></i> Daily Activity Trend (Last 30 Days)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="chart_daily_trends"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Country-wise Stats Table -->
+    <div class="col-lg-12">
+        <div class="card shadow-sm border-0 mt-4 mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title font-weight-bold mb-0 text-dark">
+                    <i class="fas fa-globe-americas mr-2 text-success"></i> Country-wise Registration & Submission Analytics
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" style="min-width: 800px;">
+                        <thead class="bg-light small uppercase font-weight-bold text-muted">
+                            <tr>
+                                <th class="border-0 px-4 py-3">Country</th>
+                                <th class="border-0 py-3 text-center">Total Registrations</th>
+                                <th class="border-0 py-3 text-center">Authors<br><small class="text-xs">(Paid / Total)</small></th>
+                                <th class="border-0 py-3 text-center">Participants<br><small class="text-xs">(Paid / Total)</small></th>
+                                <th class="border-0 py-3 text-center">Submitted Papers</th>
+                                <th class="border-0 px-4 py-3 text-right">Payment Completion (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($countryStats as $cStat)
+                                <tr>
+                                    <td class="px-4 py-3">
+                                        <div class="font-weight-bold text-dark">{{ $cStat->country_name }}</div>
+                                    </td>
+                                    <td class="py-3 text-center font-weight-bold text-dark-blue">{{ $cStat->total_registrations }}</td>
+                                    <td class="py-3 text-center">
+                                        <span class="text-success font-weight-bold">{{ $cStat->paid_authors }}</span>
+                                        <span class="text-muted">/</span>
+                                        <span class="text-secondary font-weight-bold">{{ $cStat->total_authors }}</span>
+                                    </td>
+                                    <td class="py-3 text-center">
+                                        <span class="text-success font-weight-bold">{{ $cStat->paid_participants }}</span>
+                                        <span class="text-muted">/</span>
+                                        <span class="text-secondary font-weight-bold">{{ $cStat->total_participants }}</span>
+                                    </td>
+                                    <td class="py-3 text-center">
+                                        <span class="badge badge-light border text-primary font-weight-bold px-3 py-2 rounded-pill">{{ $cStat->total_papers }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <div class="d-flex align-items-center justify-content-end">
+                                            <div class="progress mr-2" style="width: 100px; height: 8px; border-radius: 4px; background-color: #e9ecef;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ $cStat->payment_percentage }}%; border-radius: 4px;"></div>
+                                            </div>
+                                            <span class="font-weight-bold text-success" style="font-size: 0.95rem;">{{ $cStat->payment_percentage }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i> No country analytics data recorded yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
 @endcan
 
 @auth
@@ -550,6 +631,10 @@ height: 500px;
     width: 100%;
     height: 300px;
 }
+#chart_daily_trends {
+    width: 100%;
+    height: 400px;
+}
 .link-muted:hover{color: #7016B6}
 </style>
 
@@ -703,6 +788,65 @@ labels[i].style.color = '#ddd';
             am4core.color("#28a745"),
             am4core.color("#ffc107")
         ];
+
+        // Daily Activity Trends Chart
+        var trendChart = am4core.create("chart_daily_trends", am4charts.XYChart);
+        trendChart.data = {!! json_encode($dailyTrends) !!};
+
+        // Create axes
+        var categoryAxis = trendChart.xAxes.push(new am4charts.CategoryAxis());
+        categoryAxis.dataFields.category = "date";
+        categoryAxis.renderer.grid.template.location = 0;
+        categoryAxis.renderer.minGridDistance = 40;
+        categoryAxis.renderer.labels.template.rotation = -45;
+        categoryAxis.renderer.labels.template.horizontalCenter = "right";
+        categoryAxis.renderer.labels.template.verticalCenter = "middle";
+
+        var valueAxis = trendChart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis.title.text = "Count";
+        valueAxis.min = 0;
+
+        // Create series for Authors
+        var seriesAuthors = trendChart.series.push(new am4charts.ColumnSeries());
+        seriesAuthors.dataFields.valueY = "authors";
+        seriesAuthors.dataFields.categoryX = "date";
+        seriesAuthors.name = "Registered Authors";
+        seriesAuthors.tooltipText = "{name}: [bold]{valueY}[/]";
+        seriesAuthors.columns.template.fill = am4core.color("#007bff");
+        seriesAuthors.columns.template.stroke = am4core.color("#007bff");
+        seriesAuthors.columns.template.width = am4core.percent(40);
+
+        // Create series for Participants
+        var seriesParticipants = trendChart.series.push(new am4charts.ColumnSeries());
+        seriesParticipants.dataFields.valueY = "participants";
+        seriesParticipants.dataFields.categoryX = "date";
+        seriesParticipants.name = "Registered Participants";
+        seriesParticipants.tooltipText = "{name}: [bold]{valueY}[/]";
+        seriesParticipants.columns.template.fill = am4core.color("#28a745");
+        seriesParticipants.columns.template.stroke = am4core.color("#28a745");
+        seriesParticipants.columns.template.width = am4core.percent(40);
+
+        // Create series for Papers
+        var seriesPapers = trendChart.series.push(new am4charts.LineSeries());
+        seriesPapers.dataFields.valueY = "papers";
+        seriesPapers.dataFields.categoryX = "date";
+        seriesPapers.name = "Submitted Papers";
+        seriesPapers.tooltipText = "{name}: [bold]{valueY}[/]";
+        seriesPapers.strokeWidth = 3;
+        seriesPapers.stroke = am4core.color("#ffc107");
+        seriesPapers.fill = am4core.color("#ffc107");
+        
+        // Add bullets to LineSeries
+        var bullet = seriesPapers.bullets.push(new am4charts.CircleBullet());
+        bullet.circle.radius = 4;
+        bullet.circle.fill = am4core.color("#fff");
+        bullet.circle.strokeWidth = 2;
+
+        // Add legend
+        trendChart.legend = new am4charts.Legend();
+
+        // Add cursor
+        trendChart.cursor = new am4charts.XYCursor();
     });
 </script>
 @endpush

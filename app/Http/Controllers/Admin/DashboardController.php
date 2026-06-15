@@ -137,13 +137,71 @@ class DashboardController extends Controller
             }
         }
 
+        // 1. Country-wise Registration & Submission Analytics
+        $countryStats = DB::table('countries')
+            ->join('profiles', 'profiles.country_id', '=', 'countries.id')
+            ->selectRaw('countries.id as country_id,
+                         countries.name as country_name,
+                         COUNT(profiles.id) as total_registrations,
+                         SUM(CASE WHEN profiles.is_author = 1 THEN 1 ELSE 0 END) as total_authors,
+                         SUM(CASE WHEN profiles.is_author = 1 AND profiles.payment_status = "1" THEN 1 ELSE 0 END) as paid_authors,
+                         SUM(CASE WHEN profiles.is_author = 0 THEN 1 ELSE 0 END) as total_participants,
+                         SUM(CASE WHEN profiles.is_author = 0 AND profiles.payment_status = "1" THEN 1 ELSE 0 END) as paid_participants,
+                         SUM(CASE WHEN profiles.payment_status = "1" THEN 1 ELSE 0 END) as total_paid')
+            ->groupBy('countries.id', 'countries.name')
+            ->orderBy('total_registrations', 'desc')
+            ->get();
+
+        $paperCountryStats = DB::table('papers')
+            ->join('profiles', 'profiles.user_id', '=', 'papers.user_id')
+            ->selectRaw('profiles.country_id, COUNT(papers.id) as total_papers')
+            ->groupBy('profiles.country_id')
+            ->pluck('total_papers', 'profiles.country_id');
+
+        foreach ($countryStats as $stat) {
+            $stat->total_papers = $paperCountryStats[$stat->country_id] ?? 0;
+            $stat->payment_percentage = $stat->total_registrations > 0 
+                ? round(($stat->total_paid / $stat->total_registrations) * 100, 1) 
+                : 0;
+        }
+
+        // 2. Daily Trends (Last 30 Days)
+        $dailyRegistrations = DB::table('profiles')
+            ->selectRaw('DATE(created_at) as reg_date,
+                         SUM(CASE WHEN is_author = 1 THEN 1 ELSE 0 END) as author_count,
+                         SUM(CASE WHEN is_author = 0 THEN 1 ELSE 0 END) as participant_count')
+            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->groupBy('reg_date')
+            ->orderBy('reg_date', 'asc')
+            ->get();
+
+        $dailyPapers = DB::table('papers')
+            ->selectRaw('DATE(created_at) as submit_date, COUNT(*) as paper_count')
+            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->groupBy('submit_date')
+            ->orderBy('submit_date', 'asc')
+            ->pluck('paper_count', 'submit_date');
+
+        $dailyTrends = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i)->format('Y-m-d');
+            $reg = $dailyRegistrations->firstWhere('reg_date', $date);
+            
+            $dailyTrends[] = [
+                'date' => Carbon::parse($date)->format('M d'),
+                'authors' => $reg ? (int)$reg->author_count : 0,
+                'participants' => $reg ? (int)$reg->participant_count : 0,
+                'papers' => (int)($dailyPapers[$date] ?? 0),
+            ];
+        }
+
         return view('admin.home', compact(
             'settings', 'profiles', 'total', 'totalParticipants', 'totalAuthors', 'totalSubmitters', 'totalActualAuthors', 'paidParticipants', 'schedules', 'allSchedules', 'blogs',
             'eventActivities', 'aminities', 'topTracks', 'totalTaka',
             'totalPayAmount', 'allowedDomain', 'currencyStats',
             'totalPapers', 'pendingPapers', 'approvedPapers', 'rejectedPapers',
             'paperStats', 'paidPapers', 'paperPaymentStats',
-            'unpaidPapers'
+            'unpaidPapers', 'countryStats', 'dailyTrends'
         ));
     }
 }
