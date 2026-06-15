@@ -113,6 +113,7 @@
                             <th>Track</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Date</th>
+                            <th>Abstract</th>
                             <th class="text-right">Actions</th>
                         </tr>
                     </thead>
@@ -215,14 +216,14 @@ $(function () {
             className: 'btn-default',
             text: '<i class="fas fa-file-excel mr-1 text-success"></i> Excel',
             titleAttr: 'Export to Excel',
-            exportOptions: { columns: ':visible' }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }
         },
         {
             extend: 'csv',
             className: 'btn-default',
             text: '<i class="fas fa-file-csv mr-1 text-info"></i> CSV',
             titleAttr: 'Export to CSV',
-            exportOptions: { columns: ':visible' }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }
         },
         {
             extend: 'pdf',
@@ -268,6 +269,7 @@ $(function () {
             { data: 'track', name: 'track.name' },
             { data: 'status', name: 'status', class: 'text-center' },
             { data: 'created_at', name: 'created_at', class: 'text-center' },
+            { data: 'abstract', name: 'abstract', visible: false, searchable: false, orderable: false },
             { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false, class: 'text-right' }
         ],
         orderCellsTop: true,
