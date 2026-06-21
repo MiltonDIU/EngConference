@@ -44,7 +44,7 @@ class PaperController extends Controller
                 $query = Paper::select('papers.*')->where('user_id', $user->id)->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
             } else {
                 abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-                $query = Paper::select('papers.*')->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
+                $query = Paper::select('papers.*')->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country')->orderBy('id', 'desc');
             }
 
             // Apply Filters
@@ -92,6 +92,25 @@ class PaperController extends Controller
             }
 
             return DataTables::of($query)
+                ->filterColumn('designation', function($q, $keyword) {
+                    $q->where(function($sub) use ($keyword) {
+                        $sub->whereHas('authors', function($authQuery) use ($keyword) {
+                            $authQuery->where('designation', 'like', "%{$keyword}%");
+                        })->orWhereHas('user.profile', function($profileQuery) use ($keyword) {
+                            $profileQuery->where('designation', 'like', "%{$keyword}%");
+                        });
+                    });
+                })
+                ->filterColumn('pay_amount', function($q, $keyword) {
+                    $q->whereHas('user.profile', function($profileQuery) use ($keyword) {
+                        $profileQuery->where('pay_amount', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('currency', function($q, $keyword) {
+                    $q->whereHas('user.profile', function($profileQuery) use ($keyword) {
+                        $profileQuery->where('currency', 'like', "%{$keyword}%");
+                    });
+                })
                 ->filterColumn('department', function($q, $keyword) {
                     $q->where(function($sub) use ($keyword) {
                         $sub->whereHas('authors', function($authQuery) use ($keyword) {
@@ -193,6 +212,14 @@ class PaperController extends Controller
                     }
                     return '<span class="badge badge-light border font-weight-bold px-2 py-1 rounded-pill">' . $count . '</span>';
                 })
+                ->addColumn('designation', function ($row) {
+                    $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
+                    $designation = $author?->designation ?? null;
+                    if (empty($designation) || trim($designation) === '' || strtolower(trim($designation)) === 'n/a' || strtolower(trim($designation)) === 'null') {
+                        $designation = $row->user?->profile?->designation ?? null;
+                    }
+                    return $designation ?: 'N/A';
+                })
                 ->addColumn('department', function ($row) {
                     $author = $row->authors->where('is_presenting_author', 1)->first() ?? $row->authors->first();
                     $dept = $author?->department ?? null;
@@ -216,6 +243,17 @@ class PaperController extends Controller
                         $country = $row->user?->profile?->country?->name ?? null;
                     }
                     return $country ?: 'N/A';
+                })
+                ->editColumn('mode_of_participation', function ($row) {
+                    $mode = $row->mode_of_participation ?: $row->user?->profile?->participation_mode ?? null;
+                    return $mode ? ucfirst($mode) : 'N/A';
+                })
+                ->editColumn('pay_amount', function ($row) {
+                    $amount = $row->user?->profile?->pay_amount ?? $row->pay_amount ?? null;
+                    return $amount !== null ? number_format($amount, 2) : 'N/A';
+                })
+                ->editColumn('currency', function ($row) {
+                    return $row->user?->profile?->currency ?? $row->currency ?? 'N/A';
                 })
                 ->editColumn('title', function ($row) {
                     return '<div class="text-dark font-weight-600 text-truncate" style="max-width: 300px;" title="'.$row->title.'">'.$row->title.'</div>';

@@ -105,11 +105,15 @@
                             <th>Submission ID</th>
                             <th>Full Title</th>
                             <th>Submitted By</th>
+                            <th>Designation</th>
                             <th>Authors</th>
                             <th>Total Member</th>
                             <th>Department</th>
                             <th>University</th>
                             <th>Country</th>
+                            <th>Participation Mode</th>
+                            <th>Pay Amount</th>
+                            <th>Currency</th>
                             <th>Track</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Date</th>
@@ -216,14 +220,14 @@ $(function () {
             className: 'btn-default',
             text: '<i class="fas fa-file-excel mr-1 text-success"></i> Excel',
             titleAttr: 'Export to Excel',
-            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
         },
         {
             extend: 'csv',
             className: 'btn-default',
             text: '<i class="fas fa-file-csv mr-1 text-info"></i> CSV',
             titleAttr: 'Export to CSV',
-            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
         },
         {
             extend: 'pdf',
@@ -261,11 +265,15 @@ $(function () {
             { data: 'submission_id', name: 'submission_id' },
             { data: 'title', name: 'title' },
             { data: 'submitted_by', name: 'user.name' },
+            { data: 'designation', name: 'designation', searchable: true, orderable: false },
             { data: 'authors', name: 'authors', searchable: false, orderable: false },
             { data: 'total_member', name: 'total_member', class: 'text-center', searchable: false, orderable: false },
             { data: 'department', name: 'department', searchable: true, orderable: false },
             { data: 'institution', name: 'institution', searchable: true, orderable: false },
             { data: 'country', name: 'country', searchable: true, orderable: false },
+            { data: 'mode_of_participation', name: 'mode_of_participation', searchable: true, orderable: true },
+            { data: 'pay_amount', name: 'pay_amount', class: 'text-right', searchable: true, orderable: false },
+            { data: 'currency', name: 'currency', class: 'text-center', searchable: true, orderable: false },
             { data: 'track', name: 'track.name' },
             { data: 'status', name: 'status', class: 'text-center' },
             { data: 'created_at', name: 'created_at', class: 'text-center' },
@@ -273,7 +281,7 @@ $(function () {
             { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false, class: 'text-right' }
         ],
         orderCellsTop: true,
-        order: [[8, 'desc']],
+        order: [[12, 'desc']],
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         pageLength: 25,
         dom: 'lBfrtip',
