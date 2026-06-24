@@ -25,6 +25,7 @@ class Profile extends Model
         'pay_amount',
         'payment_status',
         'currency',
+        'author_list_confirmed',
     ];
 
     protected $appends = [
@@ -33,6 +34,7 @@ class Profile extends Model
 
     protected $casts = [
         'is_author' => 'boolean',
+        'author_list_confirmed' => 'boolean',
     ];
 
     public function getPhoneAttribute()

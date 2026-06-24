@@ -19,6 +19,12 @@ class PaperAuthor extends Model
         'email',
         'is_presenting_author',
         'author_order',
+        'is_student',
+    ];
+
+    protected $casts = [
+        'is_presenting_author' => 'boolean',
+        'is_student' => 'boolean',
     ];
 
     public function paper()

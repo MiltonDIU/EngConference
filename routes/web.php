@@ -325,6 +325,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     Route::post('validate-coupon', [ProfileController::class, 'validateCoupon'])->name('validateCoupon');
     Route::post('profile/recalculate-fee', [ProfileController::class, 'recalculateFee'])->name('profile.recalculate-fee');
     Route::post('profile/recalculate-all-unpaid', [ProfileController::class, 'recalculateAllUnpaid'])->name('profile.recalculate-all-unpaid');
+    Route::post('profile/confirm-student-status', [ProfileController::class, 'confirmStudentStatus'])->name('profile.confirm-student-status');
 
     // Paper Management
     Route::get('papers', [App\Http\Controllers\Admin\PaperController::class, 'index'])->name('papers.index');

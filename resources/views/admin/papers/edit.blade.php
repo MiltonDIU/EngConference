@@ -127,10 +127,10 @@
                             <div class="col-md-6 mb-2">
                                 <input type="email" name="co_authors[{{ $coAuthorIndex }}][email]" class="form-control form-control-sm" placeholder="Email*" value="{{ $author->email }}" required>
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <input type="text" name="co_authors[{{ $coAuthorIndex }}][designation]" class="form-control form-control-sm" placeholder="Designation*" value="{{ $author->designation }}" required>
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <input type="text" name="co_authors[{{ $coAuthorIndex }}][department]" class="form-control form-control-sm" placeholder="Department*" value="{{ $author->department }}" required>
                             </div>
                             <div class="col-md-3 mb-2">
@@ -142,6 +142,13 @@
                                     @foreach($countries as $country)
                                         <option value="{{ $country->id }}" {{ $author->country_id == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
                                     @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <select name="co_authors[{{ $coAuthorIndex }}][is_student]" class="form-control form-control-sm">
+                                    <option value="" {{ is_null($author->is_student) ? 'selected' : '' }}>Student Status</option>
+                                    <option value="1" {{ ($author->is_student === true || $author->is_student === 1 || $author->is_student === '1') ? 'selected' : '' }}>Student</option>
+                                    <option value="0" {{ ($author->is_student === false || $author->is_student === 0 || $author->is_student === '0') ? 'selected' : '' }}>Regular/Other</option>
                                 </select>
                             </div>
                         </div>
@@ -167,10 +174,10 @@
                             <div class="col-md-6 mb-2">
                                 <input type="email" name="co_authors[{{ $coAuthorIndex }}][email]" class="form-control form-control-sm" placeholder="Email*" value="{{ $submitterEmail }}" required>
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <input type="text" name="co_authors[{{ $coAuthorIndex }}][designation]" class="form-control form-control-sm" placeholder="Designation*" value="{{ $paper->user->profile?->designation ?? '' }}" required>
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <input type="text" name="co_authors[{{ $coAuthorIndex }}][department]" class="form-control form-control-sm" placeholder="Department*" value="{{ $paper->user->profile?->department ?? '' }}" required>
                             </div>
                             <div class="col-md-3 mb-2">
@@ -182,6 +189,13 @@
                                     @foreach($countries as $country)
                                         <option value="{{ $country->id }}" {{ ($paper->user->profile?->country_id ?? '') == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
                                     @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <select name="co_authors[{{ $coAuthorIndex }}][is_student]" class="form-control form-control-sm">
+                                    <option value="" selected>Student Status</option>
+                                    <option value="1">Student</option>
+                                    <option value="0">Regular/Other</option>
                                 </select>
                             </div>
                         </div>
@@ -219,10 +233,10 @@
             <div class="col-md-6 mb-2">
                 <input type="email" name="co_authors[{index}][email]" class="form-control form-control-sm" placeholder="Email*" required>
             </div>
-            <div class="col-md-3 mb-2">
+            <div class="col-md-2 mb-2">
                 <input type="text" name="co_authors[{index}][designation]" class="form-control form-control-sm" placeholder="Designation*" required>
             </div>
-            <div class="col-md-3 mb-2">
+            <div class="col-md-2 mb-2">
                 <input type="text" name="co_authors[{index}][department]" class="form-control form-control-sm" placeholder="Department*" required>
             </div>
             <div class="col-md-3 mb-2">
@@ -234,6 +248,13 @@
                     @foreach($countries as $country)
                         <option value="{{ $country->id }}">{{ $country->name }}</option>
                     @endforeach
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <select name="co_authors[{index}][is_student]" class="form-control form-control-sm">
+                    <option value="" selected>Student Status</option>
+                    <option value="1">Student</option>
+                    <option value="0">Regular/Other</option>
                 </select>
             </div>
         </div>
@@ -345,6 +366,13 @@
                 const countrySelect = div.querySelector(`select[name="co_authors[${coAuthorIndex}][country_id]"]`);
                 const option = Array.from(countrySelect.options).find(opt => opt.value == data.country_id);
                 if (option) option.selected = true;
+            }
+
+            if (data.is_student !== undefined && data.is_student !== null) {
+                const studentSelect = div.querySelector(`select[name="co_authors[${coAuthorIndex}][is_student]"]`);
+                if (studentSelect) {
+                    studentSelect.value = (data.is_student === true || data.is_student == 1) ? '1' : '0';
+                }
             }
         }
 

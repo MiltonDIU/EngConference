@@ -123,6 +123,9 @@ class PaymentController extends Controller
         }
 
         $user = User::findOrFail($request->input('user_id'));
+        if ($user->profile && $user->profile->is_author && !$user->profile->author_list_confirmed) {
+            return redirect()->back()->with('error', 'Please confirm your author list and student status first.');
+        }
         //$this->setPayment($user);
         $randomNum= rand(100,999).'-'."BNC2026-".strtotime(now());  //substr(str_shuffle
         $this->paymentStore($user,$randomNum,'onecard');
@@ -143,6 +146,9 @@ class PaymentController extends Controller
 
         $request->validate(['paper_ids' => 'required|array']);
         $user = User::findOrFail($request->input('user_id'));
+        if ($user->profile && $user->profile->is_author && !$user->profile->author_list_confirmed) {
+            return redirect()->back()->with('error', 'Please confirm your author list and student status first.');
+        }
         $paperIds = $request->input('paper_ids');
 
         $papers = \App\Models\Paper::whereIn('id', $paperIds)->where('user_id', $user->id)->get();

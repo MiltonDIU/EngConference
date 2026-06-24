@@ -138,7 +138,7 @@ class PaperController extends Controller
                         });
                     });
                 })
-                ->addColumn('actions', function ($row) use ($isSubmissionOpen, $isPaymentOpen) {
+                ->addColumn('actions', function ($row) use ($isSubmissionOpen, $isPaymentOpen, $user) {
                     $viewRoute = route('papers.show', $row->id);
                     $editRoute = route('papers.edit', $row->id);
 
@@ -157,9 +157,15 @@ class PaperController extends Controller
 
                     $payBtn = '';
                     if ($row->status === 'approved' && $row->payment_status != '1' && Auth::user()->roles->contains('id', 3) && $isPaymentOpen) {
-                        $payBtn = ' <button class="btn btn-sm btn-primary ml-1" onclick="openPaymentModal('.$row->id.')" title="Payment Review">
-                                        <i class="fas fa-credit-card mr-1"></i> Pay
-                                    </button>';
+                        if ($user->profile && !$user->profile->author_list_confirmed) {
+                            $payBtn = ' <a href="'.route('show-profile').'" class="btn btn-sm btn-warning ml-1" title="Confirm Authors First">
+                                            <i class="fas fa-id-card mr-1"></i> Confirm Authors
+                                        </a>';
+                        } else {
+                            $payBtn = ' <button class="btn btn-sm btn-primary ml-1" onclick="openPaymentModal('.$row->id.')" title="Payment Review">
+                                            <i class="fas fa-credit-card mr-1"></i> Pay
+                                        </button>';
+                        }
                     }
 
                     return '<div class="btn-group shadow-sm">
@@ -287,9 +293,24 @@ class PaperController extends Controller
                 ->make(true);
         }
 
+        $user = Auth::user();
+        $myProfile = null;
+        $unpaidPapers = collect();
+        if ($user) {
+            $myProfile = Profile::where('user_id', $user->id)->first();
+            if ($user->roles->contains('id', 3)) {
+                $unpaidPapers = Paper::where('user_id', $user->id)
+                    ->where('status', 'approved')
+                    ->where(function($q) {
+                        $q->whereNull('payment_status')
+                          ->orWhere('payment_status', '!=', '1');
+                    })->with('authors.country')->get();
+            }
+        }
+
         $tracks = Track::all();
         $countries = Country::orderBy('name', 'asc')->get();
-        return view('admin.papers.index', compact('tracks', 'countries'));
+        return view('admin.papers.index', compact('tracks', 'countries', 'myProfile', 'unpaidPapers'));
     }
 
     public function getPaperPricing(Paper $paper)
@@ -304,12 +325,17 @@ class PaperController extends Controller
             return response()->json(['error' => 'Your profile details are missing. Please complete your profile first.'], 422);
         }
 
+        if ($user->roles->contains('id', 3) && !$user->profile->author_list_confirmed) {
+            return response()->json(['error' => 'Please confirm your author list and student status first.'], 422);
+        }
+
         try {
             $pricing = \App\Services\PricingService::calculatePaperCost($user->profile, $paper);
-            $authors = $paper->authors->map(function($author) {
+            $authors = $paper->authors->map(function($author) use ($pricing) {
                 return [
                     'name' => $author->name,
-                    'designation' => $author->designation
+                    'designation' => $author->designation,
+                    'fee' => $pricing['author_fees'][$author->id] ?? $pricing['individual_final_price']
                 ];
             });
 
@@ -604,6 +630,7 @@ class PaperController extends Controller
             'co_authors.*.department' => 'required|string|max:255',
             'co_authors.*.institution' => 'required|string|max:255',
             'co_authors.*.country_id' => 'required|exists:countries,id',
+            'co_authors.*.is_student' => 'nullable|in:0,1',
         ]);
 
         try {
@@ -631,6 +658,7 @@ class PaperController extends Controller
             // 1. Maintain primary author robustly (update if available, create if missing somehow)
             $primaryAuthorFromForm = collect($request->co_authors ?? [])->firstWhere('email', $primaryEmail);
             $primaryAuthorIndexInForm = $primaryAuthorFromForm ? array_search((object)$primaryAuthorFromForm, json_decode(json_encode($request->co_authors), true)) : 0;
+            $primaryAuthorModel = $paper->authors()->where('email', $primaryEmail)->first();
 
             $primaryData = [
                 'name' => $primaryAuthorFromForm['name'] ?? trim(($profile?->first_name ?? '') . ' ' . ($profile?->last_name ?? '')) ?: $paper->user->name,
@@ -641,9 +669,9 @@ class PaperController extends Controller
                 'email' => $primaryEmail,
                 'author_order' => $orderOffset++,
                 'is_presenting_author' => ($presentingAuthorIndex == $primaryAuthorIndexInForm) ? 1 : 0,
+                'is_student' => isset($primaryAuthorFromForm['is_student']) && $primaryAuthorFromForm['is_student'] !== '' ? (bool)$primaryAuthorFromForm['is_student'] : ($primaryAuthorModel?->is_student ?? null),
             ];
 
-            $primaryAuthorModel = $paper->authors()->where('email', $primaryEmail)->first();
             if ($primaryAuthorModel) {
                 $primaryAuthorModel->update($primaryData);
                 $incomingIds[] = $primaryAuthorModel->id;
@@ -659,6 +687,12 @@ class PaperController extends Controller
                         continue;
                     }
 
+                    $existingAuthor = null;
+                    $authorId = $authorData['id'] ?? null;
+                    if ($authorId) {
+                        $existingAuthor = $paper->authors()->find($authorId);
+                    }
+
                     $coAuthorData = [
                         'name' => $authorData['name'],
                         'email' => $authorData['email'],
@@ -668,16 +702,13 @@ class PaperController extends Controller
                         'country_id' => $authorData['country_id'],
                         'author_order' => $orderOffset++,
                         'is_presenting_author' => ($presentingAuthorIndex == $index) ? 1 : 0,
+                        'is_student' => isset($authorData['is_student']) && $authorData['is_student'] !== '' ? (bool)$authorData['is_student'] : ($existingAuthor?->is_student ?? null),
                     ];
 
-                    $authorId = $authorData['id'] ?? null;
-                    if ($authorId) {
-                        $existingAuthor = $paper->authors()->find($authorId);
-                        if ($existingAuthor) {
-                            $existingAuthor->update($coAuthorData);
-                            $incomingIds[] = $existingAuthor->id;
-                            continue;
-                        }
+                    if ($existingAuthor) {
+                        $existingAuthor->update($coAuthorData);
+                        $incomingIds[] = $existingAuthor->id;
+                        continue;
                     }
 
                     // Create new if no match or no ID provided
@@ -689,6 +720,11 @@ class PaperController extends Controller
             // 3. Delete any strictly removed authors from the database (cleanup orphans)
             $paper->authors()->whereNotIn('id', $incomingIds)->delete();
             DB::commit();
+
+            // Recalculate and sync the total due amount on the profile
+            if ($profile) {
+                \App\Services\PricingService::updateProfileTotalDue($profile->fresh());
+            }
 
             return redirect()->route('papers.index')->with('success', 'Paper updated successfully.');
         } catch (\Exception $e) {

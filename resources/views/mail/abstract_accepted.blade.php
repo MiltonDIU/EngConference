@@ -290,10 +290,12 @@
                 <div class="next-steps">
                     <h3>Next Step: Complete Your Registration</h3>
                     <p>To confirm your participation, please complete the registration form and submit the conference fee by <strong>{{ config('app.registration_deadline', 'the deadline') }}</strong>.</p>
-                    <ul>
-                        <li>Only registered presenters will be included in the final conference schedule.</li>
-                        <li>Registration is mandatory for presentation.</li>
-                        <li>Further details regarding schedule, session allocation, and presentation guidelines will be shared after registration is completed.</li>
+                    <ul><li>
+                            For payment, please visit the conference website and select the Log In option. Sign in using your registered username and password, make the necessary registration selections, and complete the payment through the portal.
+                        </li>
+                        <li>Only registered presenters will be included in the final conference schedule. Registration is mandatory for presentation.</li>
+                        <li>Further details regarding the schedule, session allocation, and presentation guidelines will be shared after registration is completed.
+                        </li>
                     </ul>
                 </div>
 
@@ -302,7 +304,7 @@
                 </p>
 
                 <p class="message-intro">
-                    If you have any questions, please contact the conference team at <a href="mailto:bnc2026@diu.edu.bd" class="contact-info">bnc2026@diu.edu.bd</a>.
+                    If you have any questions, please contact the conference team at <a href="mailto:events.eng@diu.edu.bd" class="contact-info">events.eng@diu.edu.bd</a>.
                 </p>
             </div>
 

@@ -164,109 +164,191 @@
                     })->get();
             @endphp
             @if($unpaidPapers->count() > 0)
-                <div class="card mb-4 border-primary shadow-sm" style="border-width: 2px;">
-                    <div class="card-body bg-light">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4 class="text-primary font-weight-bold mb-1"><i class="fas fa-shopping-cart mr-2"></i> Abstract Bulk Checkout</h4>
-                                <p class="text-muted mb-0">You have <strong>{{ $unpaidPapers->count() }}</strong> approved abstract(s) pending payment. You can pay for all of them securely through a single transaction.</p>
+                @if(!$myProfile->author_list_confirmed)
+                    <div class="card mb-4 border-warning shadow-sm" style="border-width: 2px; border-radius: 12px; overflow: hidden;">
+                        <div class="card-header bg-warning text-dark py-3">
+                            <h5 class="card-title font-weight-bold mb-0">
+                                <i class="fas fa-id-card mr-2"></i> Confirm Author List & Student Status
+                            </h5>
+                        </div>
+                        <div class="card-body bg-white p-4">
+                            <p class="text-muted mb-4">
+                                Please select your student status (yes/no) very carefully, as this option can be chosen only once and cannot be changed later.   </p>
+
+                            <form action="{{ route('profile.confirm-student-status') }}" method="POST">
+                                @csrf
+
+                                @foreach($unpaidPapers as $paper)
+                                    <div class="mb-4 p-3 bg-light rounded border">
+                                        <h6 class="font-weight-bold text-primary mb-3">
+                                            <i class="fas fa-file-alt mr-1"></i> Paper ID: {{ $paper->submission_id }} - {{ $paper->title }}
+                                        </h6>
+
+                                        <table class="table table-sm table-bordered bg-white mb-0">
+                                            <thead>
+                                                <tr class="bg-light">
+                                                    <th>Author Name</th>
+                                                    <th>Email</th>
+                                                    <th>Designation</th>
+                                                    <th>Country</th>
+                                                    <th style="width: 180px;" class="text-center">Is Student?</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($paper->authors as $author)
+                                                    <tr>
+                                                        <td class="align-middle font-weight-bold">{{ $author->name }}</td>
+                                                        <td class="align-middle">{{ $author->email }}</td>
+                                                        <td class="align-middle">{{ $author->designation }}</td>
+                                                        <td class="align-middle">{{ $author->country->name ?? 'N/A' }}</td>
+                                                        <td class="align-middle text-center">
+                                                            <input type="hidden" name="authors[{{ $author->id }}][id]" value="{{ $author->id }}">
+                                                            <div class="student-status-toggle">
+                                                                <input type="radio" id="student_yes_{{ $author->id }}" name="authors[{{ $author->id }}][is_student]" value="1" {{ $author->is_student ? 'checked' : '' }} required>
+                                                                <label for="student_yes_{{ $author->id }}" class="toggle-btn toggle-yes">Yes</label>
+
+                                                                <input type="radio" id="student_no_{{ $author->id }}" name="authors[{{ $author->id }}][is_student]" value="0" {{ !$author->is_student ? 'checked' : '' }} required>
+                                                                <label for="student_no_{{ $author->id }}" class="toggle-btn toggle-no">No</label>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endforeach
+
+                                <div class="text-right mt-3">
+                                    <button type="submit" class="btn btn-warning btn-lg font-weight-bold shadow-sm">
+                                        <i class="fas fa-check-circle mr-1"></i> Confirm & Proceed to Payment
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                @else
+                    <div class="card mb-4 border-primary shadow-sm" style="border-width: 2px;">
+                        <div class="card-body bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="text-primary font-weight-bold mb-1"><i class="fas fa-shopping-cart mr-2"></i> Abstract Bulk Checkout</h4>
+                                    <p class="text-muted mb-0">You have <strong>{{ $unpaidPapers->count() }}</strong> approved abstract(s) pending payment. You can pay for all of them securely through a single transaction.</p>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    @if($isPaymentOpen)
+                                        <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block mr-2">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-primary btn-lg px-3" style="border-radius: 8px;" title="Refresh and update payment amount according to current timeline stage">
+                                                <i class="fas fa-sync-alt mr-1"></i> Refresh Price
+                                            </button>
+                                        </form>
+                                        <button class="btn btn-primary btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#bulkPaymentModal" style="border-radius: 8px;">
+                                            <i class="fas fa-credit-card mr-2"></i> Review & Pay All
+                                        </button>
+                                    @else
+                                        <span class="badge badge-danger p-3 font-weight-bold" style="font-size: 1rem; border-radius: 8px;">
+                                            <i class="fas fa-exclamation-circle mr-1"></i> Payment Closed
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
-                            <div class="d-flex align-items-center">
-                                @if($isPaymentOpen)
-                                    <form action="{{ route('profile.recalculate-fee') }}" method="POST" class="d-inline-block mr-2">
+                        </div>
+                    </div>
+
+                    <!-- Bulk Payment Review Modal -->
+                    <div class="modal fade" id="bulkPaymentModal" tabindex="-1" role="dialog" aria-labelledby="bulkPaymentModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title font-weight-bold text-dark" id="bulkPaymentModalLabel">Bulk Payment Review</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body pt-3 pb-4">
+                                    <p class="text-muted mb-4 small">Review the payment details for your approved abstracts before proceeding to checkout.</p>
+
+                                    <div class="bg-light p-3 rounded mb-4 border">
+                                        <table class="table table-borderless table-sm mb-0">
+                                            <thead class="text-muted border-bottom">
+                                                <tr>
+                                                    <th>Abstract ID</th>
+                                                    <th>Base Rate</th>
+                                                    <th class="text-right">Price</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php $totalPrice = 0; @endphp
+                                                @foreach($unpaidPapers as $up)
+                                                    @php
+                                                        $pricing = \App\Services\PricingService::calculatePaperCost(auth()->user()->profile, $up);
+                                                    @endphp
+                                                    <tr>
+                                                        <td class="font-weight-bold">{{ $up->submission_id }} <small class="text-muted">({{ $pricing['authors_count'] }} author{{ $pricing['authors_count'] > 1 ? 's' : '' }})</small></td>
+                                                        <td>{{ ucfirst($pricing['stage']) }} Price @if($pricing['discount'] > 0)<br><small class="text-success">-{{ $pricing['currency'] }} {{ number_format($pricing['individual_discount'], 2) }} discount per author</small>@endif</td>
+                                                        <td class="text-right">{{ $pricing['currency'] }} {{ number_format($pricing['final_price'], 2) }}</td>
+                                                    </tr>
+                                                    @if($pricing['authors_count'] > 1)
+                                                     <tr class="bg-light">
+                                                         <td colspan="3" class="py-2 px-4 shadow-sm border-0" style="border-radius: 8px;">
+                                                             <div class="mb-2">
+                                                                 <span class="text-muted font-weight-bold d-block mb-1" style="font-size: 0.85rem;">Authors Details:</span>
+                                                                 <ul class="mb-0 small text-dark pl-3" style="line-height: 1.4;">
+                                                                     @foreach($up->authors as $author)
+                                                                         @php
+                                                                             $authorFee = $pricing['author_fees'][$author->id] ?? $pricing['individual_final_price'];
+                                                                         @endphp
+                                                                         <li>
+                                                                             {{ $author->name }} 
+                                                                             @if($author->designation)<span class="text-muted">({{ $author->designation }})</span>@endif 
+                                                                             - <strong class="text-primary">{{ $pricing['currency'] }} {{ number_format($authorFee, 2) }}</strong>
+                                                                         </li>
+                                                                     @endforeach
+                                                                 </ul>
+                                                             </div>
+                                                             @php
+                                                                 $uniqueFees = array_unique($pricing['author_fees'] ?? []);
+                                                                 $hasDifferentFees = count($uniqueFees) > 1;
+                                                             @endphp
+                                                             @if($hasDifferentFees)
+                                                                 <div class="alert alert-info py-1 px-2 m-0 small d-inline-block border-0" style="background-color: #e3f2fd; color: #0d47a1; border-radius: 4px;">
+                                                                     <i class="fas fa-info-circle mr-1"></i>
+                                                                     Individual rates apply based on student/regular status.
+                                                                 </div>
+                                                             @else
+                                                                 <div class="alert alert-success py-1 px-2 m-0 small d-inline-block border-0" style="background-color: #e8f5e9; border-radius: 4px;">
+                                                                     <i class="fas fa-check-circle mr-1 text-success"></i>
+                                                                     Rate is <strong>{{ $pricing['currency'] }} {{ number_format($pricing['individual_final_price'], 2) }}</strong> per person.
+                                                                 </div>
+                                                             @endif
+                                                         </td>
+                                                     </tr>
+                                                     @endif
+                                                    @php $totalPrice += $pricing['final_price']; @endphp
+                                                @endforeach
+                                                <tr class="border-top">
+                                                    <td colspan="2" class="font-weight-bold text-dark" style="font-size: 1.1rem; padding-top: 15px;">Total Amount</td>
+                                                    <td class="font-weight-bold text-primary text-right" style="font-size: 1.25rem; padding-top: 15px;">{{ $pricing['currency'] }} {{ number_format($totalPrice, 2) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <form action="{{ route('payNowPapers') }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="btn btn-outline-primary btn-lg px-3" style="border-radius: 8px;" title="Refresh and update payment amount according to current timeline stage">
-                                            <i class="fas fa-sync-alt mr-1"></i> Refresh Price
+                                        <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+                                        @foreach($unpaidPapers as $up)
+                                            <input type="hidden" name="paper_ids[]" value="{{ $up->id }}">
+                                        @endforeach
+                                        <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">
+                                            <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
                                         </button>
                                     </form>
-                                    <button class="btn btn-primary btn-lg px-4 shadow-sm" data-toggle="modal" data-target="#bulkPaymentModal" style="border-radius: 8px;">
-                                        <i class="fas fa-credit-card mr-2"></i> Review & Pay All
-                                    </button>
-                                @else
-                                    <span class="badge badge-danger p-3 font-weight-bold" style="font-size: 1rem; border-radius: 8px;">
-                                        <i class="fas fa-exclamation-circle mr-1"></i> Payment Closed
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bulk Payment Review Modal -->
-                <div class="modal fade" id="bulkPaymentModal" tabindex="-1" role="dialog" aria-labelledby="bulkPaymentModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-                        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title font-weight-bold text-dark" id="bulkPaymentModalLabel">Bulk Payment Review</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body pt-3 pb-4">
-                                <p class="text-muted mb-4 small">Review the payment details for your approved abstracts before proceeding to checkout.</p>
-
-                                <div class="bg-light p-3 rounded mb-4 border">
-                                    <table class="table table-borderless table-sm mb-0">
-                                        <thead class="text-muted border-bottom">
-                                            <tr>
-                                                <th>Abstract ID</th>
-                                                <th>Base Rate</th>
-                                                <th class="text-right">Price</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @php $totalPrice = 0; @endphp
-                                            @foreach($unpaidPapers as $up)
-                                                @php
-                                                    $pricing = \App\Services\PricingService::calculatePaperCost(auth()->user()->profile, $up);
-                                                @endphp
-                                                <tr>
-                                                    <td class="font-weight-bold">{{ $up->submission_id }} <small class="text-muted">({{ $pricing['authors_count'] }} author{{ $pricing['authors_count'] > 1 ? 's' : '' }})</small></td>
-                                                    <td>{{ ucfirst($pricing['stage']) }} Price @if($pricing['discount'] > 0)<br><small class="text-success">-{{ $pricing['currency'] }} {{ number_format($pricing['individual_discount'], 2) }} discount per author</small>@endif</td>
-                                                    <td class="text-right">{{ $pricing['currency'] }} {{ number_format($pricing['final_price'], 2) }}</td>
-                                                </tr>
-                                                @if($pricing['authors_count'] > 1)
-                                                <tr class="bg-light">
-                                                    <td colspan="3" class="py-2 px-4 shadow-sm border-0" style="border-radius: 8px;">
-                                                        <div class="mb-2">
-                                                            <span class="text-muted font-weight-bold d-block mb-1" style="font-size: 0.85rem;">Authors Details:</span>
-                                                            <ul class="mb-0 small text-dark pl-3" style="line-height: 1.4;">
-                                                                @foreach($up->authors as $author)
-                                                                    <li>{{ $author->name }} @if($author->designation)<span class="text-muted">({{ $author->designation }})</span>@endif</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        </div>
-                                                        <div class="alert alert-success py-1 px-2 m-0 small d-inline-block border-0" style="background-color: #e8f5e9; border-radius: 4px;">
-                                                            <i class="fas fa-check-circle mr-1 text-success"></i>
-                                                            Rate is <strong>{{ $pricing['currency'] }} {{ number_format($pricing['individual_final_price'], 2) }}</strong> per person.
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                @endif
-                                                @php $totalPrice += $pricing['final_price']; @endphp
-                                            @endforeach
-                                            <tr class="border-top">
-                                                <td colspan="2" class="font-weight-bold text-dark" style="font-size: 1.1rem; padding-top: 15px;">Total Amount</td>
-                                                <td class="font-weight-bold text-primary text-right" style="font-size: 1.25rem; padding-top: 15px;">{{ $pricing['currency'] }} {{ number_format($totalPrice, 2) }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
                                 </div>
-
-                                <form action="{{ route('payNowPapers') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="user_id" value="{{ auth()->id() }}">
-                                    @foreach($unpaidPapers as $up)
-                                        <input type="hidden" name="paper_ids[]" value="{{ $up->id }}">
-                                    @endforeach
-                                    <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" style="border-radius: 8px;">
-                                        <i class="fas fa-lock mr-2"></i> Proceed to Secure Checkout
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endif
             @endif
         @endif
 
@@ -515,3 +597,46 @@
 
     </script>
 @endsection
+
+@push('style')
+<style>
+    .student-status-toggle {
+        display: inline-flex;
+        border: 1px solid #ced4da;
+        border-radius: 20px;
+        overflow: hidden;
+        background-color: #f8f9fa;
+        padding: 2px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .student-status-toggle input[type="radio"] {
+        display: none;
+    }
+    .student-status-toggle .toggle-btn {
+        padding: 4px 16px;
+        margin: 0;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 18px;
+        transition: all 0.2s ease-in-out;
+        color: #6c757d;
+        text-align: center;
+        user-select: none;
+    }
+    .student-status-toggle .toggle-btn:hover {
+        color: #495057;
+        background-color: #e9ecef;
+    }
+    .student-status-toggle input[type="radio"]:checked + .toggle-yes {
+        background-color: #28a745;
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+    }
+    .student-status-toggle input[type="radio"]:checked + .toggle-no {
+        background-color: #6c757d;
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
+    }
+</style>
+@endpush

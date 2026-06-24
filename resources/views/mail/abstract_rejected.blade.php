@@ -197,7 +197,7 @@
                 </p>
 
                 <p class="message-intro">
-                    If you have any questions, please contact us at <a href="mailto:bnc2026@diu.edu.bd" class="contact-info">bnc2026@diu.edu.bd</a>.
+                    If you have any questions, please contact us at <a href="mailto:events.eng@diu.edu.bd" class="contact-info">events.eng@diu.edu.bd</a>.
                 </p>
             </div>
 

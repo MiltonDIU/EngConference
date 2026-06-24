@@ -71,24 +71,43 @@ class PricingService
         elseif ($prefix === 'inr') $currencyCode = 'INR';
         elseif ($prefix === 'eur') $currencyCode = 'EUR';
 
-        $authorCount = 1;
+        $totalBasePrice = 0;
+        $totalFinalPrice = 0;
+        $authorFees = [];
         if ($paper !== null) {
-            $authorCount = max(1, $paper->authors()->count());
+            $authors = $paper->authors()->get();
+            $authorCount = max(1, $authors->count());
+            foreach ($authors as $author) {
+                $authorCountryName = $author->country->name ?? $countryName;
+                $authorPrefix = self::determineCurrencyPrefix($authorCountryName);
+                if ($author->is_student && $authorPrefix === 'bdt') {
+                    $fee = 2000.0;
+                    $totalBasePrice += 2000.0;
+                    $totalFinalPrice += 2000.0;
+                } else {
+                    $fee = $finalPrice;
+                    $totalBasePrice += $basePrice;
+                    $totalFinalPrice += $finalPrice;
+                }
+                $authorFees[$author->id] = $fee;
+            }
+        } else {
+            $authorCount = 1;
+            $totalBasePrice = $basePrice;
+            $totalFinalPrice = $finalPrice;
         }
-
-        $totalBasePrice = $basePrice * $authorCount;
-        $totalFinalPrice = $finalPrice * $authorCount;
 
         return [
             'base_price' => $totalBasePrice,
             'discount' => $totalBasePrice - $totalFinalPrice,
             'final_price' => $totalFinalPrice,
-            'individual_base_price' => $basePrice,
-            'individual_discount' => $basePrice - $finalPrice,
-            'individual_final_price' => $finalPrice,
+            'individual_base_price' => $authorCount > 0 ? ($totalBasePrice / $authorCount) : $basePrice,
+            'individual_discount' => ($authorCount > 0 ? ($totalBasePrice / $authorCount) : $basePrice) - ($authorCount > 0 ? ($totalFinalPrice / $authorCount) : $finalPrice),
+            'individual_final_price' => $authorCount > 0 ? ($totalFinalPrice / $authorCount) : $finalPrice,
             'currency' => $currencyCode,
             'stage' => $stage,
-            'authors_count' => $authorCount
+            'authors_count' => $authorCount,
+            'author_fees' => $authorFees
         ];
     }
     

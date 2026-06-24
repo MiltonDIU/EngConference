@@ -27,6 +27,107 @@
         </div>
     </div>
 
+    @if(session('message'))
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 8px;">
+            <i class="fas fa-check-circle mr-2 text-success"></i> {{ session('message') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 8px;">
+            <i class="fas fa-check-circle mr-2 text-success"></i> {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 8px;">
+            <i class="fas fa-exclamation-circle mr-2 text-danger"></i> {{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    @if($myProfile && auth()->user()->roles->contains('id', 3) && $unpaidPapers->count() > 0)
+        @if(!$myProfile->author_list_confirmed)
+            <div class="card mb-4 border-warning shadow-sm" style="border-width: 2px; border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="card-title font-weight-bold mb-0">
+                        <i class="fas fa-id-card mr-2"></i> Confirm Author List & Student Status
+                    </h5>
+                </div>
+                <div class="card-body bg-white p-4">
+                    <p class="text-muted mb-4">
+                        Before proceeding to payment, please confirm the student status of all authors for your approved abstract(s). 
+                        <strong>Bangladeshi student authors qualify for a flat registration fee of 2,000 BDT.</strong>
+                    </p>
+                    
+                    <form action="{{ route('profile.confirm-student-status') }}" method="POST">
+                        @csrf
+                        
+                        @foreach($unpaidPapers as $paper)
+                            <div class="mb-4 p-3 bg-light rounded border">
+                                <h6 class="font-weight-bold text-primary mb-3">
+                                    <i class="fas fa-file-alt mr-1"></i> Paper ID: {{ $paper->submission_id }} - {{ $paper->title }}
+                                </h6>
+                                
+                                <table class="table table-sm table-bordered bg-white mb-0">
+                                    <thead>
+                                        <tr class="bg-light">
+                                            <th>Author Name</th>
+                                            <th>Email</th>
+                                            <th>Designation</th>
+                                            <th>Country</th>
+                                            <th style="width: 180px;" class="text-center">Is Student?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($paper->authors as $author)
+                                            <tr>
+                                                <td class="align-middle font-weight-bold">{{ $author->name }}</td>
+                                                <td class="align-middle">{{ $author->email }}</td>
+                                                <td class="align-middle">{{ $author->designation }}</td>
+                                                <td class="align-middle">{{ $author->country->name ?? 'N/A' }}</td>
+                                                <td class="align-middle text-center">
+                                                    <input type="hidden" name="authors[{{ $author->id }}][id]" value="{{ $author->id }}">
+                                                    <div class="student-status-toggle">
+                                                        <input type="radio" id="student_yes_{{ $author->id }}" name="authors[{{ $author->id }}][is_student]" value="1" {{ $author->is_student ? 'checked' : '' }} required>
+                                                        <label for="student_yes_{{ $author->id }}" class="toggle-btn toggle-yes">Yes</label>
+                                                        
+                                                        <input type="radio" id="student_no_{{ $author->id }}" name="authors[{{ $author->id }}][is_student]" value="0" {{ !$author->is_student ? 'checked' : '' }} required>
+                                                        <label for="student_no_{{ $author->id }}" class="toggle-btn toggle-no">No</label>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endforeach
+                        
+                        <div class="text-right mt-3">
+                            <button type="submit" class="btn btn-warning btn-lg font-weight-bold shadow-sm">
+                                <i class="fas fa-check-circle mr-1"></i> Confirm & Proceed to Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @else
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4" role="alert" style="border-radius: 8px; background-color: #e8f5e9;">
+                <i class="fas fa-check-circle mr-2 text-success"></i> 
+                <strong>Author list and student status confirmed!</strong> You can now proceed with the payment for your approved abstract(s) in the table below.
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
+    @endif
+
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-4">
             <div class="row mb-3">
@@ -190,6 +291,45 @@
     </div>
 </div>
 <style>
+    .student-status-toggle {
+        display: inline-flex;
+        border: 1px solid #ced4da;
+        border-radius: 20px;
+        overflow: hidden;
+        background-color: #f8f9fa;
+        padding: 2px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .student-status-toggle input[type="radio"] {
+        display: none;
+    }
+    .student-status-toggle .toggle-btn {
+        padding: 4px 16px;
+        margin: 0;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 18px;
+        transition: all 0.2s ease-in-out;
+        color: #6c757d;
+        text-align: center;
+        user-select: none;
+    }
+    .student-status-toggle .toggle-btn:hover {
+        color: #495057;
+        background-color: #e9ecef;
+    }
+    .student-status-toggle input[type="radio"]:checked + .toggle-yes {
+        background-color: #28a745;
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+    }
+    .student-status-toggle input[type="radio"]:checked + .toggle-no {
+        background-color: #6c757d;
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
+    }
+
     .font-weight-600 { font-weight: 600; }
     .list-title-truncate { max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .btn-white { background-color: #fff; border-color: #dee2e6; }
@@ -333,13 +473,25 @@ $(function () {
                     $('#modal-authors-section').show();
                     $('#modal-authors-count').text(response.authors.length);
                     let authorListHtml = '';
+                    let fees = [];
                     response.authors.forEach(author => {
-                        authorListHtml += `<li>${author.name} <span class="text-muted small">(${author.designation || ''})</span></li>`;
+                        let designationText = author.designation ? ` (${author.designation})` : '';
+                        let feeFormatted = Number(author.fee).toLocaleString(undefined, {minimumFractionDigits: 2});
+                        authorListHtml += `<li>${author.name}<span class="text-muted small">${designationText}</span> - <strong class="text-primary">${pricing.currency} ${feeFormatted}</strong></li>`;
+                        fees.push(author.fee);
                     });
                     $('#modal-authors-list').html(authorListHtml);
 
                     $('#modal-per-person-alert').show();
-                    $('#modal-per-person-price').text(`${pricing.currency} ${pricing.individual_final_price.toLocaleString(undefined, {minimumFractionDigits: 2})}`);
+                    let uniqueFees = [...new Set(fees)];
+                    if (uniqueFees.length > 1) {
+                        $('#modal-per-person-alert').removeClass('alert-success').addClass('alert-info')
+                            .html(`<i class="fas fa-info-circle mr-1"></i> Individual rates apply based on student/regular status.`);
+                    } else {
+                        let formattedPrice = Number(pricing.individual_final_price).toLocaleString(undefined, {minimumFractionDigits: 2});
+                        $('#modal-per-person-alert').removeClass('alert-info').addClass('alert-success')
+                            .html(`<i class="fas fa-check-circle mr-1 text-success"></i> Rate is <strong>${pricing.currency} ${formattedPrice}</strong> per person. The total payment covers all authors securely.`);
+                    }
                 } else {
                     $('#modal-authors-section').hide();
                     $('#modal-per-person-alert').hide();

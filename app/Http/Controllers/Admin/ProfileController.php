@@ -203,6 +203,7 @@ class ProfileController extends Controller
             'whatsapp_number' => 'required|string|max:20',
             'participation_mode' => 'required|in:onsite,online',
             'id' => 'required|exists:profiles,id',
+            'author_list_confirmed' => 'nullable|boolean',
         ]);
         
         $profile = Profile::find($request->id);
@@ -216,7 +217,8 @@ class ProfileController extends Controller
         $profileData = $request->only([
             'first_name', 'last_name', 'designation', 'department', 'institution', 
             'country_id', 'whatsapp_number', 'registration_id', 'is_author', 
-            'participation_mode', 'pay_amount', 'currency', 'payment_status', 'coupon_code'
+            'participation_mode', 'pay_amount', 'currency', 'payment_status', 'coupon_code',
+            'author_list_confirmed'
         ]);
         
         $userSchedule = $request->input('schedule_ids', []);
@@ -315,5 +317,54 @@ class ProfileController extends Controller
         }
 
         return redirect()->back()->with('message', $count . ' unpaid profile fees recalculated successfully.');
+    }
+
+    public function confirmStudentStatus(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $profile = Profile::where('user_id', $user->id)->first();
+        if (!$profile) {
+            return redirect()->back()->with('error', 'Profile not found.');
+        }
+
+        $request->validate([
+            'authors' => 'required|array',
+            'authors.*.id' => 'required|exists:paper_authors,id',
+            'authors.*.is_student' => 'required|in:0,1'
+        ]);
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            foreach ($request->authors as $authorData) {
+                $author = \App\Models\PaperAuthor::where('id', $authorData['id'])
+                    ->whereHas('paper', function($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    })->first();
+
+                if ($author) {
+                    $author->is_student = (bool)$authorData['is_student'];
+                    $author->save();
+                }
+            }
+
+            $profile->author_list_confirmed = true;
+            $profile->save();
+
+            // Recalculate total due based on the new student status
+            \App\Services\PricingService::updateProfileTotalDue($profile);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->back()->with('message', 'Author list and student status confirmed successfully. Your registration fee has been updated.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('Confirm Student Status Error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to confirm student status. Please try again.');
+        }
     }
 }

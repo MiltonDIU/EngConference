@@ -78,14 +78,15 @@
                 <!-- Section 3: Registration & Payment -->
                 <h5 class="text-primary mt-4 mb-3 border-bottom pb-2"><i class="fas fa-file-invoice-dollar mr-2"></i> Registration & Payment</h5>
                 <div class="row">
-                    <div class="col-md-4">
+
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="registration_id">Registration ID</label>
                             <input type="text" id="registration_id" name="registration_id" class="form-control" value="{{ old('registration_id', $profile->registration_id) }}">
                             <small class="text-muted">Usually generated automatically upon payment.</small>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="participation_mode">Participation Mode *</label>
                             <select name="participation_mode" id="participation_mode" class="form-control" required>
@@ -94,12 +95,21 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group py-4">
                             <div class="custom-control custom-switch">
                                 <input type="hidden" name="is_author" value="0">
                                 <input type="checkbox" class="custom-control-input" id="is_author" name="is_author" value="1" {{ $profile->is_author ? 'checked' : '' }}>
                                 <label class="custom-control-label font-weight-bold" for="is_author">Registered as Author?</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group py-4">
+                            <div class="custom-control custom-switch">
+                                <input type="hidden" name="author_list_confirmed" value="0">
+                                <input type="checkbox" class="custom-control-input" id="author_list_confirmed" name="author_list_confirmed" value="1" {{ $profile->author_list_confirmed ? 'checked' : '' }}>
+                                <label class="custom-control-label font-weight-bold" for="author_list_confirmed">Author List Confirmed?</label>
                             </div>
                         </div>
                     </div>

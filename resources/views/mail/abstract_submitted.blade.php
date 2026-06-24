@@ -223,7 +223,7 @@
 
                 <p class="disclaimer">Please note that this message confirms receipt of your abstract only. The final decision will be communicated after the review process is completed.</p>
 
-                <p class="message-intro">If you have any questions, please contact the conference team at <a href="mailto:bnc2026@diu.edu.bd" class="contact-info">bnc2026@diu.edu.bd</a>.</p>
+                <p class="message-intro">If you have any questions, please contact the conference team at <a href="mailto:events.eng@diu.edu.bd" class="contact-info">events.eng@diu.edu.bd</a>.</p>
 
                 <p class="message-intro">Thank you for your interest in BNC2026.</p>
             </div>
