@@ -159,8 +159,13 @@ class PricingService
             $totalAmount = $pricing['final_price'];
             $currency = $pricing['currency'];
         } else {
-            // Logic for Author (Sum of all their papers)
-            $papers = \App\Models\Paper::where('user_id', $profile->user_id)->get();
+            // Logic for Author (Sum of all their unpaid papers)
+            $papers = \App\Models\Paper::where('user_id', $profile->user_id)
+                ->where(function($q) {
+                    $q->whereNull('payment_status')
+                      ->orWhere('payment_status', '!=', '1');
+                })
+                ->get();
             
             foreach ($papers as $paper) {
                 // Determine the cost based on the number of co-authors

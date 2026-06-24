@@ -102,14 +102,10 @@ class PaperController extends Controller
                     });
                 })
                 ->filterColumn('pay_amount', function($q, $keyword) {
-                    $q->whereHas('user.profile', function($profileQuery) use ($keyword) {
-                        $profileQuery->where('pay_amount', 'like', "%{$keyword}%");
-                    });
+                    $q->where('papers.pay_amount', 'like', "%{$keyword}%");
                 })
                 ->filterColumn('currency', function($q, $keyword) {
-                    $q->whereHas('user.profile', function($profileQuery) use ($keyword) {
-                        $profileQuery->where('currency', 'like', "%{$keyword}%");
-                    });
+                    $q->where('papers.currency', 'like', "%{$keyword}%");
                 })
                 ->filterColumn('department', function($q, $keyword) {
                     $q->where(function($sub) use ($keyword) {
@@ -255,11 +251,28 @@ class PaperController extends Controller
                     return $mode ? ucfirst($mode) : 'N/A';
                 })
                 ->editColumn('pay_amount', function ($row) {
-                    $amount = $row->user?->profile?->pay_amount ?? $row->pay_amount ?? null;
+                    if ($row->payment_status == '1') {
+                        $amount = $row->pay_amount;
+                    } else {
+                        if ($row->user?->profile) {
+                            $pricing = \App\Services\PricingService::calculatePaperCost($row->user->profile, $row);
+                            $amount = $pricing['final_price'];
+                        } else {
+                            $amount = $row->pay_amount;
+                        }
+                    }
                     return $amount !== null ? number_format($amount, 2) : 'N/A';
                 })
                 ->editColumn('currency', function ($row) {
-                    return $row->user?->profile?->currency ?? $row->currency ?? 'N/A';
+                    if ($row->payment_status == '1') {
+                        return $row->currency ?: 'N/A';
+                    } else {
+                        if ($row->user?->profile) {
+                            $pricing = \App\Services\PricingService::calculatePaperCost($row->user->profile, $row);
+                            return $pricing['currency'];
+                        }
+                        return $row->currency ?? 'N/A';
+                    }
                 })
                 ->editColumn('title', function ($row) {
                     return '<div class="text-dark font-weight-600 text-truncate" style="max-width: 300px;" title="'.$row->title.'">'.$row->title.'</div>';

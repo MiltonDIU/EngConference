@@ -19,7 +19,7 @@ class FaqsTableSeeder extends Seeder
         {
             Faq::create([
                 'question' => $faker->sentence,
-                'answer' => $faker->paragraph
+                'answer' => $faker->text(200)
             ]);
         }
     }

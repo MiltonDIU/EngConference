@@ -7,6 +7,10 @@ use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected $seed = true;
+
     /**
      * A basic test example.
      *
