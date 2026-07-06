@@ -101,6 +101,16 @@ class PaperController extends Controller
                         });
                     });
                 })
+                ->filterColumn('submitted_by', function($q, $keyword) {
+                    $q->whereHas('user', function($userQuery) use ($keyword) {
+                        $userQuery->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('submitter_email', function($q, $keyword) {
+                    $q->whereHas('user', function($userQuery) use ($keyword) {
+                        $userQuery->where('email', 'like', "%{$keyword}%");
+                    });
+                })
                 ->filterColumn('pay_amount', function($q, $keyword) {
                     $q->where('papers.pay_amount', 'like', "%{$keyword}%");
                 })
@@ -177,6 +187,7 @@ class PaperController extends Controller
                 })
                 ->addColumn('submitted_by', function ($row) {
                     $name = $row->user->name ?? 'N/A';
+
                     if ($row->user && $row->user->papers->count() >= 2) {
                         $otherPapers = $row->user->papers->reject(function ($p) use ($row) {
                             return $p->id === $row->id;
@@ -197,7 +208,11 @@ class PaperController extends Controller
                                     '</div>' .
                                '</div>';
                     }
+                    
                     return $name;
+                })
+                ->addColumn('submitter_email', function ($row) {
+                    return $row->user->email ?? 'N/A';
                 })
                 ->addColumn('authors', function ($row) {
                     $authors = $row->authors->pluck('name')->toArray();

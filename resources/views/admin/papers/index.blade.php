@@ -206,6 +206,7 @@
                             <th>Submission ID</th>
                             <th>Full Title</th>
                             <th>Submitted By</th>
+                            <th>Submitter Email</th>
                             <th>Designation</th>
                             <th>Authors</th>
                             <th>Total Member</th>
@@ -360,14 +361,14 @@ $(function () {
             className: 'btn-default',
             text: '<i class="fas fa-file-excel mr-1 text-success"></i> Excel',
             titleAttr: 'Export to Excel',
-            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] }
         },
         {
             extend: 'csv',
             className: 'btn-default',
             text: '<i class="fas fa-file-csv mr-1 text-info"></i> CSV',
             titleAttr: 'Export to CSV',
-            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] }
         },
         {
             extend: 'pdf',
@@ -405,6 +406,7 @@ $(function () {
             { data: 'submission_id', name: 'submission_id' },
             { data: 'title', name: 'title' },
             { data: 'submitted_by', name: 'user.name' },
+            { data: 'submitter_email', name: 'user.email' },
             { data: 'designation', name: 'designation', searchable: true, orderable: false },
             { data: 'authors', name: 'authors', searchable: false, orderable: false },
             { data: 'total_member', name: 'total_member', class: 'text-center', searchable: false, orderable: false },
