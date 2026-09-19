@@ -349,7 +349,7 @@ class DashboardController extends Controller
 
     public function paperPaymentsReport(Request $request)
     {
-        abort_if(!Gate::check('payment_report') && !Gate::check('track_report') && !Gate::check('admin_report'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(Gate::denies('payment_report'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         // 1. Fetch successful payments
         $payments = Payment::where('status', 1)->get()->keyBy('reff_id');
@@ -360,7 +360,6 @@ class DashboardController extends Controller
         // 3. Build map of paper_id => payment details and calculate currency totals
         $paperPaymentMap = [];
         $totalBaseFairBDT = 0;
-        $totalAdditionChargeBDT = 0;
         $currencySummary = [
             'BDT' => ['count' => 0, 'amount' => 0, 'symbol' => 'BDT'],
             'INR' => ['count' => 0, 'amount' => 0, 'symbol' => 'INR'],
@@ -376,7 +375,6 @@ class DashboardController extends Controller
             $d = $msg['data'] ?? $msg;
 
             $baseFair = (float)($d['base_fair'] ?? $d['amount'] ?? $p->amount);
-            $additionCharge = (float)($d['addition_charge'] ?? 0);
             $val_b = $d['value_b'] ?? null;
             $val_c = $d['value_c'] ?? null;
             $val_d = $d['value_d'] ?? null;
@@ -407,7 +405,6 @@ class DashboardController extends Controller
                         'card_type' => $d['card_type'] ?? null,
                         'card_brand' => $d['card_brand'] ?? null,
                         'base_fair' => $baseFair / $count,
-                        'addition_charge' => $additionCharge / $count,
                         'orig_amount' => $origAmt / $count,
                         'orig_currency' => $origCurr,
                         'exchange_rate' => $rate,
@@ -417,7 +414,6 @@ class DashboardController extends Controller
             }
 
             $totalBaseFairBDT += $baseFair;
-            $totalAdditionChargeBDT += $additionCharge;
             if (!isset($currencySummary[$origCurr])) {
                 $currencySummary[$origCurr] = ['count' => 0, 'amount' => 0, 'symbol' => $origCurr];
             }
@@ -475,7 +471,6 @@ class DashboardController extends Controller
             'totalAuthorMembersCount',
             'uniqueAuthorsCount',
             'totalBaseFairBDT',
-            'totalAdditionChargeBDT',
             'currencySummary',
             'tracks'
         ));
