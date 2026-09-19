@@ -204,7 +204,8 @@
                             <th style="min-width: 280px;">Members / Authors</th>
                             <th class="text-right" style="width: 140px;">Original Fee</th>
                             <th class="text-center" style="width: 120px;">Exchange Rate</th>
-                            <th class="text-right" style="width: 150px;">Paid Base Fair</th>
+                            <th class="text-right" style="width: 140px;">Paid Base Fair</th>
+                            <th class="text-right" style="width: 140px;">Gateway Charge</th>
                             <th style="width: 200px;">Transaction Details</th>
                         </tr>
                     </thead>
@@ -216,6 +217,7 @@
                                 $origCurr = $payInfo['orig_currency'] ?? ($paper->currency ?: 'BDT');
                                 $origAmt = $payInfo['orig_amount'] ?? $paper->pay_amount;
                                 $baseFair = $payInfo['base_fair'] ?? ($origCurr == 'BDT' ? $paper->pay_amount : 0);
+                                $additionCharge = $payInfo['addition_charge'] ?? 0;
                                 $rate = $payInfo['exchange_rate'] ?? 1.0;
                                 $user = $paper->user;
                                 $profile = $user ? $user->profile : null;
@@ -320,6 +322,16 @@
                                         BDT {{ number_format($baseFair, 2) }}
                                     </div>
                                     <small class="badge badge-light border text-muted">Base Fair</small>
+                                </td>
+                                <td class="text-right">
+                                    @if($additionCharge > 0)
+                                        <div class="font-weight-bold text-danger font-monospace" style="font-size: 0.98rem;">
+                                            +BDT {{ number_format($additionCharge, 2) }}
+                                        </div>
+                                        <small class="badge badge-light border text-muted">Gateway Fee</small>
+                                    @else
+                                        <span class="text-muted font-monospace small">BDT 0.00</span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($payInfo)
@@ -432,7 +444,7 @@ $(function () {
             text: '<i class="fas fa-file-excel mr-1 text-success"></i> Excel',
             title: 'Paper_Payments_Report_' + '{{ now()->format("Ymd") }}',
             exportOptions: {
-                columns: [0, 1, 2, 3, 4, 5, 6, 7],
+                columns: [0, 1, 2, 3, 4, 5, 6, 7, 8],
                 format: {
                     body: function (data, row, column, node) {
                         return $(node).text().replace(/\s+/g, ' ').trim();
@@ -446,7 +458,7 @@ $(function () {
             text: '<i class="fas fa-file-csv mr-1 text-info"></i> CSV',
             title: 'Paper_Payments_Report_' + '{{ now()->format("Ymd") }}',
             exportOptions: {
-                columns: [0, 1, 2, 3, 4, 5, 6], // Exclude Transaction Details (Column 7)
+                columns: [0, 1, 2, 3, 4, 5, 6, 7], // Exclude Transaction Details (Column 8)
                 format: {
                     body: function (data, row, column, node) {
                         return $(node).text().replace(/\s+/g, ' ').trim();
@@ -484,8 +496,8 @@ $(function () {
         pageLength: 25,
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         columnDefs: [
-            { orderable: false, targets: [3, 7] },
-            { orderable: true, targets: [0, 1, 2, 4, 5, 6] }
+            { orderable: false, targets: [3, 8] },
+            { orderable: true, targets: [0, 1, 2, 4, 5, 6, 7] }
         ]
     });
 
