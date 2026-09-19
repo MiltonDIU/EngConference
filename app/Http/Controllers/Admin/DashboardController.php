@@ -7,6 +7,8 @@ use App\Models\Domain;
 use App\Models\EventActivity;
 use App\Models\Post;
 use App\Models\Paper;
+use App\Models\Payment;
+use App\Models\Track;
 use App\Models\Profile;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
@@ -44,19 +46,72 @@ class DashboardController extends Controller
             ['country' => 'Unpaid', 'litres' => $unpaid],
         ];
 
-        // Payment Statistics Grouped by Currency and User Type
-        $currencyStats = DB::table('profiles')
+        // Payment Statistics Grouped by Currency and User Type (Using verified gateway payments for paid amounts)
+        $profileStats = DB::table('profiles')
             ->selectRaw('currency,
                          COUNT(*) as total_users,
-                         SUM(CASE WHEN payment_status = "1" THEN pay_amount ELSE 0 END) as paid_amount,
                          SUM(CASE WHEN payment_status = "0" THEN pay_amount ELSE 0 END) as unpaid_amount,
-                         SUM(CASE WHEN is_author = 1 AND payment_status = "1" THEN pay_amount ELSE 0 END) as author_paid_amt,
                          SUM(CASE WHEN is_author = 1 AND payment_status = "0" THEN pay_amount ELSE 0 END) as author_unpaid_amt,
-                         SUM(CASE WHEN is_author = 0 AND payment_status = "1" THEN pay_amount ELSE 0 END) as participant_paid_amt,
                          SUM(CASE WHEN is_author = 0 AND payment_status = "0" THEN pay_amount ELSE 0 END) as participant_unpaid_amt')
             ->whereNotNull('currency')
             ->groupBy('currency')
-            ->get();
+            ->get()
+            ->keyBy('currency');
+
+        $actualPayments = Payment::where('status', 1)->with('user.profile')->get();
+        $paidByCurrency = [
+            'BDT' => ['author' => 0, 'participant' => 0],
+            'INR' => ['author' => 0, 'participant' => 0],
+            'USD' => ['author' => 0, 'participant' => 0],
+            'EUR' => ['author' => 0, 'participant' => 0],
+        ];
+
+        foreach ($actualPayments as $p) {
+            $msg = json_decode($p->message, true);
+            $d = $msg['data'] ?? $msg;
+            $val_c = strtoupper(trim((string)($d['value_c'] ?? '')));
+            $val_b = (float)($d['value_b'] ?? 0);
+
+            if (in_array($val_c, ['USD', 'INR', 'EUR'])) {
+                $curr = $val_c;
+                $amt = $val_b;
+            } else {
+                $curr = 'BDT';
+                $amt = (float)($d['base_fair'] ?? $d['amount'] ?? $p->amount);
+            }
+
+            $isAuthor = $p->user && $p->user->profile && $p->user->profile->is_author;
+            if (!isset($paidByCurrency[$curr])) {
+                $paidByCurrency[$curr] = ['author' => 0, 'participant' => 0];
+            }
+            if ($isAuthor) {
+                $paidByCurrency[$curr]['author'] += $amt;
+            } else {
+                $paidByCurrency[$curr]['participant'] += $amt;
+            }
+        }
+
+        $currencyStats = collect(['BDT', 'INR', 'USD', 'EUR'])->map(function($curr) use ($profileStats, $paidByCurrency) {
+            $pStat = $profileStats->get($curr);
+            $paid = $paidByCurrency[$curr] ?? ['author' => 0, 'participant' => 0];
+            $authorPaid = $paid['author'];
+            $participantPaid = $paid['participant'];
+            $totalPaid = $authorPaid + $participantPaid;
+            $authorUnpaid = (float)($pStat->author_unpaid_amt ?? 0);
+            $participantUnpaid = (float)($pStat->participant_unpaid_amt ?? 0);
+            $totalUnpaid = (float)($pStat->unpaid_amount ?? 0);
+
+            return (object)[
+                'currency' => $curr,
+                'total_users' => $pStat->total_users ?? 0,
+                'author_paid_amt' => $authorPaid,
+                'author_unpaid_amt' => $authorUnpaid,
+                'participant_paid_amt' => $participantPaid,
+                'participant_unpaid_amt' => $participantUnpaid,
+                'paid_amount' => $totalPaid,
+                'unpaid_amount' => $totalUnpaid
+            ];
+        });
 
         $totalPayAmount = $currencyStats->sum('paid_amount'); // Still useful for general overview
         $totalTaka = $currencyStats->map(function($stat) {
@@ -160,8 +215,8 @@ class DashboardController extends Controller
 
         foreach ($countryStats as $stat) {
             $stat->total_papers = $paperCountryStats[$stat->country_id] ?? 0;
-            $stat->payment_percentage = $stat->total_registrations > 0 
-                ? round(($stat->total_paid / $stat->total_registrations) * 100, 1) 
+            $stat->payment_percentage = $stat->total_registrations > 0
+                ? round(($stat->total_paid / $stat->total_registrations) * 100, 1)
                 : 0;
         }
 
@@ -186,7 +241,7 @@ class DashboardController extends Controller
         for ($i = 29; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i)->format('Y-m-d');
             $reg = $dailyRegistrations->firstWhere('reg_date', $date);
-            
+
             $dailyTrends[] = [
                 'date' => Carbon::parse($date)->format('M d'),
                 'authors' => $reg ? (int)$reg->author_count : 0,
@@ -226,16 +281,16 @@ class DashboardController extends Controller
                 SUM(CASE WHEN papers.status = "approved" AND papers.payment_status = "1" THEN 1 ELSE 0 END) as paid_count,
                 SUM(CASE WHEN papers.status = "approved" AND (papers.payment_status = "0" OR papers.payment_status IS NULL) THEN 1 ELSE 0 END) as unpaid_count,
                 SUM(CASE WHEN papers.status = "pending" THEN 1 ELSE 0 END) as pending_count,
-                (SELECT COUNT(*) 
-                 FROM paper_authors 
-                 JOIN papers ON papers.id = paper_authors.paper_id 
-                 WHERE papers.track_id = tracks.id 
-                   AND papers.sub_track_id = sub_tracks.id 
+                (SELECT COUNT(*)
+                 FROM paper_authors
+                 JOIN papers ON papers.id = paper_authors.paper_id
+                 WHERE papers.track_id = tracks.id
+                   AND papers.sub_track_id = sub_tracks.id
                    AND papers.deleted_at IS NULL) as total_authors,
-                (SELECT COUNT(DISTINCT papers.user_id) 
-                 FROM papers 
-                 WHERE papers.track_id = tracks.id 
-                   AND papers.sub_track_id = sub_tracks.id 
+                (SELECT COUNT(DISTINCT papers.user_id)
+                 FROM papers
+                 WHERE papers.track_id = tracks.id
+                   AND papers.sub_track_id = sub_tracks.id
                    AND papers.deleted_at IS NULL) as unique_submitters
             ')
             ->groupBy('tracks.id', 'tracks.name', 'sub_tracks.id', 'sub_tracks.name')
@@ -269,7 +324,7 @@ class DashboardController extends Controller
         foreach ($reportData as $row) {
             $amounts = $paymentSums->where('track_id', $row->track_id)
                                    ->where('sub_track_id', $row->sub_track_id);
-            
+
             $formattedAmounts = [];
             foreach ($amounts as $amt) {
                 if ($amt->total_amount > 0 && !empty($amt->currency)) {
@@ -291,4 +346,134 @@ class DashboardController extends Controller
 
         return view('admin.reports.tracks', compact('reportData', 'tracks', 'currencies'));
     }
+
+    public function paperPaymentsReport(Request $request)
+    {
+        abort_if(!Gate::check('payment_report') && !Gate::check('track_report') && !Gate::check('admin_report'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        // 1. Fetch successful payments
+        $payments = Payment::where('status', 1)->get()->keyBy('reff_id');
+
+        // 2. Fetch completed/processing orders
+        $orders = DB::table('orders')->whereIn('status', ['Processing', 'Complete'])->get();
+
+        // 3. Build map of paper_id => payment details and calculate currency totals
+        $paperPaymentMap = [];
+        $totalBaseFairBDT = 0;
+        $currencySummary = [
+            'BDT' => ['count' => 0, 'amount' => 0, 'symbol' => 'BDT'],
+            'INR' => ['count' => 0, 'amount' => 0, 'symbol' => 'INR'],
+            'USD' => ['count' => 0, 'amount' => 0, 'symbol' => 'USD'],
+            'EUR' => ['count' => 0, 'amount' => 0, 'symbol' => 'EUR'],
+        ];
+
+        foreach ($orders as $order) {
+            $p = $payments->get($order->transaction_id);
+            if (!$p) continue;
+
+            $msg = json_decode($p->message, true);
+            $d = $msg['data'] ?? $msg;
+
+            $baseFair = (float)($d['base_fair'] ?? $d['amount'] ?? $p->amount);
+            $val_b = $d['value_b'] ?? null;
+            $val_c = $d['value_c'] ?? null;
+            $val_d = $d['value_d'] ?? null;
+
+            $val_c_str = strtoupper(trim((string)$val_c));
+            if (in_array($val_c_str, ['USD', 'INR', 'EUR'])) {
+                // Foreign currency transaction with conversion details
+                $origCurr = $val_c_str;
+                $origAmt = (float)$val_b;
+                $rate = (float)$val_d;
+            } else {
+                // BDT local currency transaction (val_b/c/d are user_id or gateway internals, not currency rates)
+                $origCurr = 'BDT';
+                $origAmt = (float)($d['base_fair'] ?? $d['amount'] ?? $p->amount);
+                $rate = 1.0;
+            }
+
+            $pIds = json_decode($order->paper_ids, true);
+            if (is_array($pIds) && count($pIds) > 0) {
+                $count = count($pIds);
+                foreach ($pIds as $pid) {
+                    $paperPaymentMap[$pid] = [
+                        'payment_id' => $p->id,
+                        'tran_id' => $d['tran_id'] ?? $p->reff_id,
+                        'bank_tran_id' => $d['bank_tran_id'] ?? null,
+                        'val_id' => $d['val_id'] ?? null,
+                        'tran_date' => $d['tran_date'] ?? ($p->created_at ? $p->created_at->format('Y-m-d H:i:s') : null),
+                        'card_type' => $d['card_type'] ?? null,
+                        'card_brand' => $d['card_brand'] ?? null,
+                        'base_fair' => $baseFair / $count,
+                        'orig_amount' => $origAmt / $count,
+                        'orig_currency' => $origCurr,
+                        'exchange_rate' => $rate,
+                        'gateway' => $p->getaway
+                    ];
+                }
+            }
+
+            $totalBaseFairBDT += $baseFair;
+            if (!isset($currencySummary[$origCurr])) {
+                $currencySummary[$origCurr] = ['count' => 0, 'amount' => 0, 'symbol' => $origCurr];
+            }
+            $currencySummary[$origCurr]['count']++;
+            $currencySummary[$origCurr]['amount'] += $origAmt;
+        }
+
+        // 4. Eager load paid papers with authors and user profile
+        $papers = Paper::where('payment_status', '1')
+            ->with(['user.profile.country', 'authors.country', 'track', 'subTrack'])
+            ->latest('id')
+            ->get();
+
+        // 5. Aggregate summary stats
+        $uniqueUsersCount = $papers->pluck('user_id')->unique()->count();
+        $totalPaidPapersCount = $papers->count();
+
+        $totalAuthorMembersCount = 0;
+        $uniqueAuthorEmails = [];
+        foreach ($papers as $paper) {
+            $totalAuthorMembersCount += $paper->authors->count();
+            foreach ($paper->authors as $a) {
+                if ($a->email) {
+                    $uniqueAuthorEmails[strtolower(trim($a->email))] = true;
+                } else {
+                    $uniqueAuthorEmails[strtolower(trim($a->name))] = true;
+                }
+            }
+        }
+        $uniqueAuthorsCount = count($uniqueAuthorEmails);
+
+        // Dashboard Profile Table Financial Overview
+        $dashboardCurrencyStats = DB::table('profiles')
+            ->selectRaw('currency,
+                         COUNT(*) as total_users,
+                         SUM(CASE WHEN payment_status IN ("1", "2") THEN pay_amount ELSE 0 END) as paid_amount,
+                         SUM(CASE WHEN payment_status = "0" THEN pay_amount ELSE 0 END) as unpaid_amount,
+                         SUM(CASE WHEN is_author = 1 AND payment_status IN ("1", "2") THEN pay_amount ELSE 0 END) as author_paid_amt,
+                         SUM(CASE WHEN is_author = 1 AND payment_status = "0" THEN pay_amount ELSE 0 END) as author_unpaid_amt,
+                         SUM(CASE WHEN is_author = 0 AND payment_status IN ("1", "2") THEN pay_amount ELSE 0 END) as participant_paid_amt,
+                         SUM(CASE WHEN is_author = 0 AND payment_status = "0" THEN pay_amount ELSE 0 END) as participant_unpaid_amt')
+            ->whereNotNull('currency')
+            ->groupBy('currency')
+            ->get()
+            ->keyBy('currency');
+
+        $tracks = Track::orderBy('name', 'asc')->get();
+
+        return view('admin.reports.paper_payments', compact(
+            'dashboardCurrencyStats',
+            'papers',
+            'paperPaymentMap',
+            'uniqueUsersCount',
+            'totalPaidPapersCount',
+            'totalAuthorMembersCount',
+            'uniqueAuthorsCount',
+            'totalBaseFairBDT',
+            'currencySummary',
+            'tracks'
+        ));
+    }
+
 }

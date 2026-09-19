@@ -345,6 +345,18 @@
                     </a>
                 </li>
                 @endcan
+                @if(Gate::check('payment_report') || Gate::check('track_report') || Gate::check('admin_report'))
+                <li class="nav-item">
+                    <a href="{{ route("admin.paper-payments-report") }}" class="nav-link {{ request()->is('admin/paper-payments-report*') ? 'active' : '' }}">
+                        <i class="fa-fw fas fa-file-invoice-dollar">
+
+                        </i>
+                        <p>
+                            <span>Paper Payments Report</span>
+                        </p>
+                    </a>
+                </li>
+                @endif
                 @can('schedule_access')
                     <li class="nav-item">
                         <a href="{{ route("admin.schedules.index") }}" class="nav-link {{ request()->is('admin/schedules') || request()->is('admin/schedules/*') ? 'active' : '' }}">

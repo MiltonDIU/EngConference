@@ -151,6 +151,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
 
     Route::get('/', [DashboardController::class, 'index'])->name('home');
     Route::get('tracks-report', [DashboardController::class, 'tracksReport'])->name('tracks-report');
+    Route::get('paper-payments-report', [DashboardController::class, 'paperPaymentsReport'])->name('paper-payments-report');
     // Permissions
     Route::delete('permissions/destroy', [PermissionsController::class,'massDestroy'])->name('permissions.massDestroy');
     Route::resource('permissions', PermissionsController::class);
