@@ -44,6 +44,7 @@ use App\Http\Controllers\Admin\CommitteeTypeController;
 use App\Http\Controllers\Admin\CommitteeController;
 use App\Http\Controllers\Admin\ConferenceMemberController;
 use App\Http\Controllers\Admin\PaperController;
+use App\Http\Controllers\Admin\PaperFileController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -309,6 +310,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
     Route::post('papers/{paper}/review', [PaperController::class, 'review'])->name('papers.review');
     Route::post('papers/{paper}/approve', [PaperController::class, 'approve'])->name('papers.approve');
     Route::post('papers/{paper}/reject', [PaperController::class, 'reject'])->name('papers.reject');
+    Route::get('papers/{paper}/files/{paperFile}/download', [PaperFileController::class, 'download'])->name('papers.files.download');
+    Route::get('papers/{paper}/files/{paperFile}/preview', [PaperFileController::class, 'preview'])->name('papers.files.preview');
 });
 
     // Paper Submission (Post-registration)
@@ -336,6 +339,9 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     Route::get('papers/{paper}/edit', [App\Http\Controllers\Admin\PaperController::class, 'edit'])->name('papers.edit');
     Route::put('papers/{paper}', [App\Http\Controllers\Admin\PaperController::class, 'update'])->name('papers.update');
     Route::get('papers/{paper}/pricing', [App\Http\Controllers\Admin\PaperController::class, 'getPaperPricing'])->name('papers.pricing');
+    Route::post('papers/{paper}/files/{type}', [PaperFileController::class, 'store'])
+        ->whereIn('type', ['full_paper', 'presentation'])
+        ->name('papers.files.store');
 
     // Payments
     Route::get('set/payment/{data}', [PaymentController::class, 'setPayment'])->name('setPayment');

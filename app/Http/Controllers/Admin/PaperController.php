@@ -41,11 +41,12 @@ class PaperController extends Controller
             $user = Auth::user();
 
             if ($user->roles->contains('id', 3)) {
-                $query = Paper::select('papers.*')->where('user_id', $user->id)->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country');
+                $query = Paper::select('papers.*')->where('user_id', $user->id)->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country', 'files');
             } else {
                 abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-                $query = Paper::select('papers.*')->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country')->orderBy('id', 'desc');
+                $query = Paper::select('papers.*')->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country', 'files')->orderBy('id', 'desc');
             }
+            $canDownloadFiles = !$user->roles->contains('id', 3) && Gate::allows('paper_access');
 
             // Apply Filters
             if ($request->filled('status')) {
@@ -90,6 +91,41 @@ class PaperController extends Controller
                     });
                 });
             }
+
+            if ($request->filled('file_status')) {
+                // e.g. "full_paper:submitted" or "presentation:missing" (approved & paid papers only)
+                [$fileType, $fileState] = array_pad(explode(':', $request->file_status, 2), 2, null);
+                if (isset(\App\Services\PaperFileService::TYPES[$fileType]) && in_array($fileState, ['submitted', 'missing'], true)) {
+                    $query->where('status', 'approved')->where('payment_status', '1');
+                    $fileState === 'submitted'
+                        ? $query->whereHas('files', fn ($q) => $q->where('type', $fileType))
+                        : $query->whereDoesntHave('files', fn ($q) => $q->where('type', $fileType));
+                }
+            }
+
+            $renderFileCell = function ($row, string $type) use ($canDownloadFiles) {
+                $latest = $row->latestFile($type);
+                if (!$latest) {
+                    return $row->isApprovedAndPaid()
+                        ? '<span class="badge badge-light border text-muted">Not submitted</span>'
+                        : '<span class="text-muted">-</span>';
+                }
+                $label = '<i class="fas fa-check-circle mr-1"></i>v' . $latest->version . ' &middot; ' . $latest->created_at->format('M d, Y');
+                if ($canDownloadFiles) {
+                    $downloadUrl = route('admin.papers.files.download', [$row->id, $latest->id]);
+                    $html = '<a href="' . $downloadUrl . '" class="badge badge-success" title="Download ' . e($latest->file_name) . '">'
+                        . $label . ' <i class="fas fa-download ml-1"></i></a>';
+                    if ($kind = \App\Services\PaperFileService::previewKind($latest)) {
+                        $html .= ' <a href="#" class="badge badge-info paper-file-preview-btn" title="View ' . e($latest->file_name) . '"'
+                            . ' data-kind="' . $kind . '"'
+                            . ' data-url="' . route('admin.papers.files.preview', [$row->id, $latest->id]) . '"'
+                            . ' data-download-url="' . $downloadUrl . '"'
+                            . ' data-name="' . e($latest->file_name) . '"><i class="fas fa-eye"></i></a>';
+                    }
+                    return '<span class="text-nowrap">' . $html . '</span>';
+                }
+                return '<span class="badge badge-success" title="' . e($latest->original_name) . '">' . $label . '</span>';
+            };
 
             return DataTables::of($query)
                 ->filterColumn('designation', function($q, $keyword) {
@@ -174,14 +210,24 @@ class PaperController extends Controller
                         }
                     }
 
+                    $filesBtn = '';
+                    if (Auth::user()->roles->contains('id', 3) && $row->user_id === Auth::id() && $row->isApprovedAndPaid()) {
+                        $filesBtn = ' <a href="'.$viewRoute.'#paper-files" class="btn btn-sm btn-success ml-1" title="Upload Full Paper & Presentation">
+                                        <i class="fas fa-upload mr-1"></i> Files
+                                    </a>';
+                    }
+
                     return '<div class="btn-group shadow-sm">
                                 <a href="'.$viewRoute.'" class="btn btn-sm btn-white border text-primary" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 '.$editBtn.'
                                 '.$payBtn.'
+                                '.$filesBtn.'
                             </div>';
                 })
+                ->addColumn('full_paper', fn ($row) => $renderFileCell($row, \App\Models\PaperFile::TYPE_FULL_PAPER))
+                ->addColumn('presentation', fn ($row) => $renderFileCell($row, \App\Models\PaperFile::TYPE_PRESENTATION))
                 ->editColumn('submission_id', function ($row) {
                     return '<span class="font-weight-bold text-primary">'.$row->submission_id.'</span>';
                 })
@@ -317,7 +363,7 @@ class PaperController extends Controller
                 ->editColumn('created_at', function ($row) {
                     return $row->created_at ? $row->created_at->format('M d, Y') : '';
                 })
-                ->rawColumns(['actions', 'submission_id', 'submitted_by', 'title', 'authors', 'total_member', 'track', 'status'])
+                ->rawColumns(['actions', 'submission_id', 'submitted_by', 'title', 'authors', 'total_member', 'track', 'status', 'full_paper', 'presentation'])
                 ->make(true);
         }
 
@@ -338,7 +384,8 @@ class PaperController extends Controller
 
         $tracks = Track::all();
         $countries = Country::orderBy('name', 'asc')->get();
-        return view('admin.papers.index', compact('tracks', 'countries', 'myProfile', 'unpaidPapers'));
+        $canDownloadFiles = $user && !$user->roles->contains('id', 3) && Gate::allows('paper_access');
+        return view('admin.papers.index', compact('tracks', 'countries', 'myProfile', 'unpaidPapers', 'canDownloadFiles'));
     }
 
     public function getPaperPricing(Paper $paper)
@@ -398,9 +445,12 @@ class PaperController extends Controller
             abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         }
 
-        $paper->load('authors', 'user', 'reviewHistory.reviewer');
+        $paper->load('authors', 'user', 'reviewHistory.reviewer', 'files.uploader');
 
-        return view('admin.papers.show', compact('paper'));
+        $fileSlots = \App\Services\PaperFileService::uploadContext($paper, $user);
+        $canDownloadFiles = !$user->roles->contains('id', 3) && Gate::allows('paper_access');
+
+        return view('admin.papers.show', compact('paper', 'fileSlots', 'canDownloadFiles'));
     }
 
     public function create()

@@ -7,6 +7,56 @@ Dashboard
 
 <div class="card-body">
 <div class="content">
+@if($storageStatus)
+    @php
+        $fmt = fn ($b) => \App\Services\StorageMonitorService::formatBytes($b);
+        $st = $storageStatus;
+        $usedPct = ($st['total'] ?? 0) > 0 ? min(100, round($st['used'] / $st['total'] * 100)) : null;
+        $tone = $st['free'] === null ? 'secondary' : ($st['is_low'] ? 'danger' : 'success');
+    @endphp
+    <div class="alert alert-{{ $tone }} shadow-sm border-0 mb-4" style="border-radius: 12px; border-left: 6px solid {{ $tone === 'danger' ? '#dc3545' : ($tone === 'success' ? '#28a745' : '#6c757d') }} !important;">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div class="mb-2 mr-3">
+                <h5 class="font-weight-bold mb-1">
+                    <i class="fas fa-circle mr-1 text-{{ $tone }}"></i>
+                    <i class="fas fa-hdd mr-1"></i>
+                    @if($st['free'] === null)
+                        Storage status unavailable
+                    @elseif($st['is_low'])
+                        Low storage: only {{ $fmt($st['free']) }} free
+                    @else
+                        Storage OK: {{ $fmt($st['free']) }} free
+                    @endif
+                </h5>
+                @if($st['free'] !== null)
+                    <div class="small">
+                        {{ $fmt($st['used']) }} used of {{ $fmt($st['total']) }} ({{ $st['source'] }})
+                        &middot; Paper uploads: {{ $fmt($st['paper_files_bytes']) }} in {{ $st['paper_files_count'] }} file(s)
+                    </div>
+                    <div class="small mt-1">
+                        Max space still needed for {{ $st['estimate']['missing']['full_paper'] }} full paper(s) &times; {{ $st['estimate']['max_size_mb']['full_paper'] }} MB
+                        + {{ $st['estimate']['missing']['presentation'] }} presentation(s) &times; {{ $st['estimate']['max_size_mb']['presentation'] }} MB
+                        ({{ $st['estimate']['approved_papers'] }} approved abstracts): <strong>{{ $fmt($st['estimate']['bytes']) }}</strong>
+                        @if($st['is_low'])
+                            <br><strong><i class="fas fa-exclamation-triangle mr-1"></i> Free space is below the safe limit (minimum {{ $st['min_free_gb'] }} GB or the estimate). Please free up space or upgrade the hosting storage before more files are uploaded.</strong>
+                        @endif
+                    </div>
+                @endif
+            </div>
+            <div class="text-right">
+                <a href="{{ route('admin.home', ['refresh_storage' => 1]) }}" class="btn btn-sm btn-light border" title="Re-check now">
+                    <i class="fas fa-sync-alt mr-1"></i> Refresh
+                </a>
+                <small class="d-block mt-1 opacity-75">Checked {{ $st['checked_at']->diffForHumans() }}</small>
+            </div>
+        </div>
+        @if($usedPct !== null)
+            <div class="progress mt-2" style="height: 8px; border-radius: 4px;">
+                <div class="progress-bar bg-{{ $tone }}" role="progressbar" style="width: {{ $usedPct }}%;" aria-valuenow="{{ $usedPct }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        @endif
+    </div>
+@endif
 @can('admin_report')
 <div class="row mb-4">
     <div class="col-xl col-lg-4 col-md-6 col-sm-6 mb-3 mb-xl-0">
@@ -351,6 +401,8 @@ We are pleased to inform you that your payment has been <strong>successfully</st
                         <strong>Info!</strong> We have received your registration details; however, it appears that the payment for your account has not been completed yet. <strong>Please note that your seat is not confirmed until the payment is processed successfully</strong>
                     </div>
                 @endif
+
+                @include('admin.papers.partials.file-upload-reminder')
 
                 @if($unpaidPapers->count() > 0)
                     @if(!auth()->user()->profile->author_list_confirmed)

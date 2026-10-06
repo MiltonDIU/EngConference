@@ -250,8 +250,12 @@ class DashboardController extends Controller
             ];
         }
 
+        $storageStatus = Gate::allows('admin_report') && !$user->roles->contains('id', 3)
+            ? \App\Services\StorageMonitorService::status(request()->boolean('refresh_storage'))
+            : null;
+
         return view('admin.home', compact(
-            'settings', 'profiles', 'total', 'totalParticipants', 'totalAuthors', 'totalSubmitters', 'totalActualAuthors', 'paidParticipants', 'schedules', 'allSchedules', 'blogs',
+            'storageStatus', 'settings', 'profiles', 'total', 'totalParticipants', 'totalAuthors', 'totalSubmitters', 'totalActualAuthors', 'paidParticipants', 'schedules', 'allSchedules', 'blogs',
             'eventActivities', 'aminities', 'topTracks', 'totalTaka',
             'totalPayAmount', 'allowedDomain', 'currencyStats',
             'totalPapers', 'pendingPapers', 'approvedPapers', 'rejectedPapers',

@@ -155,6 +155,8 @@
                 </div>
             @endif
 
+            @include('admin.papers.partials.file-upload-reminder')
+
             @php
                 $unpaidPapers = \App\Models\Paper::where('user_id', auth()->id())
                     ->where('status', 'approved')

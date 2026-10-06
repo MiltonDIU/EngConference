@@ -131,7 +131,7 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-4">
             <div class="row mb-3">
-                <div class="col-md-4 mb-3 mb-md-0">
+                <div class="col-md-3 mb-3 mb-md-0">
                     <label class="small font-weight-bold text-muted mb-1">
                         <i class="fas fa-info-circle mr-1 text-primary"></i> Status Filter
                     </label>
@@ -142,7 +142,7 @@
                         <option value="rejected">Rejected</option>
                     </select>
                 </div>
-                <div class="col-md-4 mb-3 mb-md-0">
+                <div class="col-md-3 mb-3 mb-md-0">
                     <label class="small font-weight-bold text-muted mb-1">
                         <i class="fas fa-road mr-1 text-primary"></i> Track Filter
                     </label>
@@ -153,7 +153,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 mb-3 mb-md-0">
+                <div class="col-md-3 mb-3 mb-md-0">
                     <label class="small font-weight-bold text-muted mb-1">
                         <i class="fas fa-credit-card mr-1 text-primary"></i> Payment Filter
                     </label>
@@ -161,6 +161,18 @@
                         <option value="">All Payment Status</option>
                         <option value="paid">Paid</option>
                         <option value="unpaid">Unpaid</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <label class="small font-weight-bold text-muted mb-1">
+                        <i class="fas fa-file-upload mr-1 text-primary"></i> Full Paper / Presentation
+                    </label>
+                    <select id="filter_file_status" class="form-control form-control-sm select2">
+                        <option value="">All</option>
+                        <option value="full_paper:submitted">Full Paper Submitted</option>
+                        <option value="full_paper:missing">Full Paper Not Submitted</option>
+                        <option value="presentation:submitted">Presentation Submitted</option>
+                        <option value="presentation:missing">Presentation Not Submitted</option>
                     </select>
                 </div>
             </div>
@@ -218,6 +230,8 @@
                             <th>Currency</th>
                             <th>Track</th>
                             <th class="text-center">Status</th>
+                            <th class="text-center">Full Paper</th>
+                            <th class="text-center">Presentation</th>
                             <th class="text-center">Date</th>
                             <th>Abstract</th>
                             <th class="text-right">Actions</th>
@@ -228,6 +242,10 @@
         </div>
     </div>
 </div>
+
+@if($canDownloadFiles)
+    @include('admin.papers.partials.file-preview')
+@endif
 
 <!-- Reusable Payment Review Modal -->
 <div class="modal fade" id="paymentReviewModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -361,14 +379,14 @@ $(function () {
             className: 'btn-default',
             text: '<i class="fas fa-file-excel mr-1 text-success"></i> Excel',
             titleAttr: 'Export to Excel',
-            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] }
         },
         {
             extend: 'csv',
             className: 'btn-default',
             text: '<i class="fas fa-file-csv mr-1 text-info"></i> CSV',
             titleAttr: 'Export to CSV',
-            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] }
         },
         {
             extend: 'pdf',
@@ -400,6 +418,7 @@ $(function () {
                 d.department = $('#filter_department').val();
                 d.institution = $('#filter_institution').val();
                 d.country_id = $('#filter_country').val();
+                d.file_status = $('#filter_file_status').val();
             }
         },
         columns: [
@@ -418,6 +437,8 @@ $(function () {
             { data: 'currency', name: 'currency', class: 'text-center', searchable: true, orderable: false },
             { data: 'track', name: 'track.name' },
             { data: 'status', name: 'status', class: 'text-center' },
+            { data: 'full_paper', name: 'full_paper', class: 'text-center', searchable: false, orderable: false },
+            { data: 'presentation', name: 'presentation', class: 'text-center', searchable: false, orderable: false },
             { data: 'created_at', name: 'created_at', class: 'text-center' },
             { data: 'abstract', name: 'abstract', visible: false, searchable: false, orderable: false },
             { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false, class: 'text-right' }
@@ -431,7 +452,7 @@ $(function () {
     });
 
     // Filter Change Listeners
-    $('#filter_status, #filter_track, #filter_payment, #filter_country').on('change', function() {
+    $('#filter_status, #filter_track, #filter_payment, #filter_country, #filter_file_status').on('change', function() {
         table.draw();
     });
     $('#filter_department, #filter_institution').on('keyup', function() {
@@ -440,7 +461,7 @@ $(function () {
 
     // Reset Filters
     $('#reset_filters').on('click', function() {
-        $('#filter_status, #filter_track, #filter_payment, #filter_country').val('').trigger('change');
+        $('#filter_status, #filter_track, #filter_payment, #filter_country, #filter_file_status').val('').trigger('change');
         $('#filter_department, #filter_institution').val('');
         table.draw();
     });

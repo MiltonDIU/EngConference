@@ -27,6 +27,19 @@
             </div>
         </div>
 
+        @if(session('message'))
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 8px;">
+                <i class="fas fa-check-circle mr-2 text-success"></i> {{ session('message') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 8px;">
+                <i class="fas fa-exclamation-circle mr-2 text-danger"></i> {{ session('error') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+        @endif
+
         <!-- Abstract Content Card -->
         <div class="card shadow-sm border-0 mb-4 rounded-lg">
             <div class="card-header bg-white border-bottom py-3">
@@ -148,6 +161,124 @@
             </div>
         </div>
 
+        @php
+            $isPaperOwner = auth()->id() === $paper->user_id;
+            $showFileSection = $paper->isApprovedAndPaid() || $paper->files->isNotEmpty();
+        @endphp
+        @if($showFileSection && ($isPaperOwner || $canDownloadFiles))
+        <!-- Full Paper & Presentation Section -->
+        <div class="card shadow-sm border-0 rounded-lg mt-4" id="paper-files">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-dark">
+                    <i class="fas fa-file-upload mr-2 text-primary"></i> Full Paper & Presentation
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach($fileSlots as $slot)
+                    <div class="col-md-6 mb-3">
+                        <div class="border rounded p-3 h-100 bg-light-soft">
+                            <h6 class="font-weight-bold text-dark mb-1">
+                                <i class="fas {{ $slot['type'] === 'full_paper' ? 'fa-file-word text-primary' : 'fa-file-powerpoint text-danger' }} mr-1"></i>
+                                {{ $slot['label'] }}
+                            </h6>
+                            <small class="text-muted d-block mb-3">
+                                Allowed: {{ strtoupper(implode(', ', $slot['extensions'])) }} only &middot; Max {{ $slot['max_size_mb'] }} MB
+                            </small>
+
+                            @if($slot['latest'])
+                                <div class="alert alert-success py-2 px-3 small mb-3">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Submitted: <strong>{{ $slot['latest']->original_name }}</strong>
+                                    <span class="d-block text-muted">
+                                        Version {{ $slot['latest']->version }} &middot; {{ $slot['latest']->readable_size }} &middot; {{ $slot['latest']->created_at->format('M d, Y h:i A') }}
+                                    </span>
+                                </div>
+                            @else
+                                <div class="alert alert-light border py-2 px-3 small mb-3">
+                                    <i class="fas fa-info-circle mr-1"></i> Not submitted yet.
+                                </div>
+                            @endif
+
+                            @if($isPaperOwner)
+                                @if($slot['can_upload'])
+                                    <form action="{{ route('papers.files.store', [$paper->id, $slot['type']]) }}" method="POST" enctype="multipart/form-data" class="paper-file-form">
+                                        @csrf
+                                        <div class="form-group mb-2">
+                                            <input type="file" name="file" required
+                                                   accept="{{ $slot['accept'] }}"
+                                                   data-extensions="{{ implode(',', $slot['extensions']) }}"
+                                                   data-max-mb="{{ $slot['max_size_mb'] }}"
+                                                   data-label="{{ $slot['label'] }}"
+                                                   class="form-control-file {{ $errors->{$slot['type']}->has('file') ? 'is-invalid' : '' }}">
+                                            @if($errors->{$slot['type']}->has('file'))
+                                                <div class="invalid-feedback d-block">{{ $errors->{$slot['type']}->first('file') }}</div>
+                                            @endif
+                                            <div class="invalid-feedback paper-file-client-error"></div>
+                                        </div>
+                                        @if($slot['latest'])
+                                            <small class="text-warning d-block mb-2"><i class="fas fa-exclamation-triangle mr-1"></i> Uploading again will submit a new version.</small>
+                                        @elseif(!\App\Services\PaperFileService::isReuploadAllowed())
+                                            <small class="text-warning d-block mb-2"><i class="fas fa-exclamation-triangle mr-1"></i> You can upload this file only once. Please check it before submitting.</small>
+                                        @endif
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-upload mr-1"></i> Upload {{ $slot['label'] }}
+                                        </button>
+                                    </form>
+                                @else
+                                    <small class="text-muted d-block"><i class="fas fa-lock mr-1"></i> {{ $slot['blocked_reason'] }}</small>
+                                @endif
+                            @endif
+
+                            @if($canDownloadFiles && $slot['versions']->isNotEmpty())
+                                <table class="table table-sm table-bordered bg-white mb-0 mt-2 small">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th>Ver.</th>
+                                            <th>File</th>
+                                            <th>Uploaded</th>
+                                            <th class="text-center">Download</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($slot['versions'] as $file)
+                                        <tr>
+                                            <td class="font-weight-bold">v{{ $file->version }}</td>
+                                            <td>
+                                                <div class="text-dark">{{ $file->file_name }}</div>
+                                                <small class="text-muted">{{ $file->original_name }} &middot; {{ $file->readable_size }}</small>
+                                            </td>
+                                            <td>
+                                                {{ $file->created_at->format('M d, Y h:i A') }}
+                                                <small class="text-muted d-block">{{ $file->uploader?->name ?? 'N/A' }}</small>
+                                            </td>
+                                            <td class="text-center text-nowrap">
+                                                @if(\App\Services\PaperFileService::isPreviewable($file))
+                                                    <button type="button" class="btn btn-sm btn-outline-info paper-file-preview-btn" title="View"
+                                                            data-kind="{{ \App\Services\PaperFileService::previewKind($file) }}"
+                                                            data-url="{{ route('admin.papers.files.preview', [$paper->id, $file->id]) }}"
+                                                            data-download-url="{{ route('admin.papers.files.download', [$paper->id, $file->id]) }}"
+                                                            data-name="{{ $file->file_name }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                @endif
+                                                <a href="{{ route('admin.papers.files.download', [$paper->id, $file->id]) }}" class="btn btn-sm btn-outline-primary" title="Download">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
+
         @if($paper->reviewHistory && $paper->reviewHistory->count() > 0)
         <!-- Review History Section -->
         <div class="card shadow-sm border-0 rounded-lg mt-4">
@@ -192,6 +323,10 @@
         @endif
     </div>
 </div>
+
+@if($canDownloadFiles)
+    @include('admin.papers.partials.file-preview')
+@endif
 
 @can('paper_access')
 <!-- Review Modal -->
@@ -244,4 +379,43 @@
     .bg-gray-50 { background-color: #f9fafb; }
     .shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
 </style>
+
+<script>
+    // Quick client-side check so wrong formats / oversized files are caught before upload.
+    // The server validates again; this only improves the experience.
+    document.querySelectorAll('.paper-file-form').forEach(function (form) {
+        var input = form.querySelector('input[type="file"]');
+        var errorBox = form.querySelector('.paper-file-client-error');
+
+        function check() {
+            var file = input.files[0];
+            var message = '';
+            if (file) {
+                var allowed = input.dataset.extensions.split(',');
+                var ext = file.name.split('.').pop().toLowerCase();
+                if (file.name.indexOf('.') === -1 || allowed.indexOf(ext) === -1) {
+                    message = 'Only .' + allowed.join(' / .') + ' files are allowed for the ' + input.dataset.label + '.';
+                } else if (file.size > parseInt(input.dataset.maxMb, 10) * 1024 * 1024) {
+                    message = 'The ' + input.dataset.label + ' must not be larger than ' + input.dataset.maxMb + ' MB.';
+                }
+            }
+            errorBox.textContent = message;
+            errorBox.classList.toggle('d-block', message !== '');
+            input.classList.toggle('is-invalid', message !== '');
+            return message === '';
+        }
+
+        input.addEventListener('change', check);
+        form.addEventListener('submit', function (e) {
+            if (!check()) {
+                e.preventDefault();
+                return;
+            }
+            var btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Uploading...';
+        });
+    });
+</script>
+
 @endsection

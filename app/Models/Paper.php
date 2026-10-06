@@ -65,4 +65,22 @@ class Paper extends Model
     {
         return $this->hasMany(PaperReview::class)->latest();
     }
+
+    /**
+     * Full paper / presentation uploads, newest version first.
+     */
+    public function files()
+    {
+        return $this->hasMany(PaperFile::class)->orderByDesc('version');
+    }
+
+    public function latestFile(string $type): ?PaperFile
+    {
+        return $this->files->where('type', $type)->first();
+    }
+
+    public function isApprovedAndPaid(): bool
+    {
+        return $this->status === 'approved' && $this->payment_status == 1;
+    }
 }
