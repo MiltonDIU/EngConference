@@ -13,12 +13,15 @@ Dashboard
         $st = $storageStatus;
         $usedPct = ($st['total'] ?? 0) > 0 ? min(100, round($st['used'] / $st['total'] * 100)) : null;
         $tone = $st['free'] === null ? 'secondary' : ($st['is_low'] ? 'danger' : 'success');
+        // Explicit colours so the theme's alert/progress styles can't wash them out
+        $toneColor = ['danger' => '#dc3545', 'success' => '#28a745', 'secondary' => '#6c757d'][$tone];
     @endphp
-    <div class="alert alert-{{ $tone }} shadow-sm border-0 mb-4" style="border-radius: 12px; border-left: 6px solid {{ $tone === 'danger' ? '#dc3545' : ($tone === 'success' ? '#28a745' : '#6c757d') }} !important;">
+    <div class="card shadow-sm mb-4" style="border-radius: 12px; border: 1px solid #dee2e6; border-left: 6px solid {{ $toneColor }}; background: #fff; color: #212529;">
+        <div class="card-body p-3">
         <div class="d-flex justify-content-between align-items-start flex-wrap">
             <div class="mb-2 mr-3">
-                <h5 class="font-weight-bold mb-1">
-                    <i class="fas fa-circle mr-1 text-{{ $tone }}"></i>
+                <h5 class="font-weight-bold mb-1" style="color: {{ $toneColor }};">
+                    <i class="fas fa-circle mr-1"></i>
                     <i class="fas fa-hdd mr-1"></i>
                     @if($st['free'] === null)
                         Storage status unavailable
@@ -29,32 +32,43 @@ Dashboard
                     @endif
                 </h5>
                 @if($st['free'] !== null)
-                    <div class="small">
-                        {{ $fmt($st['used']) }} used of {{ $fmt($st['total']) }} ({{ $st['source'] }})
+                    <div class="small" style="color: #495057;">
+                        Total {{ $fmt($st['total']) }} ({{ $st['source'] }})
                         &middot; Paper uploads: {{ $fmt($st['paper_files_bytes']) }} in {{ $st['paper_files_count'] }} file(s)
                     </div>
-                    <div class="small mt-1">
+                    <div class="small mt-1" style="color: #495057;">
                         Max space still needed for {{ $st['estimate']['missing']['full_paper'] }} full paper(s) &times; {{ $st['estimate']['max_size_mb']['full_paper'] }} MB
                         + {{ $st['estimate']['missing']['presentation'] }} presentation(s) &times; {{ $st['estimate']['max_size_mb']['presentation'] }} MB
-                        ({{ $st['estimate']['approved_papers'] }} approved abstracts): <strong>{{ $fmt($st['estimate']['bytes']) }}</strong>
+                        ({{ $st['estimate']['eligible_papers'] ?? 0 }} approved &amp; paid papers): <strong>{{ $fmt($st['estimate']['bytes']) }}</strong>
                         @if($st['is_low'])
-                            <br><strong><i class="fas fa-exclamation-triangle mr-1"></i> Free space is below the safe limit (minimum {{ $st['min_free_gb'] }} GB or the estimate). Please free up space or upgrade the hosting storage before more files are uploaded.</strong>
+                            <br><strong style="color: #dc3545;"><i class="fas fa-exclamation-triangle mr-1"></i> Free space is below the safe limit (minimum {{ $st['min_free_gb'] }} GB or the estimate). Please free up space or upgrade the hosting storage before more files are uploaded.</strong>
                         @endif
                     </div>
                 @endif
             </div>
             <div class="text-right">
-                <a href="{{ route('admin.home', ['refresh_storage' => 1]) }}" class="btn btn-sm btn-light border" title="Re-check now">
+                <a href="{{ route('admin.home', ['refresh_storage' => 1]) }}" class="btn btn-sm" title="Re-check now"
+                   style="background: #fff; color: #343a40; border: 1px solid #6c757d;">
                     <i class="fas fa-sync-alt mr-1"></i> Refresh
                 </a>
-                <small class="d-block mt-1 opacity-75">Checked {{ $st['checked_at']->diffForHumans() }}</small>
+                <small class="d-block mt-1" style="color: #6c757d;">Checked {{ $st['checked_at']->diffForHumans() }}</small>
             </div>
         </div>
         @if($usedPct !== null)
-            <div class="progress mt-2" style="height: 8px; border-radius: 4px;">
-                <div class="progress-bar bg-{{ $tone }}" role="progressbar" style="width: {{ $usedPct }}%;" aria-valuenow="{{ $usedPct }}" aria-valuemin="0" aria-valuemax="100"></div>
+            <div class="d-flex justify-content-between small font-weight-bold mt-2 mb-1">
+                <span style="color: {{ $toneColor }};">
+                    <i class="fas fa-square mr-1"></i> Used: {{ $fmt($st['used']) }} ({{ $usedPct }}%)
+                </span>
+                <span style="color: #495057;">
+                    <i class="far fa-square mr-1"></i> Free: {{ $fmt($st['free']) }} ({{ 100 - $usedPct }}%)
+                </span>
+            </div>
+            <div style="height: 14px; border-radius: 7px; background: #e9ecef; border: 1px solid #ced4da; overflow: hidden;"
+                 role="progressbar" aria-valuenow="{{ $usedPct }}" aria-valuemin="0" aria-valuemax="100" title="{{ $usedPct }}% used">
+                <div style="height: 100%; width: {{ max($usedPct, 1) }}%; background: {{ $toneColor }};"></div>
             </div>
         @endif
+        </div>
     </div>
 @endif
 @can('admin_report')
@@ -414,19 +428,19 @@ We are pleased to inform you that your payment has been <strong>successfully</st
                             </div>
                             <div class="card-body bg-white p-4">
                                 <p class="text-muted mb-4">
-                                    Before proceeding to payment, please confirm the student status of all authors for your approved abstract(s). 
+                                    Before proceeding to payment, please confirm the student status of all authors for your approved abstract(s).
                                     <strong>Bangladeshi student authors qualify for a flat registration fee of 2,000 BDT.</strong>
                                 </p>
-                                
+
                                 <form action="{{ route('profile.confirm-student-status') }}" method="POST">
                                     @csrf
-                                    
+
                                     @foreach($unpaidPapers as $paper)
                                         <div class="mb-4 p-3 bg-light rounded border">
                                             <h6 class="font-weight-bold text-primary mb-3">
                                                 <i class="fas fa-file-alt mr-1"></i> Paper ID: {{ $paper->submission_id }} - {{ $paper->title }}
                                             </h6>
-                                            
+
                                             <table class="table table-sm table-bordered bg-white mb-0">
                                                 <thead>
                                                     <tr class="bg-light">
@@ -449,7 +463,7 @@ We are pleased to inform you that your payment has been <strong>successfully</st
                                                                 <div class="student-status-toggle">
                                                                     <input type="radio" id="student_yes_{{ $author->id }}" name="authors[{{ $author->id }}][is_student]" value="1" {{ $author->is_student ? 'checked' : '' }} required>
                                                                     <label for="student_yes_{{ $author->id }}" class="toggle-btn toggle-yes">Yes</label>
-                                                                    
+
                                                                     <input type="radio" id="student_no_{{ $author->id }}" name="authors[{{ $author->id }}][is_student]" value="0" {{ !$author->is_student ? 'checked' : '' }} required>
                                                                     <label for="student_no_{{ $author->id }}" class="toggle-btn toggle-no">No</label>
                                                                 </div>
@@ -460,7 +474,7 @@ We are pleased to inform you that your payment has been <strong>successfully</st
                                             </table>
                                         </div>
                                     @endforeach
-                                    
+
                                     <div class="text-right mt-3">
                                         <button type="submit" class="btn btn-warning btn-lg font-weight-bold shadow-sm">
                                             <i class="fas fa-check-circle mr-1"></i> Confirm & Proceed to Payment
@@ -528,8 +542,8 @@ We are pleased to inform you that your payment has been <strong>successfully</st
                                                                                 $authorFee = $pricing['author_fees'][$author->id] ?? $pricing['individual_final_price'];
                                                                             @endphp
                                                                             <li>
-                                                                                {{ $author->name }} 
-                                                                                @if($author->designation)<span class="text-muted">({{ $author->designation }})</span>@endif 
+                                                                                {{ $author->name }}
+                                                                                @if($author->designation)<span class="text-muted">({{ $author->designation }})</span>@endif
                                                                                 - <strong class="text-primary">{{ $pricing['currency'] }} {{ number_format($authorFee, 2) }}</strong>
                                                                             </li>
                                                                         @endforeach
@@ -1028,7 +1042,7 @@ labels[i].style.color = '#ddd';
         seriesPapers.strokeWidth = 3;
         seriesPapers.stroke = am4core.color("#ffc107");
         seriesPapers.fill = am4core.color("#ffc107");
-        
+
         // Add bullets to LineSeries
         var bullet = seriesPapers.bullets.push(new am4charts.CircleBullet());
         bullet.circle.radius = 4;

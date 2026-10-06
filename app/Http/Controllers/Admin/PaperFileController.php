@@ -56,21 +56,21 @@ class PaperFileController extends Controller
     }
 
     /**
-     * Admin-only download of any stored version.
+     * Download of a stored version: admins any paper's files, authors only their own.
      */
     public function download(Paper $paper, PaperFile $paperFile)
     {
-        $disk = $this->authorizeAdminFile($paper, $paperFile);
+        $disk = $this->authorizeFile($paper, $paperFile);
 
         return $disk->download($paperFile->path, $paperFile->file_name);
     }
 
     /**
-     * Admin-only raw .docx / .pptx stream for the in-browser preview.
+     * Raw .docx / .pptx stream for the in-browser preview (same access as download).
      */
     public function preview(Paper $paper, PaperFile $paperFile)
     {
-        $disk = $this->authorizeAdminFile($paper, $paperFile);
+        $disk = $this->authorizeFile($paper, $paperFile);
         $kind = PaperFileService::previewKind($paperFile);
         abort_unless($kind !== null, Response::HTTP_UNPROCESSABLE_ENTITY, 'Preview is available for .docx and .pptx files only.');
 
@@ -81,11 +81,9 @@ class PaperFileController extends Controller
         ]);
     }
 
-    private function authorizeAdminFile(Paper $paper, PaperFile $paperFile)
+    private function authorizeFile(Paper $paper, PaperFile $paperFile)
     {
-        $user = Auth::user();
-        abort_if($user->roles->contains('id', 3), Response::HTTP_FORBIDDEN, '403 Forbidden');
-        abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_unless(PaperFileService::canAccessFiles($paper, Auth::user()), Response::HTTP_FORBIDDEN, '403 Forbidden');
         abort_if($paperFile->paper_id !== $paper->id, Response::HTTP_NOT_FOUND);
 
         $disk = Storage::disk($paperFile->disk);

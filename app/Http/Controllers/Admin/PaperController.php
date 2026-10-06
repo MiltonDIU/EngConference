@@ -46,7 +46,7 @@ class PaperController extends Controller
                 abort_if(Gate::denies('paper_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
                 $query = Paper::select('papers.*')->with('user.papers', 'user.profile.country', 'track', 'subTrack', 'authors.country', 'files')->orderBy('id', 'desc');
             }
-            $canDownloadFiles = !$user->roles->contains('id', 3) && Gate::allows('paper_access');
+            $isFileAdmin = \App\Services\PaperFileService::isFileAdmin($user);
 
             // Apply Filters
             if ($request->filled('status')) {
@@ -103,7 +103,9 @@ class PaperController extends Controller
                 }
             }
 
-            $renderFileCell = function ($row, string $type) use ($canDownloadFiles) {
+            $renderFileCell = function ($row, string $type) use ($isFileAdmin, $user) {
+                // Admins get links for every paper, authors for their own
+                $canDownloadFiles = $isFileAdmin || $row->user_id === $user->id;
                 $latest = $row->latestFile($type);
                 if (!$latest) {
                     return $row->isApprovedAndPaid()
@@ -384,7 +386,8 @@ class PaperController extends Controller
 
         $tracks = Track::all();
         $countries = Country::orderBy('name', 'asc')->get();
-        $canDownloadFiles = $user && !$user->roles->contains('id', 3) && Gate::allows('paper_access');
+        // Authors only list their own papers, so they can open the file links too
+        $canDownloadFiles = $user && ($user->roles->contains('id', 3) || \App\Services\PaperFileService::isFileAdmin($user));
         return view('admin.papers.index', compact('tracks', 'countries', 'myProfile', 'unpaidPapers', 'canDownloadFiles'));
     }
 
@@ -448,7 +451,7 @@ class PaperController extends Controller
         $paper->load('authors', 'user', 'reviewHistory.reviewer', 'files.uploader');
 
         $fileSlots = \App\Services\PaperFileService::uploadContext($paper, $user);
-        $canDownloadFiles = !$user->roles->contains('id', 3) && Gate::allows('paper_access');
+        $canDownloadFiles = \App\Services\PaperFileService::canAccessFiles($paper, $user);
 
         return view('admin.papers.show', compact('paper', 'fileSlots', 'canDownloadFiles'));
     }

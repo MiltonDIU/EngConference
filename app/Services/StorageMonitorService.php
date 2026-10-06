@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Process;
 
 class StorageMonitorService
 {
-    private const CACHE_KEY = 'storage_monitor_status';
+    private const CACHE_KEY = 'storage_monitor_status_v2';
     private const CACHE_SECONDS = 600;
 
 
@@ -110,29 +110,30 @@ class StorageMonitorService
     }
 
     /**
-     * Worst-case space still needed: every approved paper uploads each missing file
-     * at the maximum allowed size (full_paper / presentation_max_upload_size_mb).
+     * Worst-case space still needed: every approved & paid paper (only they can upload)
+     * uploads each missing file at the maximum allowed size.
      */
     private static function remainingUploadEstimate(): array
     {
         $settings = PaperFileService::settings();
-        $approvedPapers = Paper::where('status', 'approved')->count();
+        $eligible = fn () => Paper::where('status', 'approved')->where('payment_status', '1');
+        $eligiblePapers = $eligible()->count();
         $bytes = 0;
         $missing = [];
         $maxSizeMb = [];
 
         foreach (array_keys(PaperFileService::TYPES) as $type) {
-            $submitted = Paper::where('status', 'approved')
+            $submitted = $eligible()
                 ->whereHas('files', fn ($q) => $q->where('type', $type))
                 ->count();
 
-            $missing[$type] = max(0, $approvedPapers - $submitted);
+            $missing[$type] = max(0, $eligiblePapers - $submitted);
             $maxSizeMb[$type] = PaperFileService::maxSizeMb($type, $settings);
             $bytes += $missing[$type] * $maxSizeMb[$type] * 1048576;
         }
 
         return [
-            'approved_papers' => $approvedPapers,
+            'eligible_papers' => $eligiblePapers,
             'missing' => $missing,
             'max_size_mb' => $maxSizeMb,
             'bytes' => $bytes,

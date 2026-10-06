@@ -247,6 +247,23 @@ class PaperFileService
         return isset(self::PREVIEW_MIME_TYPES[$extension]) ? $extension : null;
     }
 
+    /**
+     * Who may download / preview a paper's files: the submitting author, or an admin.
+     */
+    public static function canAccessFiles(Paper $paper, ?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return $paper->user_id === $user->id || self::isFileAdmin($user);
+    }
+
+    public static function isFileAdmin(?User $user): bool
+    {
+        return $user && !$user->roles->contains('id', 3) && \Illuminate\Support\Facades\Gate::forUser($user)->allows('paper_access');
+    }
+
     public static function isPreviewable(PaperFile $file): bool
     {
         return self::previewKind($file) !== null;
