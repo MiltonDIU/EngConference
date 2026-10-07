@@ -58,6 +58,9 @@ Dashboard
             <div class="d-flex justify-content-between small font-weight-bold mt-2 mb-1">
                 <span style="color: {{ $toneColor }};">
                     <i class="fas fa-square mr-1"></i> Used: {{ $fmt($st['used']) }} ({{ $usedPct }}%)
+                    @if(($st['reserved'] ?? 0) > 0)
+                        <span class="font-weight-normal" style="color: #6c757d;">&middot; includes {{ $fmt($st['reserved']) }} safety reserve</span>
+                    @endif
                 </span>
                 <span style="color: #495057;">
                     <i class="far fa-square mr-1"></i> Free: {{ $fmt($st['free']) }} ({{ 100 - $usedPct }}%)

@@ -11,7 +11,10 @@ use Illuminate\Support\Facades\Process;
 
 class StorageMonitorService
 {
-    private const CACHE_KEY = 'storage_monitor_status_v2';
+    private const CACHE_KEY = 'storage_monitor_status_v3';
+
+    // Safety margin counted as already used, so the dashboard warns before the disk is really full
+    private const RESERVED_BYTES = 5 * 1073741824;
     private const CACHE_SECONDS = 600;
 
 
@@ -23,6 +26,13 @@ class StorageMonitorService
 
         return Cache::remember(self::CACHE_KEY, self::CACHE_SECONDS, function () {
             $space = self::cpanelQuota() ?? self::diskSpace();
+            $reserved = 0;
+            if ($space['free'] !== null) {
+                $reserved = min(self::RESERVED_BYTES, $space['free']);
+                $space['used'] += $reserved;
+                $space['free'] -= $reserved;
+            }
+            $space['reserved'] = $reserved;
             $estimate = self::remainingUploadEstimate();
             $minFreeGb = (float) (Setting::where('key', 'storage_min_free_gb')->value('value') ?: 5);
 
