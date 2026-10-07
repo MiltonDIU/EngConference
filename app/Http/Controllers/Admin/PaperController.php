@@ -48,6 +48,8 @@ class PaperController extends Controller
             }
             $isFileAdmin = \App\Services\PaperFileService::isFileAdmin($user);
 
+            $paidAtMap = $this->paperPaidAtMap();
+
             // Apply Filters
             if ($request->filled('status')) {
                 $query->where('status', $request->status);
@@ -365,6 +367,26 @@ class PaperController extends Controller
                 ->editColumn('created_at', function ($row) {
                     return $row->created_at ? $row->created_at->format('M d, Y') : '';
                 })
+                ->addColumn('paid_at', function ($row) use ($paidAtMap) {
+                    return ($row->payment_status == '1' && isset($paidAtMap[$row->id]))
+                        ? Carbon::parse($paidAtMap[$row->id])->format('M d, Y h:i A')
+                        : '';
+                })
+                ->orderColumn('paid_at', function ($q, $order) use ($paidAtMap) {
+                    // Paper ids in payment-time order; FIELD() gives each paper its position (0 = no payment)
+                    $ids = array_keys($paidAtMap);
+                    if (strtolower($order) === 'desc') {
+                        $ids = array_reverse($ids);
+                    }
+                    // Drop the default id ordering so this sort takes effect
+                    $q->reorder();
+                    if ($ids) {
+                        $field = 'FIELD(papers.id, ' . implode(',', array_map('intval', $ids)) . ')';
+                        // Unpaid papers always go last
+                        $q->orderByRaw($field . ' = 0')->orderByRaw($field);
+                    }
+                    $q->orderBy('papers.id', 'desc');
+                })
                 ->rawColumns(['actions', 'submission_id', 'submitted_by', 'title', 'authors', 'total_member', 'track', 'status', 'full_paper', 'presentation'])
                 ->make(true);
         }
@@ -389,6 +411,36 @@ class PaperController extends Controller
         // Authors only list their own papers, so they can open the file links too
         $canDownloadFiles = $user && ($user->roles->contains('id', 3) || \App\Services\PaperFileService::isFileAdmin($user));
         return view('admin.papers.index', compact('tracks', 'countries', 'myProfile', 'unpaidPapers', 'canDownloadFiles'));
+    }
+
+    /**
+     * paper_id => last successful payment time, oldest first. Paper payments live on the
+     * order (orders.paper_ids is a JSON list of ids); updated_at is when it was marked paid.
+     */
+    private function paperPaidAtMap(): array
+    {
+        $map = [];
+        $orders = DB::table('orders')
+            ->whereIn('status', ['Processing', 'Complete'])
+            ->whereNotNull('paper_ids')
+            ->get(['paper_ids', 'updated_at']);
+
+        foreach ($orders as $order) {
+            $ids = json_decode($order->paper_ids, true);
+            if (!is_array($ids) || !$order->updated_at) {
+                continue;
+            }
+            foreach ($ids as $id) {
+                $id = (int) $id;
+                if ($id > 0 && (!isset($map[$id]) || $order->updated_at > $map[$id])) {
+                    $map[$id] = $order->updated_at;
+                }
+            }
+        }
+
+        asort($map);
+
+        return $map;
     }
 
     public function getPaperPricing(Paper $paper)

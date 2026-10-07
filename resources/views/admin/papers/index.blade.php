@@ -189,7 +189,7 @@
                     </label>
                     <input type="text" id="filter_institution" class="form-control form-control-sm" placeholder="Search university/institute...">
                 </div>
-                <div class="col-md-3 mb-2 mb-md-0">
+                <div class="col-md-2 mb-2 mb-md-0">
                     <label class="small font-weight-bold text-muted mb-1">
                         <i class="fas fa-globe mr-1 text-primary"></i> Country
                     </label>
@@ -200,7 +200,17 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3 mt-3 mt-md-0">
+                <div class="col-md-2 mb-2 mb-md-0">
+                    <label class="small font-weight-bold text-muted mb-1">
+                        <i class="fas fa-sort-amount-down mr-1 text-primary"></i> Sort by Payment
+                    </label>
+                    <select id="sort_paid_at" class="form-control form-control-sm">
+                        <option value="">Default</option>
+                        <option value="desc">Latest payment first</option>
+                        <option value="asc">Oldest payment first</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mt-3 mt-md-0">
                     <button type="button" id="reset_filters" class="btn btn-sm btn-outline-secondary btn-block">
                         <i class="fas fa-undo mr-1"></i> Reset Filters
                     </button>
@@ -233,6 +243,7 @@
                             <th class="text-center">Full Paper</th>
                             <th class="text-center">Presentation</th>
                             <th class="text-center">Date</th>
+                            <th class="text-center">Paid At</th>
                             <th>Abstract</th>
                             <th class="text-right">Actions</th>
                         </tr>
@@ -379,14 +390,14 @@ $(function () {
             className: 'btn-default',
             text: '<i class="fas fa-file-excel mr-1 text-success"></i> Excel',
             titleAttr: 'Export to Excel',
-            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] }
         },
         {
             extend: 'csv',
             className: 'btn-default',
             text: '<i class="fas fa-file-csv mr-1 text-info"></i> CSV',
             titleAttr: 'Export to CSV',
-            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] }
+            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] }
         },
         {
             extend: 'pdf',
@@ -440,6 +451,7 @@ $(function () {
             { data: 'full_paper', name: 'full_paper', class: 'text-center', searchable: false, orderable: false },
             { data: 'presentation', name: 'presentation', class: 'text-center', searchable: false, orderable: false },
             { data: 'created_at', name: 'created_at', class: 'text-center' },
+            { data: 'paid_at', name: 'paid_at', class: 'text-center text-nowrap', searchable: false, orderable: true, orderSequence: ['desc', 'asc'] },
             { data: 'abstract', name: 'abstract', visible: false, searchable: false, orderable: false },
             { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false, class: 'text-right' }
         ],
@@ -459,8 +471,23 @@ $(function () {
         table.draw();
     });
 
+    // Sort by last payment time (unpaid papers always stay at the bottom)
+    let defaultOrder = JSON.parse(JSON.stringify(table.order()));
+    let paidAtColumn = table.column('paid_at:name').index();
+    $('#sort_paid_at').on('change', function() {
+        let dir = $(this).val();
+        table.order(dir ? [[paidAtColumn, dir]] : defaultOrder).draw();
+    });
+    table.on('order.dt', function() {
+        let current = table.order()[0];
+        let dir = (current && current[0] === paidAtColumn) ? current[1] : '';
+        if ($('#sort_paid_at').val() !== dir) { $('#sort_paid_at').val(dir); }
+    });
+
     // Reset Filters
     $('#reset_filters').on('click', function() {
+        $('#sort_paid_at').val('');
+        table.order(defaultOrder);
         $('#filter_status, #filter_track, #filter_payment, #filter_country, #filter_file_status').val('').trigger('change');
         $('#filter_department, #filter_institution').val('');
         table.draw();
