@@ -80,6 +80,52 @@ class PaperFileService
     }
 
     /**
+     * Largest upload PHP accepts (upload_max_filesize / post_max_size), in MB.
+     * Null when neither is limited.
+     */
+    public static function serverLimitMb(): ?float
+    {
+        $limits = array_filter([
+            self::iniBytes(ini_get('upload_max_filesize')),
+            self::iniBytes(ini_get('post_max_size')),
+        ]);
+
+        return $limits ? min($limits) / 1048576 : null;
+    }
+
+    /**
+     * Limit that actually applies: the Settings value, capped by the server limit,
+     * so the page never promises more than PHP will accept.
+     */
+    public static function effectiveMaxSizeMb(string $type, $settings = null): float
+    {
+        $configured = self::maxSizeMb($type, $settings);
+        $server = self::serverLimitMb();
+
+        return $server !== null ? min($configured, floor($server * 100) / 100) : $configured;
+    }
+
+    private static function iniBytes($value): int
+    {
+        $value = trim((string) $value);
+        if ($value === '' || $value === '0' || $value === '-1') {
+            return 0;
+        }
+
+        $number = (float) $value;
+        switch (strtolower(substr($value, -1))) {
+            case 'g':
+                return (int) ($number * 1073741824);
+            case 'm':
+                return (int) ($number * 1048576);
+            case 'k':
+                return (int) ($number * 1024);
+            default:
+                return (int) $number;
+        }
+    }
+
+    /**
      * Upload state of every slot for this paper, as seen by $user.
      * Expects $paper->files to be loaded (or loads it).
      */
@@ -107,7 +153,7 @@ class PaperFileService
 
             $context[$type] = $config + [
                 'type' => $type,
-                'max_size_mb' => self::maxSizeMb($type, $settings),
+                'max_size_mb' => self::effectiveMaxSizeMb($type, $settings),
                 'accept' => '.' . implode(',.', $config['extensions']),
                 'latest' => $latest,
                 'versions' => $paper->files->where('type', $type)->values(),
@@ -152,7 +198,7 @@ class PaperFileService
     public static function rules(string $type, $settings = null): array
     {
         $config = self::TYPES[$type];
-        $maxKb = self::maxSizeMb($type, $settings) * 1024;
+        $maxKb = (int) floor(self::effectiveMaxSizeMb($type, $settings) * 1024);
 
         return [
             'file' => [
@@ -179,7 +225,7 @@ class PaperFileService
     public static function messages(string $type, $settings = null): array
     {
         $config = self::TYPES[$type];
-        $maxMb = self::maxSizeMb($type, $settings);
+        $maxMb = self::effectiveMaxSizeMb($type, $settings);
 
         return [
             'file.required' => 'Please choose a ' . $config['label'] . ' file to upload.',

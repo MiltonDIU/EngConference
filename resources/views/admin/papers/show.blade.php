@@ -211,6 +211,7 @@
                                                    data-max-mb="{{ $slot['max_size_mb'] }}"
                                                    data-label="{{ $slot['label'] }}"
                                                    class="form-control-file {{ $errors->{$slot['type']}->has('file') ? 'is-invalid' : '' }}">
+                                            <small class="d-none mt-1 paper-file-size"></small>
                                             @if($errors->{$slot['type']}->has('file'))
                                                 <div class="invalid-feedback d-block">{{ $errors->{$slot['type']}->first('file') }}</div>
                                             @endif
@@ -386,6 +387,15 @@
     document.querySelectorAll('.paper-file-form').forEach(function (form) {
         var input = form.querySelector('input[type="file"]');
         var errorBox = form.querySelector('.paper-file-client-error');
+        var sizeBox = form.querySelector('.paper-file-size');
+        var maxMb = parseFloat(input.dataset.maxMb);
+
+        // Same 1 MB = 1024 x 1024 bytes the server uses, so both sides agree
+        function readableSize(bytes) {
+            return bytes >= 1048576
+                ? (bytes / 1048576).toFixed(2) + ' MB'
+                : (bytes / 1024).toFixed(1) + ' KB';
+        }
 
         function check() {
             var file = input.files[0];
@@ -395,9 +405,13 @@
                 var ext = file.name.split('.').pop().toLowerCase();
                 if (file.name.indexOf('.') === -1 || allowed.indexOf(ext) === -1) {
                     message = 'Only .' + allowed.join(' / .') + ' files are allowed for the ' + input.dataset.label + '.';
-                } else if (file.size > parseInt(input.dataset.maxMb, 10) * 1024 * 1024) {
-                    message = 'The ' + input.dataset.label + ' must not be larger than ' + input.dataset.maxMb + ' MB.';
+                } else if (file.size > maxMb * 1024 * 1024) {
+                    message = 'The ' + input.dataset.label + ' is ' + readableSize(file.size) + ' and must not be larger than ' + maxMb + ' MB.';
                 }
+                sizeBox.textContent = 'Selected file size: ' + readableSize(file.size) + ' (limit ' + maxMb + ' MB)';
+                sizeBox.className = 'd-block mt-1 paper-file-size ' + (file.size > maxMb * 1024 * 1024 ? 'text-danger' : 'text-success');
+            } else {
+                sizeBox.className = 'd-none mt-1 paper-file-size';
             }
             errorBox.textContent = message;
             errorBox.classList.toggle('d-block', message !== '');
