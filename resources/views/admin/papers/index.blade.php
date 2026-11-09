@@ -168,11 +168,20 @@
                         <i class="fas fa-file-upload mr-1 text-primary"></i> Full Paper / Presentation
                     </label>
                     <select id="filter_file_status" class="form-control form-control-sm select2">
+                        @php
+                            $fileStatusOptions = [
+                                'both:submitted' => 'Both Submitted',
+                                'full_paper:submitted' => 'Full Paper Submitted',
+                                'full_paper:missing' => 'Full Paper Not Submitted',
+                                'presentation:submitted' => 'Presentation Submitted',
+                                'presentation:missing' => 'Presentation Not Submitted',
+                            ];
+                        @endphp
                         <option value="">All</option>
-                        <option value="full_paper:submitted">Full Paper Submitted</option>
-                        <option value="full_paper:missing">Full Paper Not Submitted</option>
-                        <option value="presentation:submitted">Presentation Submitted</option>
-                        <option value="presentation:missing">Presentation Not Submitted</option>
+                        @foreach($fileStatusOptions as $value => $label)
+                            {{-- Pre-selected when opened from a dashboard upload count --}}
+                            <option value="{{ $value }}" {{ request('file_status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>

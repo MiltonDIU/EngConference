@@ -157,6 +157,19 @@ class DashboardController extends Controller
         $approvedPapers = Paper::where('status', 'approved')->count();
         $rejectedPapers = Paper::where('status', 'rejected')->count();
 
+        // Full paper / presentation uploads, counted over approved & paid papers (same as the paper list filter)
+        $eligiblePapers = Paper::where('status', 'approved')->where('payment_status', '1');
+        $hasFile = fn (string $type) => fn ($q) => $q->where('type', $type);
+        $fileUploadStats = [
+            'eligible' => (clone $eligiblePapers)->count(),
+            'both' => (clone $eligiblePapers)
+                ->whereHas('files', $hasFile(\App\Models\PaperFile::TYPE_FULL_PAPER))
+                ->whereHas('files', $hasFile(\App\Models\PaperFile::TYPE_PRESENTATION))
+                ->count(),
+            'full_paper' => (clone $eligiblePapers)->whereHas('files', $hasFile(\App\Models\PaperFile::TYPE_FULL_PAPER))->count(),
+            'presentation' => (clone $eligiblePapers)->whereHas('files', $hasFile(\App\Models\PaperFile::TYPE_PRESENTATION))->count(),
+        ];
+
         $paperStats = [
             ['category' => 'Pending', 'litres' => $pendingPapers],
             ['category' => 'Approved', 'litres' => $approvedPapers],
@@ -258,7 +271,7 @@ class DashboardController extends Controller
             'storageStatus', 'settings', 'profiles', 'total', 'totalParticipants', 'totalAuthors', 'totalSubmitters', 'totalActualAuthors', 'paidParticipants', 'schedules', 'allSchedules', 'blogs',
             'eventActivities', 'aminities', 'topTracks', 'totalTaka',
             'totalPayAmount', 'allowedDomain', 'currencyStats',
-            'totalPapers', 'pendingPapers', 'approvedPapers', 'rejectedPapers',
+            'totalPapers', 'pendingPapers', 'approvedPapers', 'rejectedPapers', 'fileUploadStats',
             'paperStats', 'paidPapers', 'paperPaymentStats',
             'unpaidPapers', 'countryStats', 'dailyTrends'
         ));

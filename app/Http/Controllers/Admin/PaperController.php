@@ -95,9 +95,14 @@ class PaperController extends Controller
             }
 
             if ($request->filled('file_status')) {
-                // e.g. "full_paper:submitted" or "presentation:missing" (approved & paid papers only)
+                // e.g. "full_paper:submitted", "presentation:missing" or "both:submitted" (approved & paid papers only)
                 [$fileType, $fileState] = array_pad(explode(':', $request->file_status, 2), 2, null);
-                if (isset(\App\Services\PaperFileService::TYPES[$fileType]) && in_array($fileState, ['submitted', 'missing'], true)) {
+                if ($request->file_status === 'both:submitted') {
+                    $query->where('status', 'approved')->where('payment_status', '1');
+                    foreach (array_keys(\App\Services\PaperFileService::TYPES) as $type) {
+                        $query->whereHas('files', fn ($q) => $q->where('type', $type));
+                    }
+                } elseif (isset(\App\Services\PaperFileService::TYPES[$fileType]) && in_array($fileState, ['submitted', 'missing'], true)) {
                     $query->where('status', 'approved')->where('payment_status', '1');
                     $fileState === 'submitted'
                         ? $query->whereHas('files', fn ($q) => $q->where('type', $fileType))

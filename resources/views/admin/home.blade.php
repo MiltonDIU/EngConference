@@ -153,6 +153,32 @@ Dashboard
     </div>
 </div>
 
+{{-- Full paper / presentation uploads; each count opens the paper list with the matching filter --}}
+<h6 class="font-weight-bold text-muted mb-2">
+    <i class="fas fa-file-upload mr-1"></i> Full Paper / Presentation Uploads
+    <small class="font-weight-normal">(out of {{ $fileUploadStats['eligible'] }} approved &amp; paid papers)</small>
+</h6>
+<div class="row mb-4">
+    @foreach([
+        ['both:submitted', 'Both Submitted', $fileUploadStats['both'], 'fa-check-double', '#28a745'],
+        ['full_paper:submitted', 'Full Paper Submitted', $fileUploadStats['full_paper'], 'fa-file-word', '#007bff'],
+        ['presentation:submitted', 'Presentation Submitted', $fileUploadStats['presentation'], 'fa-file-powerpoint', '#dc3545'],
+    ] as [$filter, $label, $count, $icon, $color])
+        <div class="col-md-4 mb-3 mb-md-0">
+            <a href="{{ route('papers.index', ['file_status' => $filter]) }}" class="text-decoration-none" title="Show these papers">
+                <div class="info-box shadow-none border bg-white mb-0" style="border-radius: 12px; border-left: 5px solid {{ $color }} !important;">
+                    <span class="info-box-icon" style="color: {{ $color }};"><i class="fas {{ $icon }}"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text font-weight-bold text-muted small uppercase">{{ $label }}</span>
+                        <span class="info-box-number h4 mb-0 font-weight-bold text-dark">{{ $count }}</span>
+                    </div>
+                    <span class="align-self-center text-muted small pr-2">View <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+        </div>
+    @endforeach
+</div>
+
 <div class="row">
     <div class="col-lg-6">
         <div class="card shadow-sm border-0" style="border-radius: 12px;">
