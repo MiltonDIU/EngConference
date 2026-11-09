@@ -39,6 +39,21 @@
                         </div>
                     </div>
                     <div class="col-md-4">
+                        <div class="form-group {{ $errors->has('end_time') ? 'has-error' : '' }}">
+                            <label for="end_time">End Time</label>
+                            <input type="text" id="end_time" name="end_time" class="form-control timepicker" value="{{ old('end_time', isset($schedule) ? $schedule->end_time : '') }}">
+                            @if($errors->has('end_time'))
+                                <p class="help-block">
+                                    {{ $errors->first('end_time') }}
+                                </p>
+                            @endif
+                            <p class="helper-block">Leave empty for a single time (e.g. transport departure).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
                         <div class="form-group {{ $errors->has('title') ? 'has-error' : '' }}">
                             <label for="title">{{ trans('cruds.schedule.fields.title') }}*</label>
                             <input type="text" id="title" name="title" class="form-control" value="{{ old('title', isset($schedule) ? $schedule->title : '') }}" required>

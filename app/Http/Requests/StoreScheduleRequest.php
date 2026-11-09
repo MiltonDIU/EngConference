@@ -29,6 +29,11 @@ class StoreScheduleRequest extends FormRequest
                 'required',
                 'date_format:' . config('panel.time_format'),
             ],
+            'end_time'   => [
+                'nullable',
+                'date_format:' . config('panel.time_format'),
+                'after:start_time',
+            ],
             'title'      => [
                 'required',
             ],

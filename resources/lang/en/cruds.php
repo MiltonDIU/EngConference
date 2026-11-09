@@ -133,7 +133,7 @@ return [
             'start_time_helper' => '',
             'title'             => 'Session Title',
             'title_helper'      => '',
-            'subtitle'          => 'Duration',
+            'subtitle'          => 'Note',
             'subtitle_helper'   => '',
             'speaker'           => 'Speaker',
             'speaker_helper'    => '',

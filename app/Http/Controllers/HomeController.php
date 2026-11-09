@@ -68,9 +68,10 @@ protected $noReferral = array(
         $user = Auth::user();
         $settings = Setting::pluck('value', 'key');
         $speakers = Speaker::where('show_home',1)->orderBy('serial','asc')->get();
-        $schedules = Schedule::with('speaker')
+        $schedules = Schedule::with('speaker', 'speakers.media')
             ->orderBy('day_number', 'asc')
             ->orderBy('start_time', 'asc')
+            ->orderBy('id', 'asc')
              ->where('is_active','1')
             ->get()
             ->groupBy('day_number');

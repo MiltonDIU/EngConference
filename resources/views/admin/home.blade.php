@@ -701,7 +701,7 @@ Total Program Schedule
 
                     {!! ++$key. '. '.$sc->title!!}
                     <br>
-                    Start Time & Duration: {{ \Carbon\Carbon::parse($sc->start_time)->format('h:i A') }} -- {{ $sc->subtitle }}
+                    Time: {{ \Carbon\Carbon::parse($sc->start_time)->format('h:i A') }}{{ $sc->end_time ? ' - ' . \Carbon\Carbon::parse($sc->end_time)->format('h:i A') : '' }} -- {{ $sc->subtitle }}
                     <br>
                 @endforeach
             </td>

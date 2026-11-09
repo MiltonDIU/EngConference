@@ -35,6 +35,7 @@ class Schedule extends Model
         'subtitle',
         'day_number',
         'start_time',
+        'end_time',
         'speaker_id',
         'total_seat',
         'is_workshop',

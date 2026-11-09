@@ -72,7 +72,7 @@
                                 {{ $schedule->day_number ?? '' }}
                             </td>
                             <td>
-                                {{ $schedule->start_time ?? '' }}
+                                {{ $schedule->start_time ?? '' }}{{ $schedule->end_time ? ' - ' . $schedule->end_time : '' }}
                             </td>
                             <td>
                                 {{ $schedule->title ?? '' }}

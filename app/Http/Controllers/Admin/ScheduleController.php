@@ -34,7 +34,7 @@ class ScheduleController extends Controller
 
     public function store(StoreScheduleRequest $request)
     {
-    $data =  $request->only('day_number', 'start_time', 'title', 'subtitle', 'is_workshop','total_seat','event_session');
+    $data =  $request->only('day_number', 'start_time', 'end_time', 'title', 'subtitle', 'is_workshop','total_seat','event_session');
     if ($request->input('is_workshop')=='1'){
         $benefits = [];
         foreach ($request->input('benefit_title') as $key => $title) {
@@ -70,7 +70,7 @@ class ScheduleController extends Controller
     public function update(UpdateScheduleRequest $request, Schedule $schedule)
     {
 
-        $data =  $request->only('day_number', 'start_time', 'title', 'subtitle','event_session', 'is_workshop','total_seat','is_active');
+        $data =  $request->only('day_number', 'start_time', 'end_time', 'title', 'subtitle','event_session', 'is_workshop','total_seat','is_active');
 
         if ($request->input('is_workshop')=='1'){
             $benefits = [];
