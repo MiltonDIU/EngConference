@@ -203,8 +203,11 @@
                                 </div>
                             @endif
 
-                            @if($isPaperOwner)
+                            @if($isPaperOwner || $slot['is_admin_upload'])
                                 @if($slot['can_upload'])
+                                    @if($slot['is_admin_upload'])
+                                        <small class="text-info d-block mb-2"><i class="fas fa-user-shield mr-1"></i> Admin upload on behalf of the author (deadline and re-upload limits do not apply).</small>
+                                    @endif
                                     <form action="{{ route('papers.files.store', [$paper->id, $slot['type']]) }}" method="POST" enctype="multipart/form-data" class="paper-file-form">
                                         @csrf
                                         <div class="form-group mb-2">
@@ -222,7 +225,7 @@
                                         </div>
                                         @if($slot['latest'])
                                             <small class="text-warning d-block mb-2"><i class="fas fa-exclamation-triangle mr-1"></i> Uploading again will submit a new version.</small>
-                                        @elseif(!\App\Services\PaperFileService::isReuploadAllowed())
+                                        @elseif(!$slot['is_admin_upload'] && !\App\Services\PaperFileService::isReuploadAllowed())
                                             <small class="text-warning d-block mb-2"><i class="fas fa-exclamation-triangle mr-1"></i> You can upload this file only once. Please check it before submitting.</small>
                                         @endif
                                         <button type="submit" class="btn btn-primary btn-sm">

@@ -16,13 +16,18 @@ use Symfony\Component\HttpFoundation\Response;
 class PaperFileController extends Controller
 {
     /**
-     * Author uploads the Full Paper or Presentation for an approved & paid paper.
+     * Author (or an admin on the author's behalf) uploads the Full Paper or Presentation
+     * for an approved & paid paper.
      */
     public function store(Request $request, Paper $paper, string $type)
     {
         $user = Auth::user();
         abort_unless(isset(PaperFileService::TYPES[$type]), Response::HTTP_NOT_FOUND);
-        abort_if($paper->user_id !== $user->id, Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(
+            $paper->user_id !== $user->id && !PaperFileService::canAdminUpload($user, PaperFileService::settings()),
+            Response::HTTP_FORBIDDEN,
+            '403 Forbidden'
+        );
 
         $settings = PaperFileService::settings();
         $paper->load('files');
@@ -40,7 +45,7 @@ class PaperFileController extends Controller
         );
 
         try {
-            $file = PaperFileService::store($paper, $type, $request->file('file'), $user);
+            $file = PaperFileService::store($paper, $type, $request->file('file'), $user, !$slot['is_admin_upload']);
         } catch (\RuntimeException $e) {
             return $redirect->with('error', $e->getMessage());
         } catch (\Throwable $e) {
