@@ -168,6 +168,8 @@ class PaperFileService
         $isEnabled = ($settings['is_paper_file_submission_open'] ?? 'false') == 'true';
         $reuploadAllowed = self::isReuploadAllowed($settings);
         $isOwner = $user && $paper->user_id === $user->id;
+        // Admin uploading on the author's behalf: not bound by the open flag, deadlines or the re-upload rule
+        $isAdminUpload = !$isOwner && self::canAdminUpload($user, $settings);
 
         $context = [];
         foreach (self::TYPES as $type => $config) {
@@ -175,10 +177,12 @@ class PaperFileService
             $deadline = self::deadline($type, $settings);
 
             $reason = null;
-            if (!$isOwner) {
+            if (!$isOwner && !$isAdminUpload) {
                 $reason = 'Only the submitting author can upload files.';
             } elseif (!$paper->isApprovedAndPaid()) {
                 $reason = 'Upload is available once the abstract is approved and payment is completed.';
+            } elseif ($isAdminUpload) {
+                // No further restrictions for admins
             } elseif (!$isEnabled) {
                 $reason = 'Full paper and presentation submission is currently closed.';
             } elseif (!self::isTypeOpen($type, $settings)) {
@@ -195,6 +199,7 @@ class PaperFileService
                 'latest' => $latest,
                 'versions' => $paper->files->where('type', $type)->values(),
                 'can_upload' => $reason === null,
+                'is_admin_upload' => $isAdminUpload,
                 'blocked_reason' => $reason,
             ];
         }
@@ -274,16 +279,16 @@ class PaperFileService
     /**
      * Stores the file as the next version for this paper/type.
      */
-    public static function store(Paper $paper, string $type, UploadedFile $file, User $user): PaperFile
+    public static function store(Paper $paper, string $type, UploadedFile $file, User $user, bool $enforceReuploadRule = true): PaperFile
     {
         $config = self::TYPES[$type];
         $extension = strtolower($file->getClientOriginalExtension());
 
-        return DB::transaction(function () use ($paper, $type, $file, $user, $config, $extension) {
+        return DB::transaction(function () use ($paper, $type, $file, $user, $config, $extension, $enforceReuploadRule) {
             // Lock the paper row so two parallel uploads can't take the same version
             Paper::whereKey($paper->id)->lockForUpdate()->first();
 
-            if (!self::isReuploadAllowed() && PaperFile::where('paper_id', $paper->id)->where('type', $type)->exists()) {
+            if ($enforceReuploadRule && !self::isReuploadAllowed() &&PaperFile::where('paper_id', $paper->id)->where('type', $type)->exists()) {
                 throw new \RuntimeException('This file has already been submitted. Re-upload is not allowed.');
             }
 
@@ -345,6 +350,24 @@ class PaperFileService
     public static function isFileAdmin(?User $user): bool
     {
         return $user && !$user->roles->contains('id', 3) && \Illuminate\Support\Facades\Gate::forUser($user)->allows('paper_access');
+    }
+
+    /**
+     * Admins who may upload / replace a paper's files on the author's behalf.
+     * Can be switched off from Settings (allow_admin_paper_file_upload).
+     */
+    public static function isAdminUploadEnabled($settings = null): bool
+    {
+        $settings = $settings ?? self::settings();
+
+        return ($settings['allow_admin_paper_file_upload'] ?? 'false') == 'true';
+    }
+
+    public static function canAdminUpload(?User $user, $settings = null): bool
+    {
+        return self::isAdminUploadEnabled($settings)
+            && self::isFileAdmin($user)
+            && \Illuminate\Support\Facades\Gate::forUser($user)->allows('paper_edit');
     }
 
     public static function isPreviewable(PaperFile $file): bool
