@@ -184,6 +184,9 @@
                             </h6>
                             <small class="text-muted d-block mb-3">
                                 Allowed: {{ strtoupper(implode(', ', $slot['extensions'])) }} only &middot; Max {{ $slot['max_size_mb'] }} MB
+                                @if($slot['deadline'])
+                                    &middot; Deadline: {{ $slot['deadline']->format('M d, Y') }}
+                                @endif
                             </small>
 
                             @if($slot['latest'])

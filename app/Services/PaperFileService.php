@@ -28,6 +28,7 @@ class PaperFileService
             'ooxml' => 'word/document.xml',
             'size_setting' => 'full_paper_max_upload_size_mb',
             'default_size_mb' => 10,
+            'deadline_setting' => 'paper_file_submission_deadline',
         ],
         PaperFile::TYPE_PRESENTATION => [
             'label' => 'Presentation',
@@ -36,6 +37,8 @@ class PaperFileService
             'ooxml' => 'ppt/presentation.xml',
             'size_setting' => 'presentation_max_upload_size_mb',
             'default_size_mb' => 20,
+            // Empty = same deadline as the full paper
+            'deadline_setting' => 'presentation_submission_deadline',
         ],
     ];
 
@@ -47,7 +50,23 @@ class PaperFileService
         return Setting::pluck('value', 'key');
     }
 
+    /**
+     * True while at least one file type can still be uploaded.
+     */
     public static function isSubmissionOpen($settings = null): bool
+    {
+        $settings = $settings ?? self::settings();
+
+        foreach (array_keys(self::TYPES) as $type) {
+            if (self::isTypeOpen($type, $settings)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function isTypeOpen(string $type, $settings = null): bool
     {
         $settings = $settings ?? self::settings();
 
@@ -55,12 +74,26 @@ class PaperFileService
             return false;
         }
 
-        $deadline = trim((string) ($settings['paper_file_submission_deadline'] ?? ''));
-        if ($deadline !== '' && Carbon::now()->gt(Carbon::parse($deadline)->endOfDay())) {
-            return false;
+        $deadline = self::deadline($type, $settings);
+
+        return $deadline === null || Carbon::now()->lte($deadline);
+    }
+
+    /**
+     * End of the last day this file type can be uploaded, or null when there is no deadline.
+     * A type without its own deadline uses the general (full paper) one.
+     */
+    public static function deadline(string $type, $settings = null): ?Carbon
+    {
+        $settings = $settings ?? self::settings();
+        $general = self::TYPES[PaperFile::TYPE_FULL_PAPER]['deadline_setting'];
+
+        $value = trim((string) ($settings[self::TYPES[$type]['deadline_setting']] ?? ''));
+        if ($value === '') {
+            $value = trim((string) ($settings[$general] ?? ''));
         }
 
-        return true;
+        return $value !== '' ? Carbon::parse($value)->endOfDay() : null;
     }
 
     public static function isReuploadAllowed($settings = null): bool
@@ -132,21 +165,24 @@ class PaperFileService
     public static function uploadContext(Paper $paper, ?User $user, $settings = null): array
     {
         $settings = $settings ?? self::settings();
-        $isOpen = self::isSubmissionOpen($settings);
+        $isEnabled = ($settings['is_paper_file_submission_open'] ?? 'false') == 'true';
         $reuploadAllowed = self::isReuploadAllowed($settings);
         $isOwner = $user && $paper->user_id === $user->id;
 
         $context = [];
         foreach (self::TYPES as $type => $config) {
             $latest = $paper->latestFile($type);
+            $deadline = self::deadline($type, $settings);
 
             $reason = null;
             if (!$isOwner) {
                 $reason = 'Only the submitting author can upload files.';
             } elseif (!$paper->isApprovedAndPaid()) {
                 $reason = 'Upload is available once the abstract is approved and payment is completed.';
-            } elseif (!$isOpen) {
+            } elseif (!$isEnabled) {
                 $reason = 'Full paper and presentation submission is currently closed.';
+            } elseif (!self::isTypeOpen($type, $settings)) {
+                $reason = 'The ' . $config['label'] . ' submission deadline (' . $deadline->format('M d, Y') . ') has passed.';
             } elseif ($latest && !$reuploadAllowed) {
                 $reason = 'This file has already been submitted. Re-upload is not allowed.';
             }
@@ -154,6 +190,7 @@ class PaperFileService
             $context[$type] = $config + [
                 'type' => $type,
                 'max_size_mb' => self::effectiveMaxSizeMb($type, $settings),
+                'deadline' => $deadline,
                 'accept' => '.' . implode(',.', $config['extensions']),
                 'latest' => $latest,
                 'versions' => $paper->files->where('type', $type)->values(),

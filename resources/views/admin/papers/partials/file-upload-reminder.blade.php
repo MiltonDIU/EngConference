@@ -1,7 +1,12 @@
 {{-- Highlight for authors whose approved & paid papers still need a Full Paper / Presentation --}}
 @php
     $pendingFileUploads = \App\Services\PaperFileService::pendingUploadsFor(auth()->user());
-    $fileDeadline = trim((string) (\App\Models\Setting::where('key', 'paper_file_submission_deadline')->value('value') ?? ''));
+    // Each file type has its own deadline; show only the ones still open
+    $fileSettings = \App\Services\PaperFileService::settings();
+    $openDeadlines = collect(\App\Services\PaperFileService::TYPES)
+        ->filter(fn ($config, $type) => \App\Services\PaperFileService::isTypeOpen($type, $fileSettings))
+        ->map(fn ($config, $type) => ['label' => $config['label'], 'deadline' => \App\Services\PaperFileService::deadline($type, $fileSettings)])
+        ->filter(fn ($item) => $item['deadline'] !== null);
 @endphp
 @if($pendingFileUploads->isNotEmpty())
     <div class="card mb-4 border-success shadow-sm" style="border-width: 2px; border-radius: 12px; overflow: hidden;">
@@ -14,9 +19,9 @@
             <p class="text-muted mb-3">
                 Full paper and presentation submission is now open for your approved abstract(s).
                 Upload the <strong>Full Paper (.doc / .docx)</strong> and the <strong>Presentation (.ppt / .pptx)</strong> for each paper below.
-                @if($fileDeadline !== '')
-                    <br><strong class="text-danger"><i class="far fa-clock mr-1"></i> Deadline: {{ \Carbon\Carbon::parse($fileDeadline)->format('M d, Y') }}</strong>
-                @endif
+                @foreach($openDeadlines as $item)
+                    <br><strong class="text-danger"><i class="far fa-clock mr-1"></i> {{ $item['label'] }} deadline: {{ $item['deadline']->format('M d, Y') }}</strong>
+                @endforeach
             </p>
 
             @foreach($pendingFileUploads as $item)
@@ -29,6 +34,8 @@
                         @foreach($item->slots as $slot)
                             @if($slot['latest'])
                                 <span class="badge badge-success mr-1"><i class="fas fa-check mr-1"></i> {{ $slot['label'] }} submitted</span>
+                            @elseif(!$slot['can_upload'])
+                                <span class="badge badge-secondary mr-1"><i class="fas fa-lock mr-1"></i> {{ $slot['label'] }} closed</span>
                             @else
                                 <span class="badge badge-warning mr-1"><i class="fas fa-exclamation-circle mr-1"></i> {{ $slot['label'] }} pending</span>
                             @endif
