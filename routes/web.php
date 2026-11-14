@@ -316,6 +316,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
     // Reviewers (session chairs) and their assigned papers
     Route::get('reviewers', [App\Http\Controllers\Admin\ReviewerController::class, 'index'])->name('reviewers.index');
     Route::post('reviewers/sync', [App\Http\Controllers\Admin\ReviewerController::class, 'sync'])->name('reviewers.sync');
+    Route::post('reviewers/password', [App\Http\Controllers\Admin\ReviewerController::class, 'setPassword'])->name('reviewers.password');
     Route::get('reviewers/{user}', [App\Http\Controllers\Admin\ReviewerController::class, 'show'])->name('reviewers.show');
     Route::post('reviewers/{user}/papers', [App\Http\Controllers\Admin\ReviewerController::class, 'attach'])->name('reviewers.attach');
     Route::delete('reviewers/{user}/papers/{paper}', [App\Http\Controllers\Admin\ReviewerController::class, 'detach'])->name('reviewers.detach');

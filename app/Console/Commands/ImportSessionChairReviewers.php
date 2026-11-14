@@ -10,6 +10,7 @@ class ImportSessionChairReviewers extends Command
     protected $signature = 'reviewers:import-session-chairs
                             {file=public/documents/BNC2026_Session_Chairs_Emails_and_ABS_Submission_IDs_14Nov2026.xlsx : Path to the .xlsx (relative to the project root)}
                             {--sheet=All Sessions : Sheet that lists one session per row}
+                            {--password= : Common password for newly created accounts (random if omitted)}
                             {--dry-run : Show what would happen without saving anything}';
 
     protected $description = 'Add session chairs as reviewers and assign them the papers (ABS IDs) of their sessions';
@@ -29,8 +30,14 @@ class ImportSessionChairReviewers extends Command
             $this->warn('DRY RUN: nothing will be saved.');
         }
 
+        $password = $this->option('password');
+        if ($password !== null && $password !== '' && mb_strlen($password) < 8) {
+            $this->error('The password must be at least 8 characters.');
+            return self::FAILURE;
+        }
+
         try {
-            $s = ReviewerService::importSessionChairs($path, $this->option('sheet'), $dryRun);
+            $s = ReviewerService::importSessionChairs($path, $this->option('sheet'), $dryRun, $password);
         } catch (\Throwable $e) {
             $this->error($e->getMessage());
             return self::FAILURE;

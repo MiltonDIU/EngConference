@@ -95,6 +95,33 @@ class ReviewerService
     }
 
     /**
+     * Accounts that exist only because of the import: their sole role is Reviewer.
+     * Authors and admins who are also reviewers have other roles and are never included.
+     */
+    public static function importedOnlyReviewersQuery()
+    {
+        $roleId = self::roleId();
+
+        return User::whereHas('roles', fn ($q) => $q->where('roles.id', $roleId))
+            ->whereDoesntHave('roles', fn ($q) => $q->where('roles.id', '!=', $roleId));
+    }
+
+    /**
+     * Sets one common password on every reviewer-only account. Returns how many were changed.
+     */
+    public static function setPasswordForImportedReviewers(string $password): int
+    {
+        $count = 0;
+        self::importedOnlyReviewersQuery()->each(function (User $user) use ($password, &$count) {
+            $user->password = $password; // hashed by User::setPasswordAttribute
+            $user->save();
+            $count++;
+        });
+
+        return $count;
+    }
+
+    /**
      * Removes every assignment of a reviewer and the Reviewer role. Returns the number of papers removed.
      */
     public static function removeReviewer(int $userId): int
@@ -114,8 +141,10 @@ class ReviewerService
      *
      * @return array summary for the console
      */
-    public static function importSessionChairs(string $path, string $sheetName = 'All Sessions', bool $dryRun = false): array
+    public static function importSessionChairs(string $path, string $sheetName = 'All Sessions', bool $dryRun = false, ?string $newUserPassword = null): array
     {
+        $newUserPassword = ($newUserPassword !== null && $newUserPassword !== '') ? $newUserPassword : null;
+
         $sessions = self::readSessions($path, $sheetName);
 
         $summary = [
@@ -172,8 +201,8 @@ class ReviewerService
                     $user = User::create([
                         'name' => self::cleanName($chair['name']) ?: $email,
                         'email' => $email,
-                        // Random password: the chair sets their own via "Forgot Password"
-                        'password' => Str::random(40),
+                        // Common password given by the admin, otherwise random (chair uses "Forgot Password")
+                        'password' => $newUserPassword ?? Str::random(40),
                     ]);
                     // Admin-created account, so no verification mail is needed
                     $user->forceFill(['email_verified_at' => now()->format(config('panel.date_format') . ' ' . config('panel.time_format'))])->save();
