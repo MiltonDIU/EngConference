@@ -53,7 +53,9 @@ class ReviewerController extends Controller
         $defaultSheetExists = is_file(base_path(self::DEFAULT_SHEET));
         $storedSheet = session(self::SESSION_SHEET_KEY);
 
-        return view('admin.reviewers.index', compact('reviewers', 'sessionLabels', 'ownPapers', 'unassignedCount', 'defaultSheetExists', 'storedSheet'));
+        $importedOnlyCount = ReviewerService::importedOnlyReviewersQuery()->count();
+
+        return view('admin.reviewers.index', compact('reviewers', 'sessionLabels', 'ownPapers', 'unassignedCount', 'defaultSheetExists', 'storedSheet', 'importedOnlyCount'));
     }
 
     public function show(User $user)
@@ -81,6 +83,7 @@ class ReviewerController extends Controller
             'sheet_name' => 'nullable|string|max:100',
             'dry_run' => 'nullable|boolean',
             'use_stored' => 'nullable|boolean',
+            'new_user_password' => 'nullable|string|min:8|max:100',
         ]);
 
         $dryRun = $request->boolean('dry_run');
@@ -105,7 +108,7 @@ class ReviewerController extends Controller
         }
 
         try {
-            $summary = ReviewerService::importSessionChairs($fullPath, $sheetName, $dryRun);
+            $summary = ReviewerService::importSessionChairs($fullPath, $sheetName, $dryRun, $dryRun ? null : $request->input('new_user_password'));
         } catch (\Throwable $e) {
             Log::warning('Reviewer sync failed: ' . $e->getMessage(), ['user_id' => Auth::id()]);
             return back()->with('error', 'Sync failed: ' . $e->getMessage());
@@ -123,6 +126,23 @@ class ReviewerController extends Controller
         return redirect()->route('admin.reviewers.index')
             ->with('sync_summary', $summary)
             ->with('message', $dryRun ? 'Preview ready. Nothing has been saved yet.' : 'Reviewers synced from the sheet.');
+    }
+
+    /**
+     * One common password for every account created by the import (reviewer-only accounts).
+     */
+    public function setPassword(Request $request)
+    {
+        $this->authorizeManage();
+
+        $data = $request->validate([
+            'password' => 'required|string|min:8|max:100|confirmed',
+        ]);
+
+        $count = ReviewerService::setPasswordForImportedReviewers($data['password']);
+
+        return redirect()->route('admin.reviewers.index')
+            ->with('message', 'Common password set on ' . $count . ' reviewer accounts. Authors and admins were not changed.');
     }
 
     public function attach(Request $request, User $user)

@@ -106,6 +106,14 @@
                                 @csrf
                                 <input type="hidden" name="use_stored" value="1">
                                 <input type="hidden" name="dry_run" value="0">
+                                @if(!empty($s['users_created']))
+                                    <div class="form-group mb-2" style="max-width: 360px;">
+                                        <label class="small font-weight-bold mb-1">Common password for the {{ count($s['users_created']) }} new accounts</label>
+                                        <input type="text" name="new_user_password" minlength="8" autocomplete="off"
+                                               class="form-control form-control-sm" placeholder="Leave empty for a random password">
+                                        <small class="text-muted">Existing accounts keep their own password.</small>
+                                    </div>
+                                @endif
                                 <button type="submit" class="btn btn-success btn-sm">
                                     <i class="fas fa-sync-alt mr-1"></i> Confirm sync
                                 </button>
@@ -113,6 +121,41 @@
                         @endif
                     </div>
                 @endif
+            </div>
+        </div>
+
+        {{-- Common password for accounts created by the import --}}
+        <div class="card shadow-sm border-0 rounded-lg mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-key mr-2 text-warning"></i> Common password for new reviewer accounts</h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">
+                    Sets one password on the <strong>{{ $importedOnlyCount }}</strong> accounts created by the import (accounts whose only role is Reviewer).
+                    Authors and admins who are also reviewers keep their own password.
+                </p>
+                @if($errors->has('password'))
+                    <div class="alert alert-danger py-2 small">{{ $errors->first('password') }}</div>
+                @endif
+                <form action="{{ route('admin.reviewers.password') }}" method="POST" autocomplete="off"
+                      onsubmit="return confirm('Set this password on {{ $importedOnlyCount }} reviewer accounts?');">
+                    @csrf
+                    <div class="form-row align-items-end">
+                        <div class="col-md-4 mb-2">
+                            <label class="small font-weight-bold mb-1">Password</label>
+                            <input type="text" name="password" required minlength="8" autocomplete="off" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="small font-weight-bold mb-1">Confirm password</label>
+                            <input type="text" name="password_confirmation" required minlength="8" autocomplete="off" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <button type="submit" class="btn btn-warning btn-sm" @if(!$importedOnlyCount) disabled @endif>
+                                <i class="fas fa-key mr-1"></i> Set password
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
 
