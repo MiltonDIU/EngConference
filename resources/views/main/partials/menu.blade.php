@@ -72,6 +72,18 @@
                         </ul>
                     </li>
                 @endcan
+                @if(\App\Services\ReviewerService::isReviewer(auth()->user()))
+                    <li class="nav-item">
+                        <a href="{{ route('reviewer.papers') }}" class="nav-link {{ request()->is('reviewer/papers*') ? 'active' : '' }}">
+                            <i class="fa-fw fas fa-clipboard-check">
+
+                            </i>
+                            <p>
+                                <span>Assigned Papers</span>
+                            </p>
+                        </a>
+                    </li>
+                @endif
                 @can('profile')
                     <li class="nav-item">
                         <a href="{{ route("show-profile") }}" class="nav-link {{ request()->is('admin/profile') || request()->is('admin/profile/*') ? 'active' : '' }}">
@@ -333,6 +345,18 @@
                 </li>
                 @endif
                 @endcan
+                @if(\App\Services\ReviewerService::canManage(auth()->user()))
+                <li class="nav-item">
+                    <a href="{{ route('admin.reviewers.index') }}" class="nav-link {{ request()->is('admin/reviewers*') ? 'active' : '' }}">
+                        <i class="fa-fw fas fa-user-check">
+
+                        </i>
+                        <p>
+                            <span>Reviewers</span>
+                        </p>
+                    </a>
+                </li>
+                @endif
                 @can('track_report')
                 <li class="nav-item">
                     <a href="{{ route("admin.tracks-report") }}" class="nav-link {{ request()->is('admin/tracks-report*') ? 'active' : '' }}">

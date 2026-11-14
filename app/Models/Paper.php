@@ -61,6 +61,16 @@ class Paper extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    /**
+     * Session chairs assigned to review this paper.
+     */
+    public function reviewers()
+    {
+        return $this->belongsToMany(User::class, 'paper_reviewers')
+            ->withPivot('session_no', 'session_info', 'position')
+            ->withTimestamps();
+    }
+
     public function reviewHistory()
     {
         return $this->hasMany(PaperReview::class)->latest();

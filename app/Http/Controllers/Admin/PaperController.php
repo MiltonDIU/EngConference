@@ -494,8 +494,13 @@ class PaperController extends Controller
     public function show(Paper $paper)
     {
         $user = Auth::user();
+        // Session chair assigned to this paper may view it (read-only)
+        $isAssignedReviewer = \App\Services\ReviewerService::isAssigned($paper, $user);
+
         // Access check: Participant can only see their own paper
-        if ($user->roles->contains('id', 3)) {
+        if ($isAssignedReviewer) {
+            // allowed
+        } elseif ($user->roles->contains('id', 3)) {
 
             if ($paper->user_id != $user->id) {
                 abort(403);
@@ -510,7 +515,7 @@ class PaperController extends Controller
         $fileSlots = \App\Services\PaperFileService::uploadContext($paper, $user);
         $canDownloadFiles = \App\Services\PaperFileService::canAccessFiles($paper, $user);
 
-        return view('admin.papers.show', compact('paper', 'fileSlots', 'canDownloadFiles'));
+        return view('admin.papers.show', compact('paper', 'fileSlots', 'canDownloadFiles', 'isAssignedReviewer'));
     }
 
     public function create()

@@ -312,6 +312,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
     Route::post('papers/{paper}/reject', [PaperController::class, 'reject'])->name('papers.reject');
     Route::get('papers/{paper}/files/{paperFile}/download', [PaperFileController::class, 'download'])->name('papers.files.download');
     Route::get('papers/{paper}/files/{paperFile}/preview', [PaperFileController::class, 'preview'])->name('papers.files.preview');
+
+    // Reviewers (session chairs) and their assigned papers
+    Route::get('reviewers', [App\Http\Controllers\Admin\ReviewerController::class, 'index'])->name('reviewers.index');
+    Route::post('reviewers/sync', [App\Http\Controllers\Admin\ReviewerController::class, 'sync'])->name('reviewers.sync');
+    Route::get('reviewers/{user}', [App\Http\Controllers\Admin\ReviewerController::class, 'show'])->name('reviewers.show');
+    Route::post('reviewers/{user}/papers', [App\Http\Controllers\Admin\ReviewerController::class, 'attach'])->name('reviewers.attach');
+    Route::delete('reviewers/{user}/papers/{paper}', [App\Http\Controllers\Admin\ReviewerController::class, 'detach'])->name('reviewers.detach');
+    Route::delete('reviewers/{user}', [App\Http\Controllers\Admin\ReviewerController::class, 'destroy'])->name('reviewers.destroy');
 });
 
     // Paper Submission (Post-registration)
@@ -342,6 +350,9 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     Route::post('papers/{paper}/files/{type}', [PaperFileController::class, 'store'])
         ->whereIn('type', ['full_paper', 'presentation'])
         ->name('papers.files.store');
+
+    // Session chairs: papers assigned to them for review
+    Route::get('reviewer/papers', [App\Http\Controllers\ReviewerPaperController::class, 'index'])->name('reviewer.papers');
 
     // Payments
     Route::get('set/payment/{data}', [PaymentController::class, 'setPayment'])->name('setPayment');
