@@ -50,6 +50,11 @@ protected $noReferral = array(
             return redirect()->route('admin.home');
         }
 
+        // Session chairs land on the papers assigned to them
+        if (\App\Services\ReviewerService::isReviewer($user)) {
+            return redirect()->route('reviewer.papers');
+        }
+
         // If Role 3 (Participant/Author)
         if ($user->roles->contains('id', 3)) {
             return redirect()->route('show-profile');

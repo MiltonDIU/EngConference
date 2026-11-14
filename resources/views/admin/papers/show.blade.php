@@ -7,7 +7,7 @@
                 <i class="fas fa-file-invoice mr-2 text-primary"></i> Abstract Details
             </h4>
             <div class="btn-group shadow-sm">
-                <a href="{{ route('papers.index') }}" class="btn btn-outline-secondary btn-sm px-3">
+                <a href="{{ !empty($isAssignedReviewer) ? route('reviewer.papers') : route('papers.index') }}" class="btn btn-outline-secondary btn-sm px-3">
                     <i class="fas fa-arrow-left mr-1"></i> Back to List
                 </a>
                 @can('abstract_review')

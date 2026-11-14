@@ -118,4 +118,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Paper::class, 'user_id', 'id');
     }
+
+    /**
+     * Papers this user is assigned to review (as session chair).
+     */
+    public function reviewPapers()
+    {
+        return $this->belongsToMany(Paper::class, 'paper_reviewers')
+            ->withPivot('session_no', 'session_info', 'position')
+            ->withTimestamps();
+    }
 }

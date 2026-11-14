@@ -336,7 +336,8 @@ class PaperFileService
     }
 
     /**
-     * Who may download / preview a paper's files: the submitting author, or an admin.
+     * Who may download / preview a paper's files: the submitting author, an admin,
+     * or the session chair assigned to review the paper.
      */
     public static function canAccessFiles(Paper $paper, ?User $user): bool
     {
@@ -344,7 +345,9 @@ class PaperFileService
             return false;
         }
 
-        return $paper->user_id === $user->id || self::isFileAdmin($user);
+        return $paper->user_id === $user->id
+            || self::isFileAdmin($user)
+            || ReviewerService::isAssigned($paper, $user);
     }
 
     public static function isFileAdmin(?User $user): bool
