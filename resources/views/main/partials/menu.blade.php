@@ -380,6 +380,16 @@
                         </p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route("admin.paper-authors-report") }}" class="nav-link {{ request()->is('admin/paper-authors-report*') ? 'active' : '' }}">
+                        <i class="fa-fw fas fa-users">
+
+                        </i>
+                        <p>
+                            <span>Paid Paper Authors</span>
+                        </p>
+                    </a>
+                </li>
                 @endif
                 @can('schedule_access')
                     <li class="nav-item">

@@ -13,6 +13,7 @@ use App\Models\Profile;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\Setting;
+use App\Services\PaperAuthorsReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -362,6 +363,39 @@ class DashboardController extends Controller
         $tracks = \App\Models\Track::withCount('papers')->orderBy('name', 'asc')->get();
 
         return view('admin.reports.tracks', compact('reportData', 'tracks', 'currencies'));
+    }
+
+    /**
+     * Paid papers with the first author and every co-author, each with their affiliation.
+     */
+    public function paperAuthorsReport()
+    {
+        $this->authorizePaperAuthorsReport();
+
+        $rows = PaperAuthorsReportService::rows();
+        $coAuthorColumns = PaperAuthorsReportService::coAuthorColumns($rows);
+        $headers = PaperAuthorsReportService::headers($coAuthorColumns);
+
+        return view('admin.reports.paper_authors', compact('rows', 'coAuthorColumns', 'headers'));
+    }
+
+    /**
+     * Excel download in the BNC 2026 author & paper template layout.
+     */
+    public function paperAuthorsReportExport()
+    {
+        $this->authorizePaperAuthorsReport();
+
+        $path = PaperAuthorsReportService::buildXlsx(PaperAuthorsReportService::rows());
+
+        return response()->download($path, 'BNC_2026_Paid_Paper_Authors_' . now()->format('Y-m-d') . '.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    private function authorizePaperAuthorsReport(): void
+    {
+        abort_if(Gate::denies('payment_report') && Gate::denies('track_report') && Gate::denies('admin_report'), Response::HTTP_FORBIDDEN, '403 Forbidden');
     }
 
     public function paperPaymentsReport(Request $request)
