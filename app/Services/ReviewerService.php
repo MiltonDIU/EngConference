@@ -95,6 +95,47 @@ class ReviewerService
     }
 
     /**
+     * Moves papers from one reviewer to another, keeping each paper's session details.
+     * $paperIds = null moves all of them. Papers the new reviewer already has are only
+     * removed from the old one. The old reviewer loses the Reviewer role when nothing is left.
+     *
+     * @return array{moved: string[], already: string[]} submission IDs
+     */
+    public static function transfer(User $from, User $to, ?array $paperIds = null): array
+    {
+        $result = ['moved' => [], 'already' => []];
+
+        DB::transaction(function () use ($from, $to, $paperIds, &$result) {
+            $rows = DB::table('paper_reviewers')
+                ->join('papers', 'papers.id', '=', 'paper_reviewers.paper_id')
+                ->where('paper_reviewers.user_id', $from->id)
+                ->when($paperIds !== null, fn ($q) => $q->whereIn('paper_reviewers.paper_id', $paperIds))
+                ->get(['paper_reviewers.id', 'paper_reviewers.paper_id', 'papers.submission_id']);
+
+            $toHas = DB::table('paper_reviewers')->where('user_id', $to->id)->pluck('paper_id')->flip();
+
+            foreach ($rows as $row) {
+                if (isset($toHas[$row->paper_id])) {
+                    DB::table('paper_reviewers')->where('id', $row->id)->delete();
+                    $result['already'][] = $row->submission_id;
+                } else {
+                    DB::table('paper_reviewers')->where('id', $row->id)->update(['user_id' => $to->id, 'updated_at' => now()]);
+                    $result['moved'][] = $row->submission_id;
+                }
+            }
+
+            if ($rows->isNotEmpty() && ($roleId = self::roleId())) {
+                $to->roles()->syncWithoutDetaching([$roleId]);
+            }
+            if (!DB::table('paper_reviewers')->where('user_id', $from->id)->exists()) {
+                self::removeReviewer($from->id);
+            }
+        });
+
+        return $result;
+    }
+
+    /**
      * Accounts that exist only because of the import: their sole role is Reviewer.
      * Authors and admins who are also reviewers have other roles and are never included.
      */

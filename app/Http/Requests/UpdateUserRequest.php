@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\User;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
 class UpdateUserRequest extends FormRequest
@@ -24,6 +25,9 @@ class UpdateUserRequest extends FormRequest
             ],
             'email'   => [
                 'required',
+                'email',
+                // Another user may not have this email; the user being edited may keep theirs
+                Rule::unique('users', 'email')->ignore($this->route('user')),
             ],
             'roles.*' => [
                 'integer',
@@ -32,6 +36,13 @@ class UpdateUserRequest extends FormRequest
                 'required',
                 'array',
             ],
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'email.unique' => 'This email is already used by another user.',
         ];
     }
 }

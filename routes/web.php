@@ -321,6 +321,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth','ve
     Route::post('reviewers/password', [App\Http\Controllers\Admin\ReviewerController::class, 'setPassword'])->name('reviewers.password');
     Route::get('reviewers/{user}', [App\Http\Controllers\Admin\ReviewerController::class, 'show'])->name('reviewers.show');
     Route::post('reviewers/{user}/papers', [App\Http\Controllers\Admin\ReviewerController::class, 'attach'])->name('reviewers.attach');
+    Route::post('reviewers/{user}/transfer', [App\Http\Controllers\Admin\ReviewerController::class, 'transfer'])->name('reviewers.transfer');
     Route::delete('reviewers/{user}/papers/{paper}', [App\Http\Controllers\Admin\ReviewerController::class, 'detach'])->name('reviewers.detach');
     Route::delete('reviewers/{user}', [App\Http\Controllers\Admin\ReviewerController::class, 'destroy'])->name('reviewers.destroy');
 });

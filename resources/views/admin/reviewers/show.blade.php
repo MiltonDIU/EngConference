@@ -44,6 +44,42 @@
             </div>
         </div>
 
+        {{-- Hand papers to another reviewer --}}
+        @if($papers->isNotEmpty())
+            <div class="card shadow-sm border-0 rounded-lg mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-exchange-alt mr-2 text-primary"></i> Transfer papers to another reviewer</h6>
+                </div>
+                <div class="card-body">
+                    <form id="transfer-form" action="{{ route('admin.reviewers.transfer', $user->id) }}" method="POST"
+                          onsubmit="var n = document.querySelectorAll('.transfer-paper:checked').length; return confirm('Transfer ' + (n ? n + ' selected' : 'all {{ $papers->count() }}') + ' paper(s) from {{ addslashes($user->name) }} to ' + this.to_email.value + '?');">
+                        @csrf
+                        <div class="form-row align-items-end">
+                            <div class="col-md-8 mb-2">
+                                <label class="small font-weight-bold mb-1">New reviewer's email</label>
+                                <input type="email" name="to_email" value="{{ old('to_email') }}" required list="reviewer-emails"
+                                       class="form-control form-control-sm @error('to_email') is-invalid @enderror"
+                                       placeholder="Type or pick an email">
+                                <datalist id="reviewer-emails">
+                                    @foreach($otherReviewers as $other)
+                                        <option value="{{ $other->email }}">{{ $other->name }}</option>
+                                    @endforeach
+                                </datalist>
+                                @error('to_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-exchange-alt mr-1"></i> Transfer</button>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            Tick papers in the list below to transfer only those; with none ticked, all papers are transferred.
+                            Session details stay the same. The new reviewer can be any existing user.
+                        </small>
+                    </form>
+                </div>
+            </div>
+        @endif
+
         {{-- Assigned papers --}}
         <div class="card shadow-sm border-0 rounded-lg">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
@@ -62,6 +98,9 @@
                     <table class="table table-hover mb-0">
                         <thead class="bg-light">
                             <tr>
+                                <th style="width: 36px;" title="Select for transfer">
+                                    <input type="checkbox" id="transfer-all" title="Select all">
+                                </th>
                                 <th>Session</th>
                                 <th>Submission ID</th>
                                 <th>Title</th>
@@ -74,6 +113,10 @@
                             @forelse($papers as $paper)
                                 @php $isOwnPaper = $paper->user_id === $user->id; @endphp
                                 <tr class="{{ $isOwnPaper ? 'table-warning' : '' }}">
+                                    <td class="align-middle">
+                                        {{-- Belongs to the transfer form above (rows already hold the detach forms) --}}
+                                        <input type="checkbox" name="paper_ids[]" value="{{ $paper->id }}" form="transfer-form" class="transfer-paper">
+                                    </td>
                                     <td class="small text-muted text-nowrap">
                                         {{ $paper->pivot->session_no ? '#' . $paper->pivot->session_no : '' }}
                                         <span class="d-block">{{ $paper->pivot->session_info }}</span>
@@ -102,7 +145,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="text-center text-muted py-4">No papers assigned.</td></tr>
+                                <tr><td colspan="7" class="text-center text-muted py-4">No papers assigned.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -113,4 +156,10 @@
 </div>
 
 @include('admin.papers.partials.file-preview')
+
+<script>
+    document.getElementById('transfer-all')?.addEventListener('change', function () {
+        document.querySelectorAll('.transfer-paper').forEach(box => box.checked = this.checked);
+    });
+</script>
 @endsection

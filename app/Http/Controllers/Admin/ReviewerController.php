@@ -67,7 +67,13 @@ class ReviewerController extends Controller
             ->orderBy('paper_reviewers.id')
             ->get();
 
-        return view('admin.reviewers.show', compact('user', 'papers'));
+        // Suggestions for the transfer form; any existing user's email is accepted
+        $otherReviewers = User::whereHas('reviewPapers')
+            ->where('id', '!=', $user->id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        return view('admin.reviewers.show', compact('user', 'papers', 'otherReviewers'));
     }
 
     /**
@@ -180,6 +186,42 @@ class ReviewerController extends Controller
         }
 
         return $redirect;
+    }
+
+    /**
+     * Hands this reviewer's papers (the ticked ones, or all) to another existing user.
+     */
+    public function transfer(Request $request, User $user)
+    {
+        $this->authorizeManage();
+
+        $data = $request->validate([
+            'to_email' => 'required|email|exists:users,email',
+            'paper_ids' => 'nullable|array',
+            'paper_ids.*' => 'integer',
+        ], [
+            'to_email.exists' => 'No user has this email. Create the user first from Users, then transfer.',
+        ]);
+
+        $to = User::where('email', $data['to_email'])->firstOrFail();
+        if ($to->id === $user->id) {
+            return back()->withInput()->with('error', 'Choose a different reviewer to transfer the papers to.');
+        }
+
+        $result = ReviewerService::transfer($user, $to, $data['paper_ids'] ?? null);
+        if (!$result['moved'] && !$result['already']) {
+            return back()->with('error', 'No papers were transferred.');
+        }
+
+        $message = collect([
+            $result['moved'] ? 'Transferred to ' . $to->name . ': ' . implode(', ', $result['moved']) . '.' : null,
+            $result['already'] ? $to->name . ' already had: ' . implode(', ', $result['already']) . ' (removed from ' . $user->name . ').' : null,
+        ])->filter()->implode(' ');
+
+        // Stay on this reviewer while they still have papers, otherwise open the new one
+        return ReviewerService::isReviewer($user)
+            ? redirect()->route('admin.reviewers.show', $user->id)->with('message', $message)
+            : redirect()->route('admin.reviewers.show', $to->id)->with('message', $message . ' ' . $user->name . ' has no papers left and is no longer a reviewer.');
     }
 
     public function detach(User $user, Paper $paper)

@@ -24,6 +24,9 @@ class StoreUserRequest extends FormRequest
             ],
             'email'    => [
                 'required',
+                'email',
+                // Checked here so a duplicate shows a message instead of a database error
+                'unique:users,email',
             ],
             'password' => [
                 'required',
@@ -35,6 +38,13 @@ class StoreUserRequest extends FormRequest
                 'required',
                 'array',
             ],
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'email.unique' => 'This email is already used by another user.',
         ];
     }
 }
