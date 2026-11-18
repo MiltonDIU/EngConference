@@ -52,20 +52,25 @@
                 </div>
                 <div class="card-body">
                     <form id="transfer-form" action="{{ route('admin.reviewers.transfer', $user->id) }}" method="POST"
-                          onsubmit="var n = document.querySelectorAll('.transfer-paper:checked').length; return confirm('Transfer ' + (n ? n + ' selected' : 'all {{ $papers->count() }}') + ' paper(s) from {{ addslashes($user->name) }} to ' + this.to_email.value + '?');">
+                          onsubmit="var n = document.querySelectorAll('.transfer-paper:checked').length; var to = this.to_email.options[this.to_email.selectedIndex].text; return confirm('Transfer ' + (n ? n + ' selected' : 'all {{ $papers->count() }}') + ' paper(s) from {{ addslashes($user->name) }} to ' + to + '?');">
                         @csrf
                         <div class="form-row align-items-end">
                             <div class="col-md-8 mb-2">
-                                <label class="small font-weight-bold mb-1">New reviewer's email</label>
-                                <input type="email" name="to_email" value="{{ old('to_email') }}" required list="reviewer-emails"
-                                       class="form-control form-control-sm @error('to_email') is-invalid @enderror"
-                                       placeholder="Type or pick an email">
-                                <datalist id="reviewer-emails">
-                                    @foreach($otherReviewers as $other)
-                                        <option value="{{ $other->email }}">{{ $other->name }}</option>
+                                <label class="small font-weight-bold mb-1">New reviewer</label>
+                                <select name="to_email" id="transfer-user" required
+                                        class="form-control form-control-sm @error('to_email') is-invalid @enderror">
+                                    <option value="">Search by name or email</option>
+                                    @foreach(['Current reviewers' => $otherReviewers, 'Other users' => $otherUsers] as $group => $groupUsers)
+                                        @if($groupUsers->isNotEmpty())
+                                            <optgroup label="{{ $group }}">
+                                                @foreach($groupUsers as $other)
+                                                    <option value="{{ $other->email }}" {{ old('to_email') === $other->email ? 'selected' : '' }}>{{ $other->name }} ({{ $other->email }})</option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
                                     @endforeach
-                                </datalist>
-                                @error('to_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </select>
+                                @error('to_email')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-4 mb-2">
                                 <button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-exchange-alt mr-1"></i> Transfer</button>
@@ -73,7 +78,7 @@
                         </div>
                         <small class="text-muted">
                             Tick papers in the list below to transfer only those; with none ticked, all papers are transferred.
-                            Session details stay the same. The new reviewer can be any existing user.
+                            Session details stay the same. Someone not in the list must first be added from Users.
                         </small>
                     </form>
                 </div>
@@ -160,6 +165,15 @@
 <script>
     document.getElementById('transfer-all')?.addEventListener('change', function () {
         document.querySelectorAll('.transfer-paper').forEach(box => box.checked = this.checked);
+    });
+</script>
+@endsection
+
+@section('scripts')
+<script>
+    // Searchable user picker for the transfer form
+    $(function () {
+        $('#transfer-user').select2({ placeholder: 'Search by name or email', width: '100%' });
     });
 </script>
 @endsection

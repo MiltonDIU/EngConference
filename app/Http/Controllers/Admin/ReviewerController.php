@@ -75,13 +75,15 @@ class ReviewerController extends Controller
             ->orderBy('paper_reviewers.id')
             ->get();
 
-        // Suggestions for the transfer form; any existing user's email is accepted
-        $otherReviewers = User::whereHas('reviewPapers')
-            ->where('id', '!=', $user->id)
+        // Transfer target picker: current reviewers first, then every other user
+        $reviewerIds = DB::table('paper_reviewers')->distinct()->pluck('user_id')->flip();
+        $transferUsers = User::where('id', '!=', $user->id)
             ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+            ->get(['id', 'name', 'email'])
+            ->partition(fn ($u) => isset($reviewerIds[$u->id]));
+        [$otherReviewers, $otherUsers] = [$transferUsers[0], $transferUsers[1]];
 
-        return view('admin.reviewers.show', compact('user', 'papers', 'otherReviewers'));
+        return view('admin.reviewers.show', compact('user', 'papers', 'otherReviewers', 'otherUsers'));
     }
 
     /**
