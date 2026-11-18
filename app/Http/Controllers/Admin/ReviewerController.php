@@ -46,6 +46,14 @@ class ReviewerController extends Controller
             ->get(['paper_reviewers.user_id', 'papers.id', 'papers.submission_id'])
             ->groupBy('user_id');
 
+        // Submission IDs per reviewer, in assignment order: user_id => [{id, submission_id}]
+        $assignedPapers = DB::table('paper_reviewers')
+            ->join('papers', 'papers.id', '=', 'paper_reviewers.paper_id')
+            ->whereNull('papers.deleted_at')
+            ->orderBy('paper_reviewers.id')
+            ->get(['paper_reviewers.user_id', 'papers.id', 'papers.submission_id'])
+            ->groupBy('user_id');
+
         // Reviewers with a conflict first, then by name
         $reviewers = $reviewers->sortBy(fn ($r) => [isset($ownPapers[$r->id]) ? 0 : 1, $r->name])->values();
 
@@ -55,7 +63,7 @@ class ReviewerController extends Controller
 
         $importedOnlyCount = ReviewerService::importedOnlyReviewersQuery()->count();
 
-        return view('admin.reviewers.index', compact('reviewers', 'sessionLabels', 'ownPapers', 'unassignedCount', 'defaultSheetExists', 'storedSheet', 'importedOnlyCount'));
+        return view('admin.reviewers.index', compact('reviewers', 'sessionLabels', 'ownPapers', 'assignedPapers', 'unassignedCount', 'defaultSheetExists', 'storedSheet', 'importedOnlyCount'));
     }
 
     public function show(User $user)

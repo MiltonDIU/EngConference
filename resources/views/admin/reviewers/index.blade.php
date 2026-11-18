@@ -163,7 +163,7 @@
         <div class="card shadow-sm border-0 rounded-lg">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
                 <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-users mr-2 text-primary"></i> Reviewers</h6>
-                <input type="search" id="reviewer-search" class="form-control form-control-sm mt-2 mt-md-0" style="max-width: 260px;" placeholder="Search name or email">
+                <input type="search" id="reviewer-search" class="form-control form-control-sm mt-2 mt-md-0" style="max-width: 260px;" placeholder="Search name, email or paper ID">
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -174,6 +174,7 @@
                                 <th>Email</th>
                                 <th>Sessions</th>
                                 <th class="text-center">Papers</th>
+                                <th>Paper IDs</th>
                                 <th class="text-center">Author?</th>
                                 <th class="text-center" style="width: 170px;">Action</th>
                             </tr>
@@ -193,6 +194,13 @@
                                     <td>{{ $reviewer->email }}</td>
                                     <td class="small text-muted">{!! ($sessionLabels[$reviewer->id] ?? collect())->map(fn ($l) => e($l))->implode('<br>') !!}</td>
                                     <td class="text-center"><span class="badge badge-info">{{ $reviewer->review_papers_count }}</span></td>
+                                    <td style="min-width: 260px; max-width: 420px;">
+                                        @foreach($assignedPapers[$reviewer->id] ?? [] as $p)
+                                            {{-- Reviewer's own paper stands out --}}
+                                            <a href="{{ route('papers.show', $p->id) }}"
+                                               class="badge {{ $own->contains('id', $p->id) ? 'badge-warning' : 'badge-light border' }} text-dark font-weight-normal mb-1">{{ $p->submission_id }}</a>
+                                        @endforeach
+                                    </td>
                                     <td class="text-center">
                                         @if($reviewer->roles->contains('id', 3))
                                             <span class="badge badge-light border">Author</span>
@@ -213,7 +221,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="text-center text-muted py-4">No reviewers yet. Use "Sync from Excel sheet" above.</td></tr>
+                                <tr><td colspan="7" class="text-center text-muted py-4">No reviewers yet. Use "Sync from Excel sheet" above.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
